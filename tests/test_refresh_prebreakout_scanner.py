@@ -24,6 +24,37 @@ class FirstFailingGateAuditTests(unittest.TestCase):
         self.assertIsNone(mod.scan_bars("INVALID", bars, date(2026, 11, 8), audit=trace))
         self.assertEqual(trace["first_rejection"], "inconsistent_ohlc")
 
+    def test_invalid_bar_diagnostics_preserve_original_fail_closed_gate(self):
+        cases=[
+            (None,"non_mapping_bar"),
+            ({"date":"bad","close":10,"high":11,"low":9,"volume":20},
+             "invalid_or_missing_date"),
+            ({"date":"2026-11-06","close":None,"high":11,"low":9,"volume":20},
+             "invalid_or_missing_close"),
+            ({"date":"2026-11-06","close":10,"high":None,"low":9,"volume":20},
+             "invalid_or_missing_high"),
+            ({"date":"2026-11-06","close":10,"high":11,"low":None,"volume":20},
+             "invalid_or_missing_low"),
+            ({"date":"2026-11-06","close":True,"high":11,"low":9,"volume":20},
+             "boolean_price_or_volume"),
+            ({"date":"2026-11-06","close":float("nan"),"high":11,"low":9,"volume":20},
+             "nonfinite_close"),
+        ]
+        for bar,reason in cases:
+            with self.subTest(reason=reason):
+                audit={}
+                self.assertIsNone(mod.scan_bars("BAD",[bar],date(2026,11,8),audit=audit))
+                self.assertEqual(audit["first_rejection"],"invalid_ohlcv_or_date")
+                self.assertEqual(audit["invalid_ohlcv_detail"],reason)
+                self.assertIsNone(mod.scan_bars("BAD",[bar],date(2026,11,8)))
+
+    def test_invalid_bar_diagnostic_is_first_bad_bar_only(self):
+        good={"date":"2026-11-05","close":10,"high":11,"low":9,"volume":100}
+        bad={"date":"2026-11-06","close":10,"high":None,"low":9,"volume":100}
+        audit={}
+        self.assertIsNone(mod.scan_bars("BAD",[good,bad],date(2026,11,8),audit=audit))
+        self.assertEqual(audit["invalid_ohlcv_detail"],"invalid_or_missing_high")
+
     def test_flat_220_session_history_fails_moving_average_gate_without_relaxation(self):
         today = date(2026, 11, 8)
         bars = [{"date": (today - timedelta(days=219-i)).isoformat(),
