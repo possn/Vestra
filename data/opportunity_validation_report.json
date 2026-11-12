@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-11T14:48:02.381083+00:00",
+  "generated_at": "2026-11-12T09:54:39.297992+00:00",
   "methodology": "prospective weekly Opportunity cohorts; persistent realised price returns; no historical reconstruction",
   "horizons_days": [
     28,
@@ -8,8 +8,24 @@
     168
   ],
   "snapshots_available": 7,
-  "realised_outcomes": 4476,
-  "new_outcomes_this_run": 20,
+  "realised_outcomes": 4485,
+  "new_outcomes_this_run": 9,
+  "latest_cohort_currency_capture": {
+    "status": "observed_diagnostic_only",
+    "scope": "latest_frozen_snapshot",
+    "snapshot_date": "2026-11-09",
+    "counts": {
+      "frozen_tickers": 1601,
+      "missing_frozen_currency": 0,
+      "missing_terminal_quote": 210,
+      "missing_terminal_currency": 0,
+      "known_currency_mismatch": 0,
+      "known_currency_match": 1391
+    },
+    "counting": "disjoint_first_reason_missing_frozen_currency_then_missing_quote_then_missing_terminal_currency_then_mismatch_or_match",
+    "not_validated_outcomes": true,
+    "no_fx_imputation": true
+  },
   "horizons": {
     "28": {
       "n": 17,
@@ -208,11 +224,11 @@
         "invalid_or_unverified_evaluation_windows": 0
       },
       "expected_matured_observations": 4740,
-      "realised_matured_observations": 4476,
-      "missing_matured_observations": 264,
-      "observation_capture_pct": 94.4,
+      "realised_matured_observations": 4485,
+      "missing_matured_observations": 255,
+      "observation_capture_pct": 94.6,
       "validated_matured_observations": 17,
-      "unvalidated_matured_observations": 4459,
+      "unvalidated_matured_observations": 4468,
       "validated_capture_pct": 0.4,
       "score_quintile_capture": {
         "method": "quintiles of all frozen scored observations, ascending original opportunity_score, within each matured cohort",
@@ -222,37 +238,37 @@
           {
             "quintile": 1,
             "expected": 949,
-            "recorded": 834,
+            "recorded": 835,
             "validated": 5,
-            "missing": 115,
-            "unvalidated": 829,
+            "missing": 114,
+            "unvalidated": 830,
             "validated_capture_pct": 0.5
           },
           {
             "quintile": 2,
             "expected": 948,
-            "recorded": 859,
+            "recorded": 865,
             "validated": 8,
-            "missing": 89,
-            "unvalidated": 851,
+            "missing": 83,
+            "unvalidated": 857,
             "validated_capture_pct": 0.8
           },
           {
             "quintile": 3,
             "expected": 948,
-            "recorded": 934,
+            "recorded": 935,
             "validated": 2,
-            "missing": 14,
-            "unvalidated": 932,
+            "missing": 13,
+            "unvalidated": 933,
             "validated_capture_pct": 0.2
           },
           {
             "quintile": 4,
             "expected": 948,
-            "recorded": 924,
+            "recorded": 925,
             "validated": 1,
-            "missing": 24,
-            "unvalidated": 923,
+            "missing": 23,
+            "unvalidated": 924,
             "validated_capture_pct": 0.1
           },
           {
@@ -293,7 +309,7 @@
           {
             "cohort_date": "2026-10-05",
             "expected": 1544,
-            "recorded": 1483,
+            "recorded": 1484,
             "duplicate_records_ignored": 0,
             "duplicate_conflicts": 0,
             "exclusion_reasons": {
@@ -302,17 +318,17 @@
               "invalid_return": 0,
               "invalid_evaluation_window": 0,
               "unresolved_corporate_action": 0,
-              "incomparable_quote_currency": 29,
+              "incomparable_quote_currency": 30,
               "explicitly_ineligible_other": 0
             },
-            "missing": 61,
+            "missing": 60,
             "validated_capture_pct": 1.1,
-            "unvalidated_recorded": 1466
+            "unvalidated_recorded": 1467
           },
           {
             "cohort_date": "2026-10-12",
             "expected": 1560,
-            "recorded": 1457,
+            "recorded": 1465,
             "duplicate_records_ignored": 0,
             "duplicate_conflicts": 0,
             "exclusion_reasons": {
@@ -321,18 +337,18 @@
               "invalid_return": 0,
               "invalid_evaluation_window": 0,
               "unresolved_corporate_action": 0,
-              "incomparable_quote_currency": 1457,
+              "incomparable_quote_currency": 1465,
               "explicitly_ineligible_other": 0
             },
-            "missing": 103,
+            "missing": 95,
             "validated_capture_pct": 0.0,
-            "unvalidated_recorded": 1457
+            "unvalidated_recorded": 1465
           }
         ],
         "scope": "unique recorded outcomes from matured frozen cohorts only",
         "expected_observations": 4740,
-        "recorded_observations": 4476,
-        "missing_observations": 264,
+        "recorded_observations": 4485,
+        "missing_observations": 255,
         "duplicate_records_ignored": 0,
         "duplicate_conflict_keys": 0,
         "exclusion_reasons": {
@@ -341,15 +357,15 @@
           "invalid_return": 0,
           "invalid_evaluation_window": 0,
           "unresolved_corporate_action": 0,
-          "incomparable_quote_currency": 1486,
+          "incomparable_quote_currency": 1495,
           "explicitly_ineligible_other": 0
         },
-        "unvalidated_recorded_observations": 4459,
+        "unvalidated_recorded_observations": 4468,
         "classification": "diagnostic_only_no_backfill",
         "interpretation": "Historical records without explicit corporate-action eligibility remain unvalidated. Duplicate conflicts are counted and must be investigated; neither duplicate outcomes nor missing prices prove alpha or delisting."
       },
-      "missing_outcome_count": 264,
-      "missing_price_now_count": 257,
+      "missing_outcome_count": 255,
+      "missing_price_now_count": 249,
       "price_available_within_window_count": 0,
       "capture_window_expired_count": 100,
       "missing_outcome_samples": [
@@ -439,15 +455,15 @@
         }
       ],
       "missing_terminal_quote_reasons": {
-        "absent_from_current_index": 257,
-        "usable_quote_not_captured": 7
+        "absent_from_current_index": 249,
+        "usable_quote_not_captured": 6
       },
-      "missing_terminal_quote_reason_total": 264,
+      "missing_terminal_quote_reason_total": 255,
       "missing_terminal_quote_interpretation": "Describes current index evidence only. Absence or stale quotes cannot establish delisting, bankruptcy or realised loss; expired windows are never backfilled with today's price.",
       "delisting_status": "unverified",
       "documented_dividend_outcomes": 0,
       "documented_dividend_cash_is_complete": false,
-      "legacy_or_unresolved_outcomes": 4459,
+      "legacy_or_unresolved_outcomes": 4468,
       "first_possible_maturity_date": "2026-10-26",
       "next_pending_maturity_date": "2026-11-16"
     },
