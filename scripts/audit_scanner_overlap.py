@@ -23,6 +23,12 @@ def audit(payload):
     general_only = 0
     missing_general = 0
     invalid_rows = 0
+    # Producer-level generated_at is not equivalent to per-signal evidence date.
+    # Count only explicit evidence lineage fields; no inferred timestamps.
+    lineage = {}
+    for field in ("source", "as_of", "evidence_at", "observed_at", "signal_date"):
+        lineage[field] = Counter()
+    total_lens_records = 0
     for ticker, signals in rows.items():
         if not isinstance(ticker, str) or not ticker.strip() or not isinstance(signals, dict):
             invalid_rows += 1
@@ -33,6 +39,13 @@ def audit(payload):
             invalid_rows += 1
             continue
         counts.update(lenses)
+        total_lens_records += len(lenses)
+        for lens in lenses:
+            entry = signals[lens]
+            for field, tally in lineage.items():
+                value = entry.get(field)
+                if isinstance(value, str) and value.strip():
+                    tally[lens] += 1
         distribution[len(lenses)] += 1
         pairs.update(tuple(pair) for pair in combinations(lenses, 2))
         specialized += int(any(k != GENERAL for k in lenses))
@@ -51,10 +64,20 @@ def audit(payload):
         "specialized_tickers": specialized,
         "general_only_tickers": general_only,
         "specialized_without_general": missing_general,
+        "total_lens_records": total_lens_records,
+        "explicit_lineage_coverage": {
+            field: {
+                lens: {"present": tally[lens],
+                       "missing": counts[lens] - tally[lens]}
+                for lens, count in sorted(counts.items())
+            }
+            for field, tally in lineage.items()
+        },
         "pair_overlaps": [
             {"strategy_a": a, "strategy_b": b, "ticker_count": count}
             for (a, b), count in sorted(pairs.items(), key=lambda kv: (-kv[1], kv[0]))
         ],
+        "lineage_interpretation": "Feed publish time does not establish when each signal was observed or when its thesis changed.",
         "interpretation": "Co-occurring labels are not proof of duplicate scoring, independent evidence, or predictive edge.",
         "read_only": True,
     }
