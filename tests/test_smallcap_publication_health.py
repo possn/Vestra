@@ -10,6 +10,14 @@ spec.loader.exec_module(health)
 
 
 class SmallcapPublishedHealthTests(unittest.TestCase):
+    def test_technical_gate_rollup_must_match_per_ticker_evidence(self):
+        valid={**self.report,
+               "technical_first_rejection_counts":{"not_recorded_legacy":1}}
+        self.assertEqual(health.assess_publication(valid,self.now)["status"],"healthy")
+        invalid={**valid,"technical_first_rejection_counts":{"passed_structural_gates":1}}
+        self.assertEqual(health.assess_publication(invalid,self.now)["reason"],
+                         "unreconciled_technical_gate_counts")
+
     def setUp(self):
         self.now = datetime(2026, 11, 9, 21, 40, tzinfo=timezone.utc)
         self.report = {
