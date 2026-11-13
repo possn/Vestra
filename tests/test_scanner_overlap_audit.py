@@ -25,6 +25,19 @@ class ScannerOverlapAuditTests(unittest.TestCase):
         self.assertTrue(report["read_only"])
         self.assertEqual(len(data["tickers"]["B"]), 2)
 
+    def test_lineage_is_explicit_not_inferred_from_publish_time(self):
+        payload = {"generated_at": "2026-11-13T01:00:00Z", "tickers": {
+            "A": {"best_opportunities": {"score": 45}, "qarp": {"score": 67, "source": "financial_feed", "as_of": "2026-11-12"}},
+            "B": {"positive_revisions": {"score": 80, "source": "  ", "signal_date": "2026-11-10"}}
+        }}
+        report = module.audit(payload)
+        self.assertEqual(report["total_lens_records"], 3)
+        self.assertEqual(report["explicit_lineage_coverage"]["source"]["qarp"]["present"], 1)
+        self.assertEqual(report["explicit_lineage_coverage"]["source"]["positive_revisions"]["present"], 0)
+        self.assertEqual(report["explicit_lineage_coverage"]["as_of"]["best_opportunities"]["missing"], 1)
+        self.assertEqual(report["explicit_lineage_coverage"]["signal_date"]["positive_revisions"]["present"], 1)
+        self.assertEqual(payload["tickers"]["A"]["best_opportunities"], {"score": 45})
+
     def test_invalid_rows_and_empty_source(self):
         report = module.audit({"ticker_count": 2, "tickers": {"A": {}, "B": {"qarp": {"score": 3}}}})
         self.assertEqual(report["invalid_or_empty_ticker_rows"], 1)
