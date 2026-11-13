@@ -112,6 +112,7 @@ INDEX_KEYS = {
     "low52_status", "low52_label", "low52_score", "low52_resilience_score",
     "low52_deterioration_penalty", "low52_above_low_pct", "low52_drawdown_from_high_pct",
     "low52_range_position_pct", "low52_price_low", "low52_price_high",
+    "low52_price_basis", "low52_observed_close_sessions", "low52_observed_last_session",
     "drawdown_diagnosis_status", "drawdown_primary_driver", "drawdown_primary_label",
     "drawdown_driver_trend", "sector_relative_peer_count", "return_1y_pct",
     "sector_median_return_1y_pct", "sector_relative_return_1y_pct",
