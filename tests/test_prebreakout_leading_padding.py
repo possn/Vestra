@@ -66,6 +66,41 @@ class LeadingPaddingTests(unittest.TestCase):
         self.assertEqual(audit["invalid_ohlcv_detail"], "invalid_or_missing_close")
         self.assertEqual(audit["missing_close_bar_location"], "trailing")
 
+    def test_interior_gap_diagnostic_counts_without_mutating_history(self):
+        observed = rows()
+        observed[40] = empty("2026-01-05")  # Monday; calendar not evidence of a session
+        observed[41] = empty("2026-01-06")
+        observed[110] = empty("2026-02-07")  # Saturday, deliberately synthetic
+        original = [dict(row) for row in observed]
+        audit = scanner.interior_all_null_gap_diagnostic(observed)
+        self.assertEqual(audit["gap_runs"], 2)
+        self.assertEqual(audit["gap_rows"], 3)
+        self.assertEqual(audit["single_day_runs"], 1)
+        self.assertEqual(audit["multi_day_runs"], 1)
+        self.assertEqual(audit["max_run_rows"], 2)
+        self.assertEqual(audit["weekday_rows"], 2)
+        self.assertEqual(audit["weekend_rows"], 1)
+        self.assertEqual(observed, original)
+        trace = {}
+        self.assertIsNone(scanner.scan_bars("GAPPED", observed, date(2026, 11, 12), audit=trace))
+        self.assertEqual(trace["first_rejection"], "invalid_ohlcv_or_date")
+
+    def test_prefix_and_trailing_gaps_not_reported_as_interior(self):
+        raw = [empty("2025-01-01"), *rows(), empty("2026-11-11")]
+        audit = scanner.interior_all_null_gap_diagnostic(raw)
+        self.assertEqual(audit["gap_rows"], 0)
+        self.assertEqual(audit["gap_runs"], 0)
+        self.assertEqual(scanner.interior_all_null_gap_diagnostic([])["gap_rows"], 0)
+
+    def test_partial_bar_does_not_count_as_all_null_gap(self):
+        observed = rows()
+        observed[100] = dict(observed[100], close=None)
+        audit = scanner.interior_all_null_gap_diagnostic(observed)
+        self.assertEqual(audit["gap_rows"], 0)
+        trace = {}
+        self.assertIsNone(scanner.scan_bars("PARTIAL", observed, date(2026, 11, 12), audit=trace))
+        self.assertEqual(trace["first_rejection"], "invalid_ohlcv_or_date")
+
     def test_all_null_frame_is_not_marked_as_ohlcv(self):
         cleaned, dropped = scanner.trim_leading_provider_padding(
             [empty("2025-01-01"), empty("2025-01-02")])
