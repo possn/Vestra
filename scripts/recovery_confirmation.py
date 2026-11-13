@@ -9,7 +9,7 @@ def _n(v):
         x=float(v); return x if math.isfinite(x) else None
     except Exception: return None
 
-def _closes(row):
+def _closes(row, audit=None):
     """Preserve session spacing: one invalid bar invalidates returns.
 
     Silently dropping a malformed close changes the nominal 20/60-session
@@ -42,6 +42,8 @@ def _closes(row):
         age = (datetime.now(timezone.utc).date() - dated[-1]).days
         if not 0 <= age <= 7:
             return []
+    if audit is not None:
+        audit['dated_sessions']=dated
     return out
 
 def _ret(c,d):
@@ -49,9 +51,19 @@ def _ret(c,d):
 
 def assess(row):
     if str(row.get('quote_type') or '').upper() in ('ETF','CRYPTO','CRYPTOCURRENCY','FUND','MUTUALFUND'): return {}
-    c=_closes(row)
-    if len(c)<61: return {'recovery_status':'insufficient','recovery_label':'Dados insuficientes','recovery_score':None}
-    r20=_ret(c,20); r60=_ret(c,60)
+    trace={};c=_closes(row,trace)
+    dates=trace.get('dated_sessions',[])
+    weekly=(45<=len(c)<=54 and len(dates)==len(c)
+            and (dates[-1]-dates[0]).days>=300
+            and all(4<=(b-a).days<=11 for a,b in zip(dates,dates[1:])))
+    if len(c)>=61:
+        basis='daily_sessions_20_60'
+        r20=_ret(c,20);r60=_ret(c,60)
+    elif weekly:
+        basis='dated_weekly_closes_4_12_weeks'
+        r20=_ret(c,4);r60=_ret(c,12)
+    else:
+        return {'recovery_status':'insufficient','recovery_label':'Dados insuficientes','recovery_score':None}
     est=str(row.get('estimate_signal') or '').lower(); driver=str(row.get('drawdown_driver_trend') or 'stable').lower()
     rev=_n(row.get('revenue_yoy_acceleration_pp')); margin=_n(row.get('net_margin_yoy_change_pp')); rel=_n(row.get('sector_relative_return_1y_pct'))
     thesis=str(row.get('thesis_direction') or '').lower(); gate=str(row.get('risk_gate') or 'unknown').lower()
@@ -76,7 +88,7 @@ def assess(row):
     elif (r20 or 0)>3 and fund<45: status='bounce_only'
     else: status='unconfirmed'
     labels={'confirmed':'Recuperação confirmada','recovering':'Recuperação em curso','stabilizing':'Estabilização','bounce_only':'Ressalto sem confirmação','unconfirmed':'Sem confirmação','failed':'Falha de recuperação'}
-    return {'recovery_status':status,'recovery_label':labels[status],'recovery_score':round(score,1),'recovery_price_score':round(price,1),'recovery_fundamental_score':round(fund,1),'recovery_return_20d_pct':round(r20,2) if r20 is not None else None,'recovery_return_60d_pct':round(r60,2) if r60 is not None else None,'recovery_reasons':reasons[:5]}
+    return {'recovery_status':status,'recovery_label':labels[status],'recovery_score':round(score,1),'recovery_price_score':round(price,1),'recovery_fundamental_score':round(fund,1),'recovery_price_basis':basis,'recovery_observed_last_session':dates[-1].isoformat() if dates else None,'recovery_return_20d_pct':round(r20,2) if basis=='daily_sessions_20_60' else None,'recovery_return_60d_pct':round(r60,2) if basis=='daily_sessions_20_60' else None,'recovery_return_4w_pct':round(r20,2) if weekly else None,'recovery_return_12w_pct':round(r60,2) if weekly else None,'recovery_reasons':reasons[:5]}
 
 def assess_universe(rows):
     for row in rows: row.update(assess(row))
