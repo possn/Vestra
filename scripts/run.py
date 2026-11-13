@@ -15,6 +15,7 @@ import datetime
 import io
 import json
 import logging
+import math
 import os
 import sys
 import traceback
@@ -162,7 +163,7 @@ def _load_learned_tickers() -> list[str]:
         return []
 
 
-def _select_nonpriority_refresh(tickers, previous_rows, budget, *, today=None):
+def _select_nonpriority_refresh(tickers, previous_rows, budget, *, today=None, shadow_priority_slots=0):
     """Select a bounded daily refresh slice while prioritising uncached names.
 
     Portfolio/search-priority names are handled separately and always refresh.
@@ -177,12 +178,41 @@ def _select_nonpriority_refresh(tickers, previous_rows, budget, *, today=None):
         return tickers
 
     previous_rows = previous_rows or {}
+    today = today or datetime.date.today()
+    # A narrow, bounded research queue may request NEW fundamentals for an
+    # otherwise suppressed price-led recovery. It must never reinstate a stale
+    # opportunity label: the ordinary evidence gates still decide after fetch.
+    shadow_slots = min(budget, max(0, int(shadow_priority_slots)))
+    def observed_price_context(ticker):
+        row=previous_rows.get(ticker) or {}
+        if (row.get("pipeline_status")!="equity_carried_forward_rotating" or
+                row.get("recovery_label")!="Dados fundamentais não atualizados"):
+            return None
+        try:
+            last=datetime.date.fromisoformat(str(row["recovery_observed_last_session"])[:10])
+            r4=float(row["recovery_return_4w_pct"])
+            r12=float(row["recovery_return_12w_pct"])
+            low_distance=float(row["low52_above_low_pct"])
+        except (KeyError,TypeError,ValueError,OverflowError):
+            return None
+        if (not 0 <= (today-last).days <= 7 or
+                not all(math.isfinite(v) for v in (r4,r12,low_distance)) or
+                not (r4>0 and r12>0 and 0<=low_distance<=12)):
+            return None
+        return low_distance
+    if shadow_slots:
+        context=[(observed_price_context(t),t) for t in tickers]
+        shadow=[t for distance,t in sorted((distance,t) for distance,t in context
+                                          if distance is not None)[:shadow_slots]]
+    else:
+        shadow=[]
     missing = [
         t for t in tickers
-        if t not in previous_rows
+        if t not in shadow and (t not in previous_rows
         or (previous_rows.get(t) or {}).get("pipeline_status") in {"metadata_only", "equity_catalog_only", "catalog_only"}
+        )
     ]
-    selected = list(missing[:budget])
+    selected = shadow + list(missing[:budget-len(shadow)])
     slots = budget - len(selected)
     if slots <= 0:
         return selected
@@ -192,7 +222,6 @@ def _select_nonpriority_refresh(tickers, previous_rows, budget, *, today=None):
         selected.extend(cached)
         return selected
 
-    today = today or datetime.date.today()
     start = ((today.toordinal() * slots) % len(cached)) if cached else 0
     rotated = cached[start:] + cached[:start]
     selected.extend(rotated[:slots])
@@ -290,11 +319,13 @@ def main():
         portfolio_remainder,
         previous_rows,
         portfolio_budget,
+        shadow_priority_slots=min(24, portfolio_budget//6),
     )
     remainder_refresh = _select_nonpriority_refresh(
         remainder_tickers,
         previous_rows,
         nonpriority_budget,
+        shadow_priority_slots=min(30, nonpriority_budget//6),
     )
     log.info(
         "Total universe: %d tickers (%d learned always-refresh, portfolio fundamentals %d/%d, "

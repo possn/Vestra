@@ -1,5 +1,6 @@
 import ast
 import datetime
+import math
 from pathlib import Path
 import unittest
 
@@ -13,12 +14,35 @@ def load_selector():
     tree = ast.parse(source)
     fn = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "_select_nonpriority_refresh")
     module = ast.Module(body=[fn], type_ignores=[])
-    ns = {"datetime": datetime}
+    ns = {"datetime": datetime, "math": math}
     exec(compile(ast.fix_missing_locations(module), str(RUN_PATH), "exec"), ns)
     return ns["_select_nonpriority_refresh"]
 
 
 class FundamentalsRotationTests(unittest.TestCase):
+    def test_stale_recovery_shadow_only_prioritizes_fresh_observed_price_context(self):
+        select=load_selector()
+        today=datetime.date(2026,11,13)
+        def row(last="2026-11-09",r4=4,r12=8,near=6):
+            return {"pipeline_status":"equity_carried_forward_rotating",
+                    "recovery_label":"Dados fundamentais não atualizados",
+                    "recovery_observed_last_session":last,
+                    "recovery_return_4w_pct":r4,"recovery_return_12w_pct":r12,
+                    "low52_above_low_pct":near}
+        tickers=["A","B","C","D","E"]
+        previous={"A":row(near=4),"B":row(near=2),
+                  "C":row(last="2026-10-20"),"D":row(r4=-2),
+                  "E":{"pipeline_status":"ok"}}
+        chosen=select(tickers,previous,3,today=today,shadow_priority_slots=2)
+        self.assertEqual(chosen[:2],["B","A"])
+        self.assertEqual(len(chosen),3)
+
+    def test_shadow_budget_never_promotes_a_stale_classification(self):
+        source=RUN_PATH.read_text(encoding="utf-8")
+        self.assertIn('shadow_priority_slots=min(24, portfolio_budget//6)',source)
+        self.assertIn('shadow_priority_slots=min(30, nonpriority_budget//6)',source)
+        self.assertIn('row.get("recovery_label")!="Dados fundamentais não atualizados"',source)
+
     def test_missing_snapshots_are_refreshed_before_cached_rotation(self):
         select = load_selector()
         tickers = ["A", "B", "C", "D", "E"]
