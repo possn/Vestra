@@ -24,6 +24,16 @@ class Low52FrontendContractTests(unittest.TestCase):
         for status in ("structural_risk", "value_trap_risk", "insufficient"):
             self.assertIn(status, source)
 
+    def test_compact_index_carries_observed_date_and_price_basis(self):
+        from scripts.build_market_shards import index_row
+        original = {"ticker":"ABC", "low52_observed_last_session":"2026-11-12",
+                    "low52_price_basis":"observed_weekly_closes_approximately_52weeks",
+                    "low52_observed_close_sessions":52, "low52_above_low_pct":2.4}
+        compact = index_row(original)
+        for key in ("low52_observed_last_session", "low52_price_basis",
+                    "low52_observed_close_sessions", "low52_above_low_pct"):
+            self.assertEqual(compact[key], original[key])
+
 
 if __name__ == "__main__":
     unittest.main()
