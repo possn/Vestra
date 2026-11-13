@@ -30,6 +30,17 @@ class Provider:
         return FakeFrame()
 
 class ResearchCollectorTests(unittest.TestCase):
+    def test_overlapping_ma_rejections_remain_nonexclusive(self):
+        sample=[{"status":"evaluable_ohlcv","technical_first_rejection":"moving_average_structure",
+                 "technical_failed_ma_checks":["price_above_ma50","ma50_rising_10"]},
+                {"status":"evaluable_ohlcv","technical_first_rejection":"moving_average_structure",
+                 "technical_failed_ma_checks":["ma50_rising_10"]},
+                {"status":"evaluable_ohlcv","technical_first_rejection":"base_width"}]
+        self.assertEqual(mod.technical_structure_audit(sample),{
+            "ma_rejected_rows":2,"diagnosed_ma_rejected_rows":2,
+            "nonexclusive_failed_check_counts":{"ma50_rising_10":2,"price_above_ma50":1},
+            "not_independent_pass_rates":True})
+
     def test_technical_rejections_reconcile_with_evaluable_observations(self):
         rows=[{"ticker":"A","market_cap":150e6,"quote_type":"EQUITY"},
               {"ticker":"B","market_cap":200e6,"quote_type":"EQUITY"}]
