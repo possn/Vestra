@@ -1,5 +1,6 @@
 """Recovery classification must not manufacture momentum from broken OHLCV."""
 import unittest
+from datetime import datetime, timedelta, timezone
 
 from scripts import recovery_confirmation as recovery
 
@@ -20,6 +21,30 @@ class RecoveryIntegrityTests(unittest.TestCase):
     def test_complete_61_sessions_can_be_evaluated(self):
         row = equity([100 + i * .3 for i in range(65)])
         self.assertNotEqual(recovery.assess(row)["recovery_status"], "insufficient")
+
+    def test_full_year_dated_weekly_closes_use_distinct_weekly_horizons(self):
+        end=datetime.now(timezone.utc).date()-timedelta(days=2)
+        history=[{"date":(end-timedelta(days=7*(52-i))).isoformat(),
+                  "close":100+i*.35} for i in range(53)]
+        result=recovery.assess(equity(history))
+        self.assertNotEqual(result["recovery_status"],"insufficient")
+        self.assertEqual(result["recovery_price_basis"],"dated_weekly_closes_4_12_weeks")
+        self.assertEqual(result["recovery_observed_last_session"],end.isoformat())
+        self.assertIsNotNone(result["recovery_return_4w_pct"])
+        self.assertIsNotNone(result["recovery_return_12w_pct"])
+        self.assertIsNone(result["recovery_return_20d_pct"])
+        self.assertIsNone(result["recovery_return_60d_pct"])
+
+    def test_short_undated_and_sparse_weekly_histories_cannot_confirm(self):
+        end=datetime.now(timezone.utc).date()-timedelta(days=2)
+        cases=[[100+i*.35 for i in range(53)],
+               [{"date":(end-timedelta(days=7*(35-i))).isoformat(),"close":100+i*.35}
+                for i in range(36)],
+               [{"date":(end-timedelta(days=14*(50-i))).isoformat(),"close":100+i*.35}
+                for i in range(51)]]
+        for history in cases:
+            with self.subTest(n=len(history)):
+                self.assertEqual(recovery.assess(equity(history))["recovery_status"],"insufficient")
 
     def test_missing_nan_inf_boolean_and_bad_prices_are_not_dropped(self):
         base = [100 + i * .3 for i in range(65)]
