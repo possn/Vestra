@@ -142,6 +142,15 @@ class StandaloneGapRecoveryTests(unittest.TestCase):
 
 
 class ProviderBatchRetryTests(unittest.TestCase):
+    def test_calendar_proxy_batches_preserve_tickers_and_separate_suffixes(self):
+        names=["A","B.PA","C","D.L","E.PA","F.L","G"]
+        groups=mod.provider_calendar_batches(names,batch_size=2)
+        self.assertEqual(groups,[["A","C"],["G"],["B.PA","E.PA"],["D.L","F.L"]])
+        self.assertEqual(sorted(t for group in groups for t in group),sorted(names))
+        for group in groups:
+            self.assertEqual(len({t.rpartition(".")[2] if "." in t else "" for t in group}),1)
+        with self.assertRaises(ValueError):mod.provider_calendar_batches(names,0)
+
     def test_retry_once_recovers_transient_failure(self):
         class Provider:
             calls=0
