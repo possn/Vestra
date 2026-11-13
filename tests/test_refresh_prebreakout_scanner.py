@@ -92,19 +92,27 @@ class StandaloneGapRecoveryTests(unittest.TestCase):
         self.assertEqual(mod.verified_standalone_recovery(batch,self.bars,self.today),self.bars)
 
     def test_single_ticker_download_multilevel_columns_are_extracted(self):
-        import pandas as pd
-        index=pd.to_datetime(["2026-11-11", "2026-11-12"])
-        values={"Close":[100.,101.],"High":[102.,103.],
-                "Low":[99.,100.],"Volume":[1000.,1100.]}
-        flat=pd.DataFrame(values,index=index)
-        for columns in (pd.MultiIndex.from_product([["AAA"],values]),
-                        pd.MultiIndex.from_product([values,["AAA"]])):
-            with self.subTest(columns=columns.names):
-                frame=pd.DataFrame(flat.to_numpy(),index=index,columns=columns)
-                extracted=mod.single_ticker_ohlcv_frame(frame,"AAA")
-                self.assertEqual(mod.dataframe_bars(extracted),mod.dataframe_bars(flat))
+        class Columns:
+            nlevels=2
+            def __init__(self,position):self.position=position
+            def get_level_values(self,level):
+                return ["AAA"] if level==self.position else ["Close","High","Low","Volume"]
+        class Frame:
+            def __init__(self,position):
+                self.columns=Columns(position)
+                self.extracted=[]
+            def xs(self,ticker,axis,level):
+                self.extracted.append((ticker,axis,level))
+                return "observed single-ticker OHLCV"
+        for position in (0,1):
+            with self.subTest(ticker_column_level=position):
+                frame=Frame(position)
+                self.assertEqual(mod.single_ticker_ohlcv_frame(frame,"AAA"),
+                                 "observed single-ticker OHLCV")
+                self.assertEqual(frame.extracted,[("AAA",1,position)])
                 with self.assertRaises(KeyError):
                     mod.single_ticker_ohlcv_frame(frame,"OTHER")
+        flat=object()
         self.assertIs(mod.single_ticker_ohlcv_frame(flat,"AAA"),flat)
 
     def test_missing_or_disagreeing_independent_bars_fail_closed(self):
