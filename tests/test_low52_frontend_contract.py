@@ -6,15 +6,18 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class Low52FrontendContractTests(unittest.TestCase):
-    def test_frontend_respects_canonical_low52_status(self):
+    def test_low52_observations_are_not_suppressed_by_discovery(self):
         js = (ROOT / "market-opportunities.js").read_text(encoding="utf-8")
         start = js.index("if(lens==='low52'){", js.index("function lensEligible("))
-        end = js.index("if(lens==='emerging')", start)
+        end = js.index("if(!discoveryEligible(s))return false;", start)
         branch = js[start:end]
-        self.assertIn("s?.low52_status", branch)
-        self.assertIn("['opportunity','watch'].includes(canonical)", branch)
-        self.assertIn("if(!['opportunity','watch'].includes(canonical))return false", branch)
         self.assertIn("above<=5", branch)
+        self.assertIn("low52_observed_last_session", branch)
+        self.assertNotIn("opportunity_eligible", branch)
+        self.assertNotIn("coreCandidate", branch)
+        self.assertIn("structural_risk:'Risco estrutural'", js)
+        self.assertIn("value_trap_risk:'Risco de value trap'", js)
+        self.assertIn("Observação de preço, não recomendação", js)
 
     def test_backend_risk_statuses_remain_non_positive(self):
         source = (ROOT / "scripts/low52_intelligence.py").read_text(encoding="utf-8")

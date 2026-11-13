@@ -77,7 +77,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn(".filter(x=>x.opportunityRank!=null)", render)
         self.assertIn("Discovery canónico", render)
 
-    def test_strategy_lenses_cannot_bypass_canonical_discovery_eligibility(self):
+    def test_low52_is_factual_while_investment_lenses_keep_discovery_gate(self):
         source = read('market-opportunities.js')
         start = source.index("function lensEligible(s,lens){")
         end = source.index("function sleeveScores(s)", start)
@@ -85,9 +85,11 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("if(lens==='all')return eligible(s);", block)
         self.assertIn("if(!discoveryEligible(s))return false;", block)
         self.assertLess(
-            block.index("if(!discoveryEligible(s))return false;"),
             block.index("if(lens==='low52')"),
+            block.index("if(!discoveryEligible(s))return false;"),
         )
+        self.assertIn("Observação de preço, não recomendação", source)
+        self.assertIn("structural_risk:'Risco estrutural'", source)
 
     def test_backend_owns_featured_opportunity_decision(self):
         source = read('market-opportunities.js')
@@ -300,7 +302,8 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("if(lens!=='all')return rankedCandidates(universe,lens,sector).slice(0,limit)", source)
         self.assertIn("const canonical=(Array.isArray(universe)?universe:[]).filter(s=>eligible(s))", source)
         self.assertIn("if(lens==='low52')", source)
-        self.assertIn("coreCandidate(s,{scoreMin:50,coverageMin:45,confidenceMin:45,criticalMin:25})", source)
+        self.assertIn("Observação de preço, não recomendação", source)
+        self.assertIn("if(!discoveryEligible(s))return false;", source)
 
     def test_general_shortlist_never_uses_looser_lens_eligibility_to_fill_slots(self):
         source = read('market-opportunities.js')
