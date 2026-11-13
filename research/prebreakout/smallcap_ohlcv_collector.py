@@ -98,9 +98,13 @@ def inspect(ticker,frame,currency,checked_at):
     # ordinary Discovery score or the inventory's market capitalization.
     from scripts.refresh_prebreakout_scanner import scan_bars
     setup=None
+    technical_audit={}
     if turnover>=1_000_000:
         setup=scan_bars(ticker,full_bars,checked_at.date(),
-                        strict_quality=True,liquidity_floor=1_000_000)
+                        strict_quality=True,liquidity_floor=1_000_000,
+                        audit=technical_audit)
+    technical_first_rejection=(technical_audit.get("first_rejection","unresolved")
+                               if turnover>=1_000_000 else "below_1m_usd_turnover")
     if setup:
         setup={**setup,"source":"yahoo:smallcap_daily_ohlcv",
                "currencyVerified":"USD","spreadVerified":False,
@@ -109,6 +113,7 @@ def inspect(ticker,frame,currency,checked_at):
     return {"ticker":ticker,"status":"evaluable_ohlcv","bars":len(clean),
             "zero_volume_sessions_before_contiguous_window":zero_volume_sessions,
             "verified_prebreakout_setup":setup,
+            "technical_first_rejection":technical_first_rejection,
             "first_session":clean[0][0],"last_session":last,
             "average_dollar_volume_20_usd":round(turnover,2),
             "liquidity_5m_usd_verified":turnover>=5_000_000,
@@ -187,6 +192,9 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
             observed.append({"ticker":ticker,"status":"provider_error",
                              "error_type":type(exc).__name__})
     evaluable=sum(x["status"]=="evaluable_ohlcv" for x in observed)
+    technical_rejections=dict(sorted(Counter(
+        x.get("technical_first_rejection","not_recorded_legacy")
+        for x in observed if x["status"]=="evaluable_ohlcv").items()))
     attempt_status_counts=dict(sorted(Counter(x["status"] for x in observed).items()))
     provider_error_type_counts=dict(sorted(Counter(x["error_type"] for x in observed
         if x["status"]=="provider_error" and x.get("error_type")).items()))
@@ -199,6 +207,7 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
             "provider_attempt_status_counts":attempt_status_counts,
             "provider_error_type_counts":provider_error_type_counts,
             "evaluable_ohlcv":evaluable,"observed_incomplete":len(observed)-evaluable,
+            "technical_first_rejection_counts":technical_rejections,
             "not_observed":len(names)-len(observed),
             "universe_coverage_pct":round(100*evaluable/len(names),2) if names else None,
             "point_in_time_caveat":"market_caps_from_current_index_not_historical_asof_snapshots",
@@ -265,8 +274,12 @@ def merge_slots(current, previous, now, ttl_hours=96, *, eligible_tickers=None):
             continue
         signals.append(setup)
     evaluable=sum(row.get("status")=="evaluable_ohlcv" for row in all_rows)
+    technical_rejections=dict(sorted(Counter(
+        row.get("technical_first_rejection","not_recorded_legacy")
+        for row in all_rows if row.get("status")=="evaluable_ohlcv").items()))
     return {**current,"observations":all_rows,"signals":signals,
             "evaluable_ohlcv":evaluable,"observed_incomplete":len(all_rows)-evaluable,
+            "technical_first_rejection_counts":technical_rejections,
             "not_observed":max(0,count-len(all_rows)),
             "universe_coverage_pct":round(100*evaluable/count,2) if count else None,
             "validated_prebreakout_setups":len(signals),
