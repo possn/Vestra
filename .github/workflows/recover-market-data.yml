@@ -4,7 +4,9 @@ name: Recover missing canonical market publication
 # Never copy or synthesize historical data. The canonical workflow retains all guards.
 on:
   schedule:
-    - cron: '15 10 * * *'
+    # Redundant late-morning/afternoon checks tolerate missed GitHub schedules.
+    # check_market_rebuild_due.py only dispatches if today's build is absent.
+    - cron: '15 10,12,14 * * *'
   workflow_dispatch: {}
   # Independent scheduled event source in case this workflow's own cron is skipped.
   workflow_run:
