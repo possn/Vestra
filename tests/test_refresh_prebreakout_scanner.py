@@ -91,6 +91,22 @@ class StandaloneGapRecoveryTests(unittest.TestCase):
         batch.insert(100,{"date":"2026-07-12","close":None,"high":None,"low":None,"volume":None})
         self.assertEqual(mod.verified_standalone_recovery(batch,self.bars,self.today),self.bars)
 
+    def test_single_ticker_download_multilevel_columns_are_extracted(self):
+        import pandas as pd
+        index=pd.to_datetime(["2026-11-11", "2026-11-12"])
+        values={"Close":[100.,101.],"High":[102.,103.],
+                "Low":[99.,100.],"Volume":[1000.,1100.]}
+        flat=pd.DataFrame(values,index=index)
+        for columns in (pd.MultiIndex.from_product([["AAA"],values]),
+                        pd.MultiIndex.from_product([values,["AAA"]])):
+            with self.subTest(columns=columns.names):
+                frame=pd.DataFrame(flat.to_numpy(),index=index,columns=columns)
+                extracted=mod.single_ticker_ohlcv_frame(frame,"AAA")
+                self.assertEqual(mod.dataframe_bars(extracted),mod.dataframe_bars(flat))
+                with self.assertRaises(KeyError):
+                    mod.single_ticker_ohlcv_frame(frame,"OTHER")
+        self.assertIs(mod.single_ticker_ohlcv_frame(flat,"AAA"),flat)
+
     def test_missing_or_disagreeing_independent_bars_fail_closed(self):
         batch=[dict(x) for x in self.bars]
         bad=[dict(x) for x in self.bars]
