@@ -212,6 +212,21 @@ def _stage_done(name: str, started: float):
     return elapsed
 
 
+def _timed_pipeline_task(name, fn, *args, **kwargs):
+    """Identify slow independent feeds without changing their result or errors."""
+    start = time.perf_counter()
+    log.info("PIPELINE_TASK start %s", name)
+    try:
+        result = fn(*args, **kwargs)
+    except Exception as exc:
+        log.warning("PIPELINE_TASK failed %s elapsed=%.1fs error_type=%s",
+                    name, time.perf_counter()-start, type(exc).__name__)
+        raise
+    log.info("PIPELINE_TASK done %s elapsed=%.1fs",
+             name, time.perf_counter()-start)
+    return result
+
+
 def main():
     # Preserve previously enriched ETF catalogue rows. The wider fund universe is
     # refreshed in rotation, so a name not fetched today should keep yesterday's
@@ -330,12 +345,12 @@ def main():
     _stage = _stage_timer("post_score_intelligence")
     with ThreadPoolExecutor(max_workers=3, thread_name_prefix="postscore") as pool:
         analyst_future = pool.submit(
-            fetch_analyst_many,
+            _timed_pipeline_task, "analyst", fetch_analyst_many,
             analyst_rows,
             priority_tickers=set(universe.get("EXTRA", [])),
         )
-        insider_future = pool.submit(annotate_insiders, us_tickers)
-        congress_future = pool.submit(fetch_congress_for_universe, us_tickers)
+        insider_future = pool.submit(_timed_pipeline_task, "insiders", annotate_insiders, us_tickers)
+        congress_future = pool.submit(_timed_pipeline_task, "congress", fetch_congress_for_universe, us_tickers)
         analyst_map = analyst_future.result()
         insider_map = insider_future.result()
         congress_map = congress_future.result()
@@ -761,7 +776,9 @@ def main():
     thesis_history = thesis_history_mod.update(thesis_history, rows, today)
     thesis_history_mod.save(thesis_history, THESIS_HISTORY_PATH)
 
-    news_payload = fetch_news_for_universe(all_tickers, {str(r.get("ticker") or ""): str(r.get("name") or "") for r in rows})
+    news_payload = _timed_pipeline_task(
+        "news", fetch_news_for_universe, all_tickers,
+        {str(r.get("ticker") or ""): str(r.get("name") or "") for r in rows})
     with open(NEWS_PATH, "w") as f:
         json.dump(_json_safe(news_payload), f, separators=(",", ":"))
     log.info("Wrote news for %d tickers to %s", len(news_payload["tickers"]), NEWS_PATH)
