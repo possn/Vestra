@@ -791,6 +791,23 @@ def fetch_ohlcv_batch(provider, group):
             failures.append(type(exc).__name__)
     raise RuntimeError('ohlcv_batch_failed_after_retry:'+','.join(failures))
 
+def provider_calendar_batches(tickers, batch_size=15):
+    """Avoid mixing Yahoo quoted-suffix calendars within a batch outer join.
+
+    A suffix is only a calendar proxy, not verified exchange evidence.
+    The strict per-ticker OHLCV checks remain unchanged.
+    """
+    if type(batch_size) is not int or batch_size < 1:
+        raise ValueError("invalid OHLCV batch size")
+    cohorts={}
+    for ticker in tickers:
+        suffix=ticker.rpartition(".")[2] if "." in ticker else ""
+        cohorts.setdefault(suffix,[]).append(ticker)
+    return [members[start:start+batch_size]
+            for members in cohorts.values()
+            for start in range(0,len(members),batch_size)]
+
+
 def slot_quality_audit(telemetry:dict, coverage:dict)->dict:
     """Assess observed scan quality, never claim complete coverage from capacity."""
     attempted=telemetry["rows_attempted"]
@@ -873,8 +890,8 @@ def main():
     recovery_rejected=0
     recovery_rejection_reasons={}
     shadow={"legacy_eligible":0,"strict_eligible":0,"legacy_only":0,"strict_only":0,"neither":0,"compared":0}
-    for start in range(0,len(tickers),15):
-        group=tickers[start:start+15]
+    batches=provider_calendar_batches(tickers)
+    for group in batches:
         batch_attempted+=1
         try:
             data,retries=fetch_ohlcv_batch(yf,group)
@@ -886,7 +903,7 @@ def main():
         batch_completed+=1
         for ticker in group:
             try:
-                frame=data[ticker] if len(group)>1 else data
+                frame=single_ticker_ohlcv_frame(data,ticker)
                 bars=completed_sessions(dataframe_bars(frame),now.date())
                 # Only batch-alignment padding before the first observed bar
                 # can be removed. Gaps inside actual trading history remain fatal.
@@ -995,7 +1012,7 @@ def main():
         "measurement":"slot_observed_not_full_universe_or_provider_rate_limit_estimate"}
     scan_quality=slot_quality_audit(slot_telemetry,audit)
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-             "attempted":len(tickers),"with_ohlcv":checked,"evaluable_ohlcv":len(set(successful)),"eligible_universe":eligible,"universe_provenance_audit":universe_provenance,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"rotation_plan_audit":rotation_plan,"slot_selection_audit":slot_selection_audit,"scan_unique_tickers":len(set(tickers)),"download_batches_planned":(len(tickers)+14)//15,"download_batch_size":15,"scan_slot_telemetry":slot_telemetry,"scan_quality_audit":scan_quality,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
+             "attempted":len(tickers),"with_ohlcv":checked,"evaluable_ohlcv":len(set(successful)),"eligible_universe":eligible,"universe_provenance_audit":universe_provenance,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"rotation_plan_audit":rotation_plan,"slot_selection_audit":slot_selection_audit,"scan_unique_tickers":len(set(tickers)),"download_batches_planned":len(batches),"download_batch_size":15,"provider_batch_grouping":"quoted_suffix_calendar_proxy_not_verified_exchange","scan_slot_telemetry":slot_telemetry,"scan_quality_audit":scan_quality,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "errors":failures[:8],"gate_funnel":{"scope":"current_observed_slot_only","method":"first_failing_gate_in_order_not_independent_gate_intersections",
                  "observed_rows":sum(gate_exclusions.values()),"first_rejection_counts":dict(sorted(gate_exclusions.items())),
                  "structurally_passed":gate_exclusions.get("passed_structural_gates",0),
