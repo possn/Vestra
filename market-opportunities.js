@@ -382,8 +382,8 @@
       const above=low52Above(s);
       const observed=t(s?.low52_observed_last_session);
       const age=observed?((Date.now()-Date.parse(observed.slice(0,10)+'T23:59:59Z'))/86400000):null;
-      return above!=null&&above>=-0.5&&above<=5 &&
-        (age==null||(Number.isFinite(age)&&age>=-1&&age<=10));
+      return above!=null&&above>=0&&above<=5 &&
+        Boolean(observed)&&Number.isFinite(age)&&age>=-1&&age<=10;
     }
     // The other strategy lenses remain views over canonical Discovery eligibility.
     if(!discoveryEligible(s))return false;

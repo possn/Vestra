@@ -45,7 +45,7 @@ test('iPhone/WebKit: each opportunity lens ranks canonical Discovery independent
     candidate('RECOV', { estimate_signal: 'improving', recovery_status: 'confirmed', opportunity_timing_score: 66 }),
     candidate('ESTONLY', { estimate_signal: 'improving', thesis_direction: 'up', recovery_status: 'unconfirmed', opportunity_timing_score: 67 }),
     candidate('FAILREC', { estimate_signal: 'improving', thesis_direction: 'up', recovery_status: 'failed', opportunity_timing_score: 67 }),
-    candidate('LOW52', { low52_above_low_pct: 2.1, low52_status: 'watch', opportunity_timing_score: 55 }),
+    candidate('LOW52', { low52_above_low_pct: 2.1, low52_status: 'watch', low52_observed_last_session: new Date().toISOString().slice(0,10), opportunity_timing_score: 55 }),
     candidate('NOTIMING', {
       opportunity_timing_score: null,
       fair_value_upside_pct: 25,
@@ -303,4 +303,22 @@ test('iPhone/WebKit: FUND and CRYPTOCURRENCY cannot enter equity opportunity len
   });
   for(const cases of Object.values(observed))
     for(const value of Object.values(cases))expect(value).toBe(false);
+});
+
+
+test('iPhone/WebKit: 52-week low rejects negative zero, stale and undated claims', async ({ page }) => {
+  await waitForLaunch(page);
+  const observed = await page.evaluate(() => {
+    const api = window.VestraMarketOpportunities;
+    const today = new Date().toISOString().slice(0, 10);
+    const old = new Date(Date.now() - 21 * 86400000).toISOString().slice(0, 10);
+    const base = { ticker: 'TEST', quote_type: 'EQUITY', low52_status: 'insufficient' };
+    return {
+      verified: api.lensEligible({ ...base, low52_above_low_pct: 0, low52_observed_last_session: today }, 'low52'),
+      below: api.lensEligible({ ...base, low52_above_low_pct: -0.001, low52_observed_last_session: today }, 'low52'),
+      missingDate: api.lensEligible({ ...base, low52_above_low_pct: 0, low52_observed_last_session: null }, 'low52'),
+      stale: api.lensEligible({ ...base, low52_above_low_pct: 0, low52_observed_last_session: old }, 'low52'),
+    };
+  });
+  expect(observed).toEqual({ verified: true, below: false, missingDate: false, stale: false });
 });
