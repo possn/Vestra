@@ -54,11 +54,16 @@ _cache_dirty = False
 
 def _session() -> requests.Session:
     s = requests.Session()
+    # The full-universe rebuild must not spend its entire 45-minute budget
+    # retrying unavailable SEC Archives documents. The workflow can select a
+    # bounded retry policy; normal insider refresh retains the established
+    # defaults. A failed filing is reported as degraded, never zero activity.
+    retry_budget = max(0, min(4, int(os.getenv("FINSCANNER_SEC_HTTP_RETRIES", "4"))))
     retry = Retry(
-        total=4,
-        connect=4,
-        read=4,
-        status=4,
+        total=retry_budget,
+        connect=retry_budget,
+        read=retry_budget,
+        status=retry_budget,
         backoff_factor=0.8,
         status_forcelist=(403, 408, 429, 500, 502, 503, 504),
         allowed_methods=frozenset(["GET"]),
@@ -90,6 +95,10 @@ def _throttle():
 
 def _get(url: str, timeout: int = 25):
     _throttle()
+    if "/Archives/edgar/data/" in url:
+        # Timeout applies only to independent immutable Form 4 documents.
+        # Preserve the standard transport policy for CIK and submissions APIs.
+        timeout = min(timeout, max(5, min(25, int(os.getenv("FINSCANNER_SEC_ARCHIVE_TIMEOUT", "25")))))
     r = _get_session().get(url, timeout=timeout)
     r.raise_for_status()
     return r
