@@ -494,6 +494,21 @@ def dataframe_bars(frame):
         except (KeyError,ValueError,TypeError):continue
     return rows
 
+
+def single_ticker_ohlcv_frame(data, ticker):
+    """Extract a single ticker from either Yahoo download column layout.
+
+    yfinance may retain MultiIndex columns for a one-symbol list download.
+    Never interpret a different ticker's columns as the requested series.
+    """
+    columns = getattr(data, "columns", None)
+    if getattr(columns, "nlevels", 1) <= 1:
+        return data
+    for level in range(columns.nlevels):
+        if ticker in columns.get_level_values(level):
+            return data.xs(ticker, axis=1, level=level)
+    raise KeyError("ticker_missing_from_ohlcv_columns:" + ticker)
+
 def completed_sessions(bars, utc_today):
     """Only completed UTC daily sessions are eligible for a verified stage."""
     return [bar for bar in bars if str(bar.get("date") or "")[:10] < utc_today.isoformat()]
@@ -882,7 +897,8 @@ def main():
                     recovery_trace={}
                     try:
                         independent,_=fetch_ohlcv_batch(yf,[ticker])
-                        replacement=completed_sessions(dataframe_bars(independent),now.date())
+                        independent_frame=single_ticker_ohlcv_frame(independent,ticker)
+                        replacement=completed_sessions(dataframe_bars(independent_frame),now.date())
                         replacement,_=trim_leading_provider_padding(replacement)
                         verified=verified_standalone_recovery(bars,replacement,now.date(),audit=recovery_trace)
                     except (RuntimeError,ValueError,TypeError,KeyError) as exc:
