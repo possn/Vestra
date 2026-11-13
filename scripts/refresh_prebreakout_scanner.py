@@ -835,6 +835,8 @@ def main():
     padding_rows_trimmed=0;tickers_with_padding_trimmed=0
     interior_null_gap_totals={key:0 for key in interior_all_null_gap_diagnostic([])}
     tickers_with_interior_null_gaps=0
+    remaining_interior_gap_totals={key:0 for key in interior_all_null_gap_diagnostic([])}
+    tickers_with_remaining_interior_gaps=0
     scan_started=time.monotonic();batch_attempted=0;batch_failed=0;batch_completed=0;batch_retries=0;row_failed=0;row_missing_ohlcv=0
     try:
         fx=json.loads((ROOT/"data/fx.json").read_text(encoding="utf-8"))
@@ -882,6 +884,13 @@ def main():
                         recovery_verified+=1
                     else:
                         recovery_rejected+=1
+                remaining_gap_profile=interior_all_null_gap_diagnostic(bars)
+                tickers_with_remaining_interior_gaps+=int(remaining_gap_profile["gap_runs"]>0)
+                for key,value in remaining_gap_profile.items():
+                    if key=="max_run_rows":
+                        remaining_interior_gap_totals[key]=max(remaining_interior_gap_totals[key],value)
+                    else:
+                        remaining_interior_gap_totals[key]+=value
                 tickers_with_interior_null_gaps+=int(gap_profile["gap_runs"]>0)
                 for key,value in gap_profile.items():
                     if key=="max_run_rows":
@@ -958,7 +967,7 @@ def main():
         "measurement":"slot_observed_not_full_universe_or_provider_rate_limit_estimate"}
     scan_quality=slot_quality_audit(slot_telemetry,audit)
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"universe_provenance_audit":universe_provenance,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"rotation_plan_audit":rotation_plan,"slot_selection_audit":slot_selection_audit,"scan_unique_tickers":len(set(tickers)),"download_batches_planned":(len(tickers)+14)//15,"download_batch_size":15,"scan_slot_telemetry":slot_telemetry,"scan_quality_audit":scan_quality,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
+             "attempted":len(tickers),"with_ohlcv":checked,"evaluable_ohlcv":len(set(successful)),"eligible_universe":eligible,"universe_provenance_audit":universe_provenance,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"rotation_plan_audit":rotation_plan,"slot_selection_audit":slot_selection_audit,"scan_unique_tickers":len(set(tickers)),"download_batches_planned":(len(tickers)+14)//15,"download_batch_size":15,"scan_slot_telemetry":slot_telemetry,"scan_quality_audit":scan_quality,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "errors":failures[:8],"gate_funnel":{"scope":"current_observed_slot_only","method":"first_failing_gate_in_order_not_independent_gate_intersections",
                  "observed_rows":sum(gate_exclusions.values()),"first_rejection_counts":dict(sorted(gate_exclusions.items())),
                  "structurally_passed":gate_exclusions.get("passed_structural_gates",0),
@@ -974,9 +983,15 @@ def main():
                  "rejected":recovery_rejected,"max_per_slot":recovery_budget,
                  "no_imputation":True,"not_signal_or_performance":True},
              "interior_all_null_gap_audit":{"scope":"all_observed_slot_series_diagnostic_only",
+                 "measurement_stage":"before_independent_recovery",
                  "tickers_with_gaps":tickers_with_interior_null_gaps,
                  **interior_null_gap_totals,
                  "weekday_is_not_proof_of_trading_session":True,
+                 "no_rows_removed_or_imputed":True,
+                 "not_strategy_performance":True},
+             "remaining_interior_all_null_gap_audit":{"scope":"all_observed_slot_series_after_independent_recovery",
+                 "tickers_with_gaps":tickers_with_remaining_interior_gaps,
+                 **remaining_interior_gap_totals,
                  "no_rows_removed_or_imputed":True,
                  "not_strategy_performance":True},
              "invalid_ohlcv_detail_audit":{"scope":"first_invalid_bar_in_current_slot",
