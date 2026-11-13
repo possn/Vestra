@@ -1085,6 +1085,9 @@
     });
     window.addEventListener('vestra:market-sheet-changed', () => { syncDecisionCenter(host); syncVerifiedPriorities(host); });
     window.addEventListener('vestra:local-state-writing', () => {
+      // Manual asset/liability edits and broker imports change canonical totals
+      // without a quote-refresh event. Repaint the Home from live state now.
+      syncWealthHero(host);
       lastDecision = null;
       const output = host.querySelector('[data-vestra-decision-state]');
       if (output) {
