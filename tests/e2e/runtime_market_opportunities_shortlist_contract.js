@@ -136,4 +136,13 @@ function candidate(ticker, score, sector, industry) {
   }
 }
 
+{
+  const weekly = api.low52BasisLabel({low52_price_basis:'observed_weekly_closes_approximately_52weeks'});
+  assert.match(weekly, /fechos semanais/);
+  assert.match(weekly, /não é mínimo intradiário/);
+  assert.match(api.low52BasisLabel({low52_price_basis:'observed_daily_closes_minimum_200_sessions'}), /fechos diários/);
+  assert.match(api.low52BasisLabel({low52_price_basis:'provider_reported_52week_extrema'}), /fornecedor/);
+  assert.match(api.low52BasisLabel({}), /não verificada/);
+}
+
 console.log('opportunity shortlist runtime contract: ok');
