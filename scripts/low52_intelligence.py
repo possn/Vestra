@@ -82,12 +82,19 @@ def _price_position(row: dict):
         return None
 
     if closes:
-        # Three observed closes cannot establish a 52-week extreme.
-        # Do not silently substitute a partial close-only sample for a year.
-        if len(closes) < 200:
+        if len(closes) >= 200:
+            low, high = min(closes), max(closes)
+            basis = "observed_daily_closes_minimum_200_sessions"
+        elif (45 <= len(closes) <= 54 and len(dated_sessions) == len(closes)
+              and (dated_sessions[-1] - dated_sessions[0]).days >= 300
+              and all(4 <= (b-a).days <= 11 for a,b in zip(dated_sessions,dated_sessions[1:]))):
+            # The canonical market history is weekly. Keep this as a clearly
+            # named weekly-CLOSE observation, never an intraday 52-week low.
+            low, high = min(closes), max(closes)
+            basis = "observed_weekly_closes_approximately_52weeks"
+        else:
+            # A partial / undated history is not a 52-week observation.
             return None
-        low, high = min(closes), max(closes)
-        basis = "observed_daily_closes_minimum_200_sessions"
     else:
         # Provider 52-week extrema are a distinct basis from daily *close*
         # extrema. Never use provider data to mask corrupt/partial history.
@@ -273,6 +280,8 @@ def assess(row: dict) -> dict:
 
     basis_label = ("mínimo dos fechos diários observados"
                    if pos["price_basis"] == "observed_daily_closes_minimum_200_sessions"
+                   else "mínimo dos fechos semanais observados (~52 semanas)"
+                   if pos["price_basis"] == "observed_weekly_closes_approximately_52weeks"
                    else "mínimo 52 semanas reportado pelo fornecedor")
     why = [f"{max(0.0, pos['above_low_pct']):.1f}% acima do {basis_label}"] + positives[:3] + reasons[:3]
     return {
