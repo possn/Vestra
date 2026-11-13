@@ -119,6 +119,8 @@ INDEX_KEYS = {
     "sector_relative_drawdown_label", "sector_relative_drawdown_tone",
     "recovery_status", "recovery_label", "recovery_score", "recovery_price_score",
     "recovery_fundamental_score", "recovery_return_20d_pct", "recovery_return_60d_pct",
+    "recovery_return_4w_pct", "recovery_return_12w_pct", "recovery_price_basis",
+    "recovery_observed_last_session",
     # structural overlays used by ranking/portfolio UI
     "capital_allocation_intelligence_score", "capital_allocation_intelligence_label",
     "moat_score", "moat_label", "sector_native_score", "sector_native_label",
