@@ -374,20 +374,20 @@
     if(lens==='smallcap_breakout')return breakoutSetup(s,'smallcap_breakout')!=null;
     if(lens==='breakout')return breakoutSetup(s)!=null;
     if(lens==='all')return eligible(s);
-    // Strategy lenses are views over the canonical Discovery universe, not
-    // independent eligibility engines. A backend-rejected name must never
-    // re-enter through a local lens.
+    if(lens==='low52'){
+      const qt=t(s?.quote_type||s?.quoteType).toUpperCase();
+      if(['ETF','FUND','CRYPTO','CRYPTOCURRENCY','MUTUALFUND'].includes(qt))return false;
+      // Low52 is first a factual price observation, not a Discovery recommendation.
+      // Preserve risk/insufficient classifications on the cards; never promote them.
+      const above=low52Above(s);
+      const observed=t(s?.low52_observed_last_session);
+      const age=observed?((Date.now()-Date.parse(observed.slice(0,10)+'T23:59:59Z'))/86400000):null;
+      return above!=null&&above>=-0.5&&above<=5 &&
+        (age==null||(Number.isFinite(age)&&age>=-1&&age<=10));
+    }
+    // The other strategy lenses remain views over canonical Discovery eligibility.
     if(!discoveryEligible(s))return false;
     const p=stats(s),rec=t(s?.recovery_status),est=t(s?.estimate_signal),dir=t(s?.thesis_direction),val=t(s?.valuation_signal);
-    if(lens==='low52'){
-      const above=low52Above(s);
-      // Backend Low52 intelligence is authoritative. No local lens may promote
-      // structural risk, value traps, insufficient or unknown classifications.
-      // The 5% UI lens is a narrower view inside the backend's 10% research zone.
-      const canonical=t(s?.low52_status).toLowerCase();
-      if(!['opportunity','watch'].includes(canonical))return false;
-      return coreCandidate(s,{scoreMin:50,coverageMin:45,confidenceMin:45,criticalMin:25})&&above!=null&&above>=-0.5&&above<=5&&timing(s)>=35;
-    }
     if(lens==='emerging')return coreCandidate(s)&&!overextended(s)&&timing(s)>=55&&timing(s)<=82&&confirmed(s)>=1&&!['confirmed','recovering'].includes(rec)&&(est==='improving'||dir==='up'||(p.accel!=null&&p.accel>0));
     if(lens==='recovery')return coreCandidate(s)&&!overextended(s)&&timing(s)>=45&&['confirmed','recovering'].includes(rec);
     if(lens==='value'){
@@ -450,6 +450,10 @@
     let ranked=candidates.filter(s=>lensEligible(s,lens));
     if(sector!=='all')ranked=ranked.filter(s=>t(s?.sector)===sector);
     if(lens==='breakout'||lens==='smallcap_breakout')return ranked.sort((a,b)=>(breakoutSetup(b,lens)?.score||0)-(breakoutSetup(a,lens)?.score||0));
+    if(lens==='low52'){
+      const tier=s=>['opportunity','watch'].includes(t(s?.low52_status).toLowerCase())?0:1;
+      return ranked.sort((a,b)=>tier(a)-tier(b) || (low52Above(a)-low52Above(b)));
+    }
     ranked.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
     return ranked;
   }
@@ -645,6 +649,14 @@
       const fmt=x=>x.toFixed(1).replace('.',',');
       return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(setup.stage)} · Base 40 sessões ${fmt(setup.widthPct)}% (anterior ${fmt(setup.priorWidthPct)}%) · ${fmt(setup.distancePct)}% da resistência</div><div class="ux453-thesis">Preço acima da MM150 · MM50 acima MM200 · três médias ascendentes${setup.goldenCrossRecent?' · cruzamento MM50/MM200 recente':''}</div><div class="ux453-opportunity-type">${setup.volumeConfirmed?'Volume ≥ 1,5× média':setup.volumeDry?'Volume a secar; confirmação pendente':'Sem secagem de volume verificada'} · ${setup.stage==='compressão'?'Apenas em observação · ':''}Dados até ${esc(setup.date||'—')} · Setup técnico, não previsão${lens==='smallcap_breakout'?' · Spread/gap por validar · Resultados: risco desconhecido':''}</div></div><div class="ux453-entry"><small>SETUP</small><strong>${setup.score}</strong><em>${esc(setup.stage)}</em></div></div>`;
     }
+    if(lens==='low52'){
+      const above=low52Above(s),status=t(s?.low52_status).toLowerCase();
+      const labels={opportunity:'Oportunidade potencial · verificar',watch:'Acompanhar · verificar',structural_risk:'Risco estrutural',value_trap_risk:'Risco de value trap',uncertain:'Diagnóstico incerto',insufficient:'Dados insuficientes'};
+      const label=labels[status]||'Sem classificação positiva';
+      const stamp=t(s?.low52_observed_last_session)||'data da observação não indicada';
+      const reasons=(Array.isArray(s?.low52_reasons)?s.low52_reasons:[]).slice(0,3).map(esc).join(' · ');
+      return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${above.toFixed(1)}% acima do mínimo observado · ${esc(stamp)}</div><div class="ux453-thesis">${esc(label)} · Observação de preço, não recomendação</div><div class="ux453-opportunity-type">${reasons||'Consultar dossier para evidência e riscos'}</div></div><div class="ux453-entry"><small>MÍNIMO 52S</small><strong>${above.toFixed(1)}%</strong><em>${esc(label)}</em></div></div>`;
+    }
     const p=stats(s),sc=lensScore(s,lens),tm=timing(s),sl=sleeveScores(s),coverage=sleeveCoverage(s),dom=credibleDominantSleeve(s),capText=capSummary(s);
     const isExpanded=expandedOpportunityTickers.has(t(s.ticker).toUpperCase());
     const sleevePills=[['Força',sl.strength,'strength'],['Assimetria',sl.asymmetry,'asymmetry'],['Inflection',sl.inflection,'inflection']]
@@ -718,7 +730,9 @@
     section.querySelector('.vestra-technical-lenses')?.remove();
     section.querySelector('[data-smallcap-prebreakout-lens]')?.remove();
     const guide=section.querySelector('.ux454-opportunity-guide');
-    if(guide)guide.innerHTML=activeLens==='breakout'
+    if(guide)guide.innerHTML=activeLens==='low52'
+      ? '<span><b>OBSERVAÇÃO</b> até 5% do mínimo 52s</span><span><b>RISCO</b> classificação explícita em cada empresa</span><span><b>≠ DISCOVERY</b> estar nos mínimos não é uma recomendação</span>'
+      : activeLens==='breakout'
       ? '<span><b>SETUP TÉCNICO</b> compressão não garante subida</span><span><b>MÉDIAS</b> 50/150/200 ascendentes</span><span><b>BREAKOUT</b> só confirmado com volume</span>'
       : '<span><b>DISCOVERY</b> prioridade para investigar agora</span><span><b>≠ PORTFOLIO FIT</b> adequação à tua carteira só é avaliada na Carteira / Optimizar</span><span><b>Timing</b> evita perseguir preço esticado</span><span><b>Sinais</b> confirmações independentes</span>';
     section.querySelector('.vestra-smallcaps-entry')?.remove();
@@ -726,7 +740,7 @@
   function lensMeta(lens){
     if(lens==='smallcap_breakout')return ['Small Caps · Pré-breakout','Setups técnicos observados em empresas de 100–500 M USD. Cobertura parcial e riscos a confirmar.'];
     if(lens==='breakout')return ['Compressão · Pré-breakout','Compressão é apenas vigilância, não sinal iminente. Pré-breakout exige proximidade da resistência e volume a secar; breakout confirmado exige fecho e volume fortes.'];
-    if(lens==='low52')return ['Mínimos 52 semanas','Empresas robustas negociadas até 5% acima do mínimo de 52 semanas.'];
+    if(lens==='low52')return ['Mínimos 52 semanas','Empresas até 5% acima do mínimo observado. A proximidade do mínimo não significa qualidade: verifica o risco indicado em cada empresa.'];
     if(lens==='emerging')return ['A começar','Setups ainda numa fase inicial: timing a melhorar, sem recuperação já madura.'];
     if(lens==='recovery')return ['Recuperação','Empresas com recuperação operacional ou de estimativas já confirmada.'];
     if(lens==='value')return ['Value + timing','Desconto ou upside relevante, mas apenas com timing mínimo aceitável.'];

@@ -113,8 +113,8 @@ function candidate(ticker, score, sector, industry) {
   weaker.opportunity_timing_score = 60;
 
   const rows = api.rankLens([weaker, stronger], 'low52', {limit: 12, sector: 'all'});
-  assert.deepStrictEqual(Array.from(rows, x => x.ticker), ['DISCOVERY80','DISCOVERY79'],
-    'strategy lenses must preserve canonical Discovery order instead of adding local alpha tilts');
+  assert.deepStrictEqual(Array.from(rows, x => x.ticker), ['DISCOVERY79','DISCOVERY80'],
+    'factual Low52 observations must order by distance to the observed minimum within classification tier');
   assert.strictEqual(api.lensScore(stronger, 'low52'), 80,
     'lens score must be the canonical Discovery score');
   assert.strictEqual(api.lensScore(weaker, 'low52'), 79,
@@ -128,8 +128,8 @@ function candidate(ticker, score, sector, industry) {
     stock.low52_above_low_pct = 1;
     stock.opportunity_timing_score = 85;
     if (status) stock.low52_status = status;
-    assert.strictEqual(api.lensEligible(stock, 'low52'), false,
-      `backend Low52 status ${status || 'missing'} must not be promoted`);
+    assert.strictEqual(api.lensEligible(stock, 'low52'), true,
+      `observed Low52 price must remain visible with explicit ${status || 'missing'} classification, not promoted`);
   }
 }
 
