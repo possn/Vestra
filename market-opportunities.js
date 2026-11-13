@@ -362,6 +362,13 @@
     const current=n(s?.current_price),low=n(s?.low52_price_low)??n(s?.fifty_two_week_low);
     return current!=null&&current>0&&low!=null&&low>0?(current/low-1)*100:null;
   }
+  function low52BasisLabel(s){
+    const basis=t(s?.low52_price_basis);
+    if(basis==='observed_weekly_closes_approximately_52weeks')return 'Mínimo dos fechos semanais observados (~52 semanas); não é mínimo intradiário';
+    if(basis==='observed_daily_closes_minimum_200_sessions')return 'Mínimo dos fechos diários observados; não é mínimo intradiário';
+    if(basis==='provider_reported_52week_extrema')return 'Extremo de 52 semanas comunicado pelo fornecedor';
+    return 'Origem do mínimo não verificada';
+  }
   function coreCandidate(s,{scoreMin=54,coverageMin=50,confidenceMin=45,criticalMin=30}={}){
     const qt=t(s?.quote_type||s?.quoteType).toUpperCase();if(['ETF','FUND','CRYPTO','CRYPTOCURRENCY','MUTUALFUND'].includes(qt))return false;
     const sc=n(s?.score),cov=n(s?.data_coverage_pct),conf=n(s?.confidence_score),crit=n(s?.critical_metric_coverage_pct),rel=t(s?.score_reliability).toLowerCase(),risk=t(s?.risk_gate).toLowerCase();
@@ -655,7 +662,7 @@
       const label=labels[status]||'Sem classificação positiva';
       const stamp=t(s?.low52_observed_last_session)||'data da observação não indicada';
       const reasons=(Array.isArray(s?.low52_reasons)?s.low52_reasons:[]).slice(0,3).map(esc).join(' · ');
-      return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${above.toFixed(1)}% acima do mínimo observado · ${esc(stamp)}</div><div class="ux453-thesis">${esc(label)} · Observação de preço, não recomendação</div><div class="ux453-opportunity-type">${reasons||'Consultar dossier para evidência e riscos'}</div></div><div class="ux453-entry"><small>MÍNIMO 52S</small><strong>${above.toFixed(1)}%</strong><em>${esc(label)}</em></div></div>`;
+      return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${above.toFixed(1)}% acima do mínimo observado · ${esc(stamp)}</div><div class="ux453-thesis">${esc(label)} · Observação de preço, não recomendação</div><div class="ux453-opportunity-type">${esc(low52BasisLabel(s))} · ${reasons||'Consultar dossier para evidência e riscos'}</div></div><div class="ux453-entry"><small>MÍNIMO 52S</small><strong>${above.toFixed(1)}%</strong><em>${esc(label)}</em></div></div>`;
     }
     const p=stats(s),sc=lensScore(s,lens),tm=timing(s),sl=sleeveScores(s),coverage=sleeveCoverage(s),dom=credibleDominantSleeve(s),capText=capSummary(s);
     const isExpanded=expandedOpportunityTickers.has(t(s.ticker).toUpperCase());
@@ -755,7 +762,7 @@
     return JSON.stringify([
       t(s?.ticker),t(s?.name),s?.score,s?.opportunity_score,s?.opportunity_timing_score,
       s?.recovery_status,s?.estimate_signal,s?.thesis_direction,s?.risk_gate,
-      s?.low52_status,s?.low52_above_low_pct,s?.current_price,
+      s?.low52_status,s?.low52_above_low_pct,s?.low52_price_basis,s?.low52_observed_last_session,s?.current_price,
       s?.fair_value_upside_pct,s?.margin_of_safety_pct,s?.valuation_signal,
       s?.opportunity_upside_support,s?.opportunity_revision_evidence,
       s?.opportunity_valuation_evidence,s?.opportunity_market_regime,
@@ -845,5 +852,5 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,breakoutSetup,get activeLens(){return activeLens;},get prebreakoutFeedStatus(){return prebreakoutFeedStatus;},get smallcapFeedStatus(){return smallcapFeedStatus;},get smallcapCoveragePct(){return smallcapCoveragePct;},version:'1.18'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,low52BasisLabel,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,breakoutSetup,get activeLens(){return activeLens;},get prebreakoutFeedStatus(){return prebreakoutFeedStatus;},get smallcapFeedStatus(){return smallcapFeedStatus;},get smallcapCoveragePct(){return smallcapCoveragePct;},version:'1.19'});
 })();
