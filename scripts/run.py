@@ -227,6 +227,21 @@ def _timed_pipeline_task(name, fn, *args, **kwargs):
     return result
 
 
+def _insider_refresh_selection(tickers, budget, asof):
+    """Rotate an explicitly incomplete SEC workload without inventing negatives.
+
+    A run-scoped cap is not full-universe insider coverage. Entries not selected
+    receive unknown status in the resulting catalogue, never zero transactions.
+    """
+    names=sorted(set(tickers))
+    if type(budget) is not int or budget < 1:
+        raise ValueError("insider refresh budget must be positive")
+    if len(names) <= budget:
+        return names
+    offset=(asof.toordinal()*budget)%len(names)
+    return (names[offset:]+names[:offset])[:budget]
+
+
 def main():
     # Preserve previously enriched ETF catalogue rows. The wider fund universe is
     # refreshed in rotation, so a name not fetched today should keep yesterday's
@@ -336,6 +351,12 @@ def main():
 
     analyst_rows = [dataclasses.asdict(s) for s in scored if is_equity_candidate(s.quote_type)]
     us_tickers = [s.ticker for s in scored if "." not in s.ticker and is_equity_candidate(s.quote_type)]
+    insider_budget = max(1, int(os.getenv("FINSCANNER_INSIDER_TICKER_BUDGET", str(len(us_tickers) or 1))))
+    insider_refresh = _insider_refresh_selection(us_tickers, insider_budget, datetime.date.today())
+    insider_not_observed = set(us_tickers) - set(insider_refresh)
+    log.info("INSIDER_REFRESH_SCOPE observed_requested=%d universe=%d not_requested=%d "
+             "rotation=day_ordinal_budget_stride_unknown_not_zero",
+             len(insider_refresh), len(us_tickers), len(insider_not_observed))
 
     # These post-score enrichments are independent and use different upstreams:
     # analyst evidence is Yahoo-backed, while insiders are SEC-backed and
@@ -349,10 +370,12 @@ def main():
             analyst_rows,
             priority_tickers=set(universe.get("EXTRA", [])),
         )
-        insider_future = pool.submit(_timed_pipeline_task, "insiders", annotate_insiders, us_tickers)
+        insider_future = pool.submit(_timed_pipeline_task, "insiders", annotate_insiders, insider_refresh)
         congress_future = pool.submit(_timed_pipeline_task, "congress", fetch_congress_for_universe, us_tickers)
         analyst_map = analyst_future.result()
         insider_map = insider_future.result()
+        insider_map.update({ticker: {"status": "unknown", "reason": "not_observed_in_bounded_refresh"}
+                            for ticker in insider_not_observed})
         congress_map = congress_future.result()
     _stage_done("post_score_intelligence", _stage)
     # v0.97: price history is dossier infrastructure, not only an insider helper.
