@@ -83,6 +83,10 @@ jobs:
           FINSCANNER_ANALYST_PRIORITY_REFRESH: "100"
           FINSCANNER_ANALYST_NONPRIORITY_REFRESH: "80"
           FINSCANNER_ANALYST_ENDPOINT_CONCURRENCY: "2"
+          # Fail closed on slow SEC Form 4 documents instead of exhausting the
+          # entire canonical build; incomplete insiders remain degraded/unknown.
+          FINSCANNER_SEC_HTTP_RETRIES: "0"
+          FINSCANNER_SEC_ARCHIVE_TIMEOUT: "10"
           FINSCANNER_CAPITAL_RISK_PRIORITY_REFRESH: "80"
           FINSCANNER_CAPITAL_RISK_NONPRIORITY_REFRESH: "30"
         run: python run_market_pipeline.py
