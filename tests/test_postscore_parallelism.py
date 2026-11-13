@@ -7,9 +7,9 @@ RUN = Path(__file__).resolve().parents[1] / "scripts" / "run.py"
 def test_independent_postscore_enrichments_run_in_parallel():
     source = RUN.read_text(encoding="utf-8")
     assert 'ThreadPoolExecutor(max_workers=3, thread_name_prefix="postscore")' in source
-    assert "pool.submit(fetch_analyst_many" in source
-    assert "pool.submit(annotate_insiders, us_tickers)" in source
-    assert "pool.submit(fetch_congress_for_universe, us_tickers)" in source
+    assert '_timed_pipeline_task, "analyst", fetch_analyst_many' in source
+    assert '_timed_pipeline_task, "insiders", annotate_insiders, insider_refresh' in source
+    assert '_timed_pipeline_task, "congress", fetch_congress_for_universe, us_tickers' in source
 
 
 def test_price_history_fetch_remains_after_postscore_parallel_block():
