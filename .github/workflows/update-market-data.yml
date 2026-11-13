@@ -87,6 +87,9 @@ jobs:
           # entire canonical build; incomplete insiders remain degraded/unknown.
           FINSCANNER_SEC_HTTP_RETRIES: "0"
           FINSCANNER_SEC_ARCHIVE_TIMEOUT: "10"
+          # Preserve canonical publication by rotating slow SEC Form 4 issuer
+          # coverage; unrequested names are explicitly unknown, never zero.
+          FINSCANNER_INSIDER_TICKER_BUDGET: "120"
           FINSCANNER_CAPITAL_RISK_PRIORITY_REFRESH: "80"
           FINSCANNER_CAPITAL_RISK_NONPRIORITY_REFRESH: "30"
         run: python run_market_pipeline.py
