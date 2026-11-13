@@ -114,6 +114,23 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     latest=clean[-1]["day"]
     age=(today-latest).days
     if not 0<=age<=7:return reject('stale_or_future_daily_session')
+    def bounds(part):
+        return max(b["high"] for b in part),min(b["low"] for b in part)
+    def width(part):
+        high,low=bounds(part)
+        return high/low-1
+    # Research-only independent geometry: a moving-average rejection must not
+    # conceal whether a contracting price base exists in the same valid bars.
+    prior=clean[-100:-60];first=clean[-60:-40];second=clean[-40:-20];third=clean[-20:]
+    old_width=width(prior);w1=width(first);w2=width(second);w3=width(third)
+    base_width=width(clean[-40:])
+    base_width_ok=old_width>0 and base_width<=.22 and base_width<old_width*.8
+    vcp_ok=w1>0 and w2<=w1*.85 and w3<=w2*.85
+    if audit is not None:
+        audit["geometry_shadow"]={"base_width_pass":bool(base_width_ok),
+                                  "contractions_pass":bool(vcp_ok),
+                                  "both_pass":bool(base_width_ok and vcp_ok),
+                                  "research_only_not_eligibility":True}
     end=len(clean)-1
     values=[b["close"] for b in clean]
     m50=sma(values,end,50);m150=sma(values,end,150);m200=sma(values,end,200)
@@ -133,19 +150,10 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
                            "ma200_rising_10":slopes[2]>0})
             audit["moving_average_failed_checks"]=sorted(k for k,ok in checks.items() if not ok)
         return reject('moving_average_structure')
-    def bounds(part):
-        return max(b["high"] for b in part),min(b["low"] for b in part)
-    def width(part):
-        high,low=bounds(part)
-        return high/low-1
     # Require sequential, non-overlapping contractions, not merely one quieter 40-day window.
-    prior=clean[-100:-60];first=clean[-60:-40];second=clean[-40:-20];third=clean[-20:]
-    old_width=width(prior);w1=width(first);w2=width(second);w3=width(third)
-    base_width=width(clean[-40:])
-    if not (old_width>0 and base_width<=.22 and base_width<old_width*.8):
+    if not base_width_ok:
         return reject('base_width')
-    vcp=w1>0 and w2<=w1*.85 and w3<=w2*.85
-    if not vcp:return reject('sequential_vcp_contractions')
+    if not vcp_ok:return reject('sequential_vcp_contractions')
     resistance=bounds(clean[-40:-1])[0]
     current=values[-1]
     distance=(resistance/current-1)*100
@@ -870,6 +878,8 @@ def main():
     eligible=eligible_universe_size(stocks)
     found=[];shadow_cases=[];checked=0;successful=[];failures=[]
     gate_exclusions={};ma_gate_failure_counts={};invalid_ohlcv_details={}
+    geometry_shadow_counts={"examined":0,"base_width_pass":0,"contractions_pass":0,
+                            "both_pass":0,"ma_rejected_both_pass":0}
     missing_close_locations={};missing_close_patterns={}
     padding_rows_trimmed=0;tickers_with_padding_trimmed=0
     interior_null_gap_totals={key:0 for key in interior_all_null_gap_diagnostic([])}
@@ -951,6 +961,13 @@ def main():
                 signal=scan_bars(ticker,bars,now.date(),liquidity_floor=0,audit=trace)
                 first=trace.get('first_rejection','unresolved')
                 gate_exclusions[first]=gate_exclusions.get(first,0)+1
+                geometry=trace.get("geometry_shadow")
+                if isinstance(geometry,dict):
+                    geometry_shadow_counts["examined"]+=1
+                    for key in ("base_width_pass","contractions_pass","both_pass"):
+                        geometry_shadow_counts[key]+=int(geometry.get(key) is True)
+                    if first=="moving_average_structure" and geometry.get("both_pass") is True:
+                        geometry_shadow_counts["ma_rejected_both_pass"]+=1
                 if first=="invalid_ohlcv_or_date":
                     detail=trace.get("invalid_ohlcv_detail","unclassified")
                     invalid_ohlcv_details[detail]=invalid_ohlcv_details.get(detail,0)+1
@@ -1052,6 +1069,9 @@ def main():
                   "first_rejected_rows":gate_exclusions.get("moving_average_structure",0),
                   "failed_condition_counts":dict(sorted(ma_gate_failure_counts.items())),
                   "not_signal_or_forward_performance":True},
+             "independent_base_geometry_audit":{"scope":"current_slot_valid_fresh_histories_including_ma_rejections",
+                 "method":"same_observed_bars_no_ma_eligibility_override",
+                 **geometry_shadow_counts,"not_signal_or_forward_performance":True},
              "quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},
              "quality_shadow_cases":{"purpose":"prospective_same_slot_comparison_not_dashboard_candidates",
                   "outcomes_available":False,"records":sorted(shadow_cases,key=lambda x:(x["ticker"],x["date"]))},
