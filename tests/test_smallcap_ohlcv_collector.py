@@ -30,6 +30,12 @@ class Provider:
         return FakeFrame()
 
 class ResearchCollectorTests(unittest.TestCase):
+    def test_workflow_default_budget_matches_bounded_collector_capacity(self):
+        workflow=(ROOT/".github/workflows/smallcap-prebreakout-research.yml").read_text(encoding="utf-8")
+        self.assertEqual(mod.MAX_PER_RUN,30)
+        self.assertIn("default: '30'",workflow)
+        self.assertIn("github.event.inputs.budget || '30'",workflow)
+
     def test_cohort_excludes_live_floor_and_non_equities(self):
         rows=[{"ticker":"A","market_cap":120e6,"quote_type":"EQUITY"},
               {"ticker":"B","market_cap":499e6,"quote_type":"EQUITY"},
