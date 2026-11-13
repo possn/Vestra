@@ -9,6 +9,13 @@ from defer_main_publish_if_code_pr import smallcap_publication_overdue
 WORKFLOW=ROOT/".github/workflows/smallcap-prebreakout-research.yml"
 
 class SmallcapFirstPublishContract(unittest.TestCase):
+    def test_collector_changes_trigger_real_collection(self):
+        source=WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("push:\n    branches: [main]",source)
+        self.assertIn("'research/prebreakout/smallcap_ohlcv_collector.py'",source)
+        self.assertIn("'.github/workflows/smallcap-prebreakout-research.yml'",source)
+        self.assertIn("cancel-in-progress: false",source)
+
     def test_missing_previous_report_bypasses_code_pr_guard(self):
         source=WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("git show HEAD:data/breakout-lab-smallcap-ohlcv-research.json",source)
