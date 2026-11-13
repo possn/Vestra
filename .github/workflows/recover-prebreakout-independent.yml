@@ -1,10 +1,11 @@
 name: Recover prebreakout from independent dashboard workflow
 
-# Independent event source: a completed dashboard-news workflow can recover
-# a missed prebreakout cron. Does not depend on a scanner run existing.
+# Two independent event sources can recover a missed prebreakout cron.
+# Neither depends on a scanner run existing; the immutable-slot gate prevents
+# duplicate scans when both sources complete in the same slot.
 on:
   workflow_run:
-    workflows: ["Update dashboard news"]
+    workflows: ["Update dashboard news", "Update macro events"]
     types: [completed]
   workflow_dispatch: {}
 
