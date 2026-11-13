@@ -176,7 +176,10 @@ def assess(row: dict) -> dict:
     turnaround_signal = (delta30 is not None and delta30 >= 3) or ((rev_accel or 0) >= 5 and (margin_delta or 0) >= 1)
     if turnaround_signal and safe_gate and conf >= 55 and score >= 45 and thesis != "down":
         add("turnarounds", "Turnarounds", [_clamp(55 + (delta30 or 0) * 3 + (rev_accel or 0) * 0.5 + (margin_delta or 0) * 3), conf, score], [f"Δ score 30d +{delta30:.1f}" if delta30 is not None else "Execução a acelerar", f"Aceleração receita {rev_accel:+.1f} pp" if rev_accel is not None else "Receita a melhorar", f"Margem {margin_delta:+.1f} pp" if margin_delta is not None else "Margens estabilizadas"])
-    if div_yield is not None and div_yield > 0 and safe_gate and (quality or 0) >= 55 and conf >= 55 and (dilution is None or dilution <= 0.05) and (div_cover is None or div_cover >= 1.0) and (div_growth is None or div_growth >= 0):
+    # Dividend yield is expected as a fraction (e.g. 0.05 = 5%).
+    # Extreme or percent-unit inputs cannot establish a credible grower;
+    # fail closed instead of dividing by 100 and inventing a conversion.
+    if div_yield is not None and 0 < div_yield <= 0.25 and safe_gate and (quality or 0) >= 55 and conf >= 55 and (dilution is None or dilution <= 0.05) and (div_cover is None or div_cover >= 1.0) and (div_growth is None or div_growth >= 0):
         add("dividend_growers", "Dividend Growers", [quality, conf, _clamp(50 + (div_growth or 0) * 200), _clamp(45 + div_yield * 700), score], [f"Dividend yield {div_yield*100:.1f}%", f"Qualidade {quality:.0f}/100", f"Cobertura FCF {div_cover:.2f}×" if div_cover is not None else "Sem sinal de payout descoberto", "Sem diluição material"])
 
     ordered = sorted(results.items(), key=lambda kv: kv[1]["score"], reverse=True)
