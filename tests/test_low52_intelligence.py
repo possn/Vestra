@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime, timedelta, timezone
 
 from scripts.low52_intelligence import assess
 
@@ -105,6 +106,28 @@ class Low52IntelligenceTests(unittest.TestCase):
                          "observed_daily_closes_minimum_200_sessions")
         self.assertEqual(result["low52_observed_close_sessions"], 220)
         self.assertIn("fechos diários observados", result["low52_reasons"][0])
+
+    def test_dated_full_year_weekly_closes_have_explicit_distinct_basis(self):
+        anchor=datetime.now(timezone.utc).date()-timedelta(days=2)
+        dates=[anchor-timedelta(days=7*(51-i)) for i in range(52)]
+        row=quality_row(current_price=101)
+        row["price_history_1y"]=[{"date":day.isoformat(),"close":100+i/10}
+                                 for i,day in enumerate(dates)]
+        result=assess(row)
+        self.assertNotEqual(result["low52_status"],"insufficient")
+        self.assertEqual(result["low52_price_basis"],"observed_weekly_closes_approximately_52weeks")
+        self.assertEqual(result["low52_observed_last_session"],anchor.isoformat())
+        self.assertIn("fechos semanais",result["low52_reasons"][0])
+
+    def test_undated_or_short_weekly_history_remains_insufficient(self):
+        anchor=datetime.now(timezone.utc).date()-timedelta(days=2)
+        row=quality_row(current_price=101)
+        for count in (20,44):
+            row["price_history_1y"]=[{"date":(anchor-timedelta(days=7*(count-1-i))).isoformat(),"close":100}
+                                     for i in range(count)]
+            self.assertEqual(assess(row)["low52_status"],"insufficient")
+        row["price_history_1y"]=[100]*52
+        self.assertEqual(assess(row)["low52_status"],"insufficient")
 
     def test_provider_extrema_keep_explicit_distinct_provenance(self):
         row = quality_row()
