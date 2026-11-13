@@ -521,6 +521,49 @@ def trim_leading_provider_padding(bars):
     return bars[first:], first
 
 
+def interior_all_null_gap_diagnostic(bars):
+    """Describe fully absent interior OHLCV dates without changing price evidence.
+
+    A multi-market Yahoo outer join may create empty dates for assets whose
+    exchange was closed, but identical gaps may be provider failures. Neither
+    interpretation is assumed: no rows are removed, repaired, or imputed.
+    """
+    required = ("close", "high", "low", "volume")
+    def observed(row):
+        return isinstance(row, dict) and any(row.get(k) is not None for k in required)
+    def empty(row):
+        return (isinstance(row, dict) and
+                all(k in row and row[k] is None for k in required))
+    anchors = [i for i, row in enumerate(bars) if observed(row)]
+    result = {"gap_runs": 0, "gap_rows": 0, "single_day_runs": 0,
+              "multi_day_runs": 0, "max_run_rows": 0,
+              "weekday_rows": 0, "weekend_rows": 0,
+              "invalid_date_rows": 0}
+    if len(anchors) < 2:
+        return result
+    i = anchors[0] + 1
+    while i < anchors[-1]:
+        if not empty(bars[i]):
+            i += 1
+            continue
+        j = i
+        while j < anchors[-1] and empty(bars[j]):
+            j += 1
+        span = j - i
+        result["gap_runs"] += 1
+        result["gap_rows"] += span
+        result["single_day_runs" if span == 1 else "multi_day_runs"] += 1
+        result["max_run_rows"] = max(result["max_run_rows"], span)
+        for row in bars[i:j]:
+            try:
+                day = date.fromisoformat(str(row["date"]))
+                result["weekend_rows" if day.weekday() >= 5 else "weekday_rows"] += 1
+            except (KeyError, ValueError, TypeError):
+                result["invalid_date_rows"] += 1
+        i = j
+    return result
+
+
 def evaluable_recheck(bars, today):
     """Only a complete, fresh, ordered OHLCV series can invalidate a prior setup."""
     if len(bars)<220:
@@ -753,6 +796,8 @@ def main():
     gate_exclusions={};ma_gate_failure_counts={};invalid_ohlcv_details={}
     missing_close_locations={};missing_close_patterns={}
     padding_rows_trimmed=0;tickers_with_padding_trimmed=0
+    interior_null_gap_totals={key:0 for key in interior_all_null_gap_diagnostic([])}
+    tickers_with_interior_null_gaps=0
     scan_started=time.monotonic();batch_attempted=0;batch_failed=0;batch_completed=0;batch_retries=0;row_failed=0;row_missing_ohlcv=0
     try:
         fx=json.loads((ROOT/"data/fx.json").read_text(encoding="utf-8"))
@@ -779,6 +824,13 @@ def main():
                 # Only batch-alignment padding before the first observed bar
                 # can be removed. Gaps inside actual trading history remain fatal.
                 bars,trimmed=trim_leading_provider_padding(bars)
+                gap_profile=interior_all_null_gap_diagnostic(bars)
+                tickers_with_interior_null_gaps+=int(gap_profile["gap_runs"]>0)
+                for key,value in gap_profile.items():
+                    if key=="max_run_rows":
+                        interior_null_gap_totals[key]=max(interior_null_gap_totals[key],value)
+                    else:
+                        interior_null_gap_totals[key]+=value
                 padding_rows_trimmed+=trimmed
                 tickers_with_padding_trimmed+=int(trimmed>0)
                 checked+=bool(bars)
@@ -860,6 +912,12 @@ def main():
                  "null_prefix_rows_trimmed":padding_rows_trimmed,
                  "interior_or_partial_rows_never_trimmed":True,
                  "not_eligibility_or_performance":True},
+             "interior_all_null_gap_audit":{"scope":"all_observed_slot_series_diagnostic_only",
+                 "tickers_with_gaps":tickers_with_interior_null_gaps,
+                 **interior_null_gap_totals,
+                 "weekday_is_not_proof_of_trading_session":True,
+                 "no_rows_removed_or_imputed":True,
+                 "not_strategy_performance":True},
              "invalid_ohlcv_detail_audit":{"scope":"first_invalid_bar_in_current_slot",
                  "first_rejected_rows":gate_exclusions.get("invalid_ohlcv_or_date",0),
                  "reason_counts":dict(sorted(invalid_ohlcv_details.items())),
