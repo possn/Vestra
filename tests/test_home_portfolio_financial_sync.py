@@ -44,6 +44,11 @@ class FinancialHomeSyncContract(unittest.TestCase):
                         refresh.index('new CustomEvent("vestra:portfolio-totals-updated"'))
         self.assertIn("window.addEventListener('vestra:portfolio-totals-updated'", HOME)
 
+    def test_manual_asset_and_liability_changes_refresh_home_totals(self):
+        listener = HOME.split("window.addEventListener('vestra:local-state-writing'", 1)[1].split("\n    });", 1)[0]
+        self.assertIn('syncWealthHero(host);', listener)
+        self.assertLess(listener.index('syncWealthHero(host);'), listener.index('lastDecision = null;'))
+
     def test_quote_refresh_does_not_claim_fresh_prices_without_success(self):
         view = APP.split("function renderQuoteSyncStatus() {", 1)[1].split(
             "\nfunction updateQuoteButtonStaleness()", 1)[0]
