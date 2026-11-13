@@ -30,6 +30,17 @@ class Provider:
         return FakeFrame()
 
 class ResearchCollectorTests(unittest.TestCase):
+    def test_technical_rejections_reconcile_with_evaluable_observations(self):
+        rows=[{"ticker":"A","market_cap":150e6,"quote_type":"EQUITY"},
+              {"ticker":"B","market_cap":200e6,"quote_type":"EQUITY"}]
+        report=mod.collect(rows,Provider(),slot=0,budget=2,
+                           checked_at=datetime(2026,7,10,tzinfo=timezone.utc))
+        self.assertEqual(sum(report["technical_first_rejection_counts"].values()),
+                         report["evaluable_ohlcv"])
+        self.assertTrue(all("technical_first_rejection" in row
+                            for row in report["observations"]
+                            if row["status"]=="evaluable_ohlcv"))
+
     def test_workflow_default_budget_matches_bounded_collector_capacity(self):
         workflow=(ROOT/".github/workflows/smallcap-prebreakout-research.yml").read_text(encoding="utf-8")
         self.assertEqual(mod.MAX_PER_RUN,30)
