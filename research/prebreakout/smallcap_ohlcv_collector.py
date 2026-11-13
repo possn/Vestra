@@ -56,6 +56,21 @@ def technical_structure_audit(observations):
                 check for row in examined for check in row["technical_failed_ma_checks"]).items())),
             "not_independent_pass_rates":True}
 
+def independent_geometry_audit(observations):
+    """Independent geometry on all *current* evaluable, liquidity-qualified rows.
+
+    MA rejection does not prevent counting base/VCP geometry. The counts are
+    diagnostic only and cannot qualify a setup or bypass a later risk gate.
+    """
+    eligible=[row for row in observations if row.get("status")=="evaluable_ohlcv"
+              and row.get("technical_first_rejection")!="below_1m_usd_turnover"]
+    observed=[row for row in eligible if isinstance(row.get("technical_geometry_shadow"),dict)]
+    counts={key:sum(row["technical_geometry_shadow"].get(key) is True for row in observed)
+            for key in ("base_width_pass","contractions_pass","both_pass")}
+    return {"scope":"evaluable_liquid_series_including_ma_rejections",
+            "liquid_evaluable_rows":len(eligible),"geometry_diagnosed_rows":len(observed),
+            **counts,"not_eligibility_or_success_probability":True}
+
 def inspect(ticker,frame,currency,checked_at):
     if currency!="USD":
         return {"ticker":ticker,"status":"currency_not_verified_usd","currency":currency}
@@ -125,6 +140,8 @@ def inspect(ticker,frame,currency,checked_at):
             "zero_volume_sessions_before_contiguous_window":zero_volume_sessions,
             "verified_prebreakout_setup":setup,
             "technical_first_rejection":technical_first_rejection,
+            "technical_geometry_shadow":technical_audit.get("geometry_shadow")
+                if turnover>=1_000_000 else None,
             "technical_failed_ma_checks":technical_audit.get("moving_average_failed_checks",[])
                 if technical_first_rejection=="moving_average_structure" else None,
             "first_session":clean[0][0],"last_session":last,
@@ -222,6 +239,7 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
             "evaluable_ohlcv":evaluable,"observed_incomplete":len(observed)-evaluable,
             "technical_first_rejection_counts":technical_rejections,
             "technical_structure_audit":technical_structure_audit(observed),
+            "independent_geometry_audit":independent_geometry_audit(observed),
             "not_observed":len(names)-len(observed),
             "universe_coverage_pct":round(100*evaluable/len(names),2) if names else None,
             "point_in_time_caveat":"market_caps_from_current_index_not_historical_asof_snapshots",
@@ -295,6 +313,7 @@ def merge_slots(current, previous, now, ttl_hours=96, *, eligible_tickers=None):
             "evaluable_ohlcv":evaluable,"observed_incomplete":len(all_rows)-evaluable,
             "technical_first_rejection_counts":technical_rejections,
             "technical_structure_audit":technical_structure_audit(all_rows),
+            "independent_geometry_audit":independent_geometry_audit(all_rows),
             "not_observed":max(0,count-len(all_rows)),
             "universe_coverage_pct":round(100*evaluable/count,2) if count else None,
             "validated_prebreakout_setups":len(signals),
