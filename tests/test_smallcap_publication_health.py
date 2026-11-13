@@ -10,6 +10,21 @@ spec.loader.exec_module(health)
 
 
 class SmallcapPublishedHealthTests(unittest.TestCase):
+    def test_ma_detail_rollup_must_reconcile(self):
+        row={"ticker":"A","status":"evaluable_ohlcv",
+             "technical_first_rejection":"moving_average_structure",
+             "technical_failed_ma_checks":["ma50_rising_10"]}
+        valid={**self.report,"observations":[row,self.report["observations"][1]],
+               "technical_structure_audit":{"ma_rejected_rows":1,
+                   "diagnosed_ma_rejected_rows":1,
+                   "nonexclusive_failed_check_counts":{"ma50_rising_10":1},
+                   "not_independent_pass_rates":True}}
+        self.assertEqual(health.assess_publication(valid,self.now)["status"],"healthy")
+        invalid={**valid,"technical_structure_audit":{
+            **valid["technical_structure_audit"],"diagnosed_ma_rejected_rows":0}}
+        self.assertEqual(health.assess_publication(invalid,self.now)["reason"],
+                         "unreconciled_ma_diagnostics")
+
     def test_technical_gate_rollup_must_match_per_ticker_evidence(self):
         valid={**self.report,
                "technical_first_rejection_counts":{"not_recorded_legacy":1}}
