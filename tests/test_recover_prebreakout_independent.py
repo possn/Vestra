@@ -16,6 +16,14 @@ class IndependentRecoveryContract(unittest.TestCase):
         self.assertIn("actions: write",s)
         self.assertNotIn("refresh-prebreakout-scanner",s.split("jobs:",1)[0])
 
+    def test_code_push_retries_only_when_slot_is_due(self):
+        s=RECOVERY.read_text(encoding="utf-8")
+        self.assertIn("push:\n    branches: [main]",s)
+        self.assertIn("'.github/workflows/recover-prebreakout-independent.yml'",s)
+        self.assertIn("github.event_name == 'push'",s)
+        self.assertLess(s.index("python scripts/check_prebreakout_scan_due.py"),
+                        s.index("gh workflow run refresh-prebreakout-scanner.yml --ref main"))
+
     def test_due_check_precedes_canonical_dispatch(self):
         s=RECOVERY.read_text(encoding="utf-8")
         check="python scripts/check_prebreakout_scan_due.py"
