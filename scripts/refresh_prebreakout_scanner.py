@@ -564,6 +564,43 @@ def interior_all_null_gap_diagnostic(bars):
     return result
 
 
+
+def verified_standalone_recovery(batch_bars, standalone_bars, today):
+    """Accept a separately fetched complete series only after cross-source consistency.
+
+    Fully empty batch join rows are not evidence of trades; partial rows and
+    contradictory overlapping observed OHLCV remain hard rejection conditions.
+    No interpolation, forward fill or synthetic trading date is permitted.
+    """
+    if not evaluable_recheck(standalone_bars, today):
+        return None
+    observed = {}
+    for bar in batch_bars:
+        if not isinstance(bar, dict):
+            return None
+        fields = (bar.get("close"), bar.get("high"), bar.get("low"), bar.get("volume"))
+        if all(v is None for v in fields):
+            continue
+        if any(v is None or isinstance(v, bool) for v in fields):
+            return None
+        key = str(bar.get("date") or "")[:10]
+        if not key or key in observed:
+            return None
+        observed[key] = bar
+    independent = {bar["date"][:10]: bar for bar in standalone_bars}
+    common = set(observed) & set(independent)
+    if not common or common != set(observed):
+        return None
+    for key in common:
+        for field in ("close", "high", "low", "volume"):
+            a, b = float(observed[key][field]), float(independent[key][field])
+            if not math.isfinite(a) or not math.isfinite(b):
+                return None
+            if abs(a-b)>max(1e-6, 1e-4*max(abs(a),abs(b))):
+                return None
+    return standalone_bars
+
+
 def evaluable_recheck(bars, today):
     """Only a complete, fresh, ordered OHLCV series can invalidate a prior setup."""
     if len(bars)<220:
@@ -805,6 +842,11 @@ def main():
         fx={}  # A missing exchange-rate file may never authorize liquidity.
     currency_checked=0;currency_rejected=0
     # Shadow evaluation only; never route legacy candidates to public signals.
+    # Re-query only a bounded number of suspect ticker histories per slot.
+    recovery_budget=12
+    recovery_attempted=0
+    recovery_verified=0
+    recovery_rejected=0
     shadow={"legacy_eligible":0,"strict_eligible":0,"legacy_only":0,"strict_only":0,"neither":0,"compared":0}
     for start in range(0,len(tickers),15):
         group=tickers[start:start+15]
@@ -825,6 +867,21 @@ def main():
                 # can be removed. Gaps inside actual trading history remain fatal.
                 bars,trimmed=trim_leading_provider_padding(bars)
                 gap_profile=interior_all_null_gap_diagnostic(bars)
+                if gap_profile["gap_runs"] and recovery_attempted<recovery_budget:
+                    recovery_attempted+=1
+                    try:
+                        independent,_=fetch_ohlcv_batch(yf,[ticker])
+                        replacement=completed_sessions(dataframe_bars(independent),now.date())
+                        replacement,_=trim_leading_provider_padding(replacement)
+                        verified=verified_standalone_recovery(bars,replacement,now.date())
+                    except (RuntimeError,ValueError,TypeError,KeyError) as exc:
+                        verified=None
+                        failures.append("standalone_recheck:"+ticker+":"+type(exc).__name__)
+                    if verified is not None:
+                        bars=verified
+                        recovery_verified+=1
+                    else:
+                        recovery_rejected+=1
                 tickers_with_interior_null_gaps+=int(gap_profile["gap_runs"]>0)
                 for key,value in gap_profile.items():
                     if key=="max_run_rows":
@@ -912,6 +969,10 @@ def main():
                  "null_prefix_rows_trimmed":padding_rows_trimmed,
                  "interior_or_partial_rows_never_trimmed":True,
                  "not_eligibility_or_performance":True},
+             "standalone_gap_recovery_audit":{"method":"independent_single_ticker_ohlcv_with_exact_overlap_checks",
+                 "attempted":recovery_attempted,"verified":recovery_verified,
+                 "rejected":recovery_rejected,"max_per_slot":recovery_budget,
+                 "no_imputation":True,"not_signal_or_performance":True},
              "interior_all_null_gap_audit":{"scope":"all_observed_slot_series_diagnostic_only",
                  "tickers_with_gaps":tickers_with_interior_null_gaps,
                  **interior_null_gap_totals,

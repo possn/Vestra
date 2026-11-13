@@ -78,6 +78,32 @@ class FirstFailingGateAuditTests(unittest.TestCase):
         self.assertIn("missing_downloads_not_negative_evidence", src)
 
 
+class StandaloneGapRecoveryTests(unittest.TestCase):
+    def setUp(self):
+        today=date(2026,11,13)
+        self.today=today
+        self.bars=[{"date":(today-timedelta(days=220-i)).isoformat(),
+                    "close":100.0,"high":101.0,"low":99.0,"volume":1000.0}
+                   for i in range(220)]
+
+    def test_verified_independent_history_recovers_outer_join_null(self):
+        batch=[dict(x) for x in self.bars]
+        batch.insert(100,{"date":"2026-07-12","close":None,"high":None,"low":None,"volume":None})
+        self.assertEqual(mod.verified_standalone_recovery(batch,self.bars,self.today),self.bars)
+
+    def test_missing_or_disagreeing_independent_bars_fail_closed(self):
+        batch=[dict(x) for x in self.bars]
+        bad=[dict(x) for x in self.bars]
+        bad[20]["close"]=105
+        self.assertIsNone(mod.verified_standalone_recovery(batch,bad,self.today))
+        self.assertIsNone(mod.verified_standalone_recovery(batch,self.bars[:-1],self.today))
+
+    def test_partial_batch_bar_is_never_silently_dropped(self):
+        batch=[dict(x) for x in self.bars]
+        batch[20]["close"]=None
+        self.assertIsNone(mod.verified_standalone_recovery(batch,self.bars,self.today))
+
+
 class ProviderBatchRetryTests(unittest.TestCase):
     def test_retry_once_recovers_transient_failure(self):
         class Provider:
