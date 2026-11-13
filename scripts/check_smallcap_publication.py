@@ -56,6 +56,20 @@ def assess_publication(report: dict, now: datetime, max_age_hours: int = 8) -> d
                 for key, value in technical_counts.items()) or
             technical_counts != expected_technical):
             return {"status": "invalid", "reason": "unreconciled_technical_gate_counts"}
+    structure_audit = report.get("technical_structure_audit")
+    if structure_audit is not None:
+        from collections import Counter
+        rejected=[row for row in rows if row.get("status")=="evaluable_ohlcv" and
+                  row.get("technical_first_rejection")=="moving_average_structure"]
+        diagnosed=[row for row in rejected if isinstance(row.get("technical_failed_ma_checks"),list)]
+        counted=dict(Counter(check for row in diagnosed
+                             for check in row["technical_failed_ma_checks"]))
+        if (not isinstance(structure_audit,dict) or
+            structure_audit.get("ma_rejected_rows")!=len(rejected) or
+            structure_audit.get("diagnosed_ma_rejected_rows")!=len(diagnosed) or
+            structure_audit.get("nonexclusive_failed_check_counts")!=counted or
+            structure_audit.get("not_independent_pass_rates") is not True):
+            return {"status":"invalid","reason":"unreconciled_ma_diagnostics"}
     if report.get("not_observed") != total - len(rows):
         return {"status": "invalid", "reason": "unreconciled_unobserved_count"}
     # A recent publication timestamp alone does not make old per-ticker

@@ -45,6 +45,17 @@ def cohort(rows):
         found[symbol]=float(cap)
     return sorted(set(found)-ambiguous)
 
+def technical_structure_audit(observations):
+    """Nonexclusive failed MA checks on evaluable, MA-rejected series only."""
+    ma_rows=[row for row in observations
+             if row.get("status")=="evaluable_ohlcv" and
+             row.get("technical_first_rejection")=="moving_average_structure"]
+    examined=[row for row in ma_rows if isinstance(row.get("technical_failed_ma_checks"),list)]
+    return {"ma_rejected_rows":len(ma_rows),"diagnosed_ma_rejected_rows":len(examined),
+            "nonexclusive_failed_check_counts":dict(sorted(Counter(
+                check for row in examined for check in row["technical_failed_ma_checks"]).items())),
+            "not_independent_pass_rates":True}
+
 def inspect(ticker,frame,currency,checked_at):
     if currency!="USD":
         return {"ticker":ticker,"status":"currency_not_verified_usd","currency":currency}
@@ -114,6 +125,8 @@ def inspect(ticker,frame,currency,checked_at):
             "zero_volume_sessions_before_contiguous_window":zero_volume_sessions,
             "verified_prebreakout_setup":setup,
             "technical_first_rejection":technical_first_rejection,
+            "technical_failed_ma_checks":technical_audit.get("moving_average_failed_checks",[])
+                if technical_first_rejection=="moving_average_structure" else None,
             "first_session":clean[0][0],"last_session":last,
             "average_dollar_volume_20_usd":round(turnover,2),
             "liquidity_5m_usd_verified":turnover>=5_000_000,
@@ -208,6 +221,7 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
             "provider_error_type_counts":provider_error_type_counts,
             "evaluable_ohlcv":evaluable,"observed_incomplete":len(observed)-evaluable,
             "technical_first_rejection_counts":technical_rejections,
+            "technical_structure_audit":technical_structure_audit(observed),
             "not_observed":len(names)-len(observed),
             "universe_coverage_pct":round(100*evaluable/len(names),2) if names else None,
             "point_in_time_caveat":"market_caps_from_current_index_not_historical_asof_snapshots",
@@ -280,6 +294,7 @@ def merge_slots(current, previous, now, ttl_hours=96, *, eligible_tickers=None):
     return {**current,"observations":all_rows,"signals":signals,
             "evaluable_ohlcv":evaluable,"observed_incomplete":len(all_rows)-evaluable,
             "technical_first_rejection_counts":technical_rejections,
+            "technical_structure_audit":technical_structure_audit(all_rows),
             "not_observed":max(0,count-len(all_rows)),
             "universe_coverage_pct":round(100*evaluable/count,2) if count else None,
             "validated_prebreakout_setups":len(signals),
