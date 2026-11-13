@@ -621,6 +621,13 @@ def apply_market_identity_fallback(row: dict, fallback: dict | None) -> dict:
 
 
 
+def choose_duplicate_ticker_row(previous: dict, incoming: dict) -> dict:
+    """An untyped enrichment must not erase an explicit security identity."""
+    old_type = str(previous.get("quote_type") or "").strip().upper()
+    new_type = str(incoming.get("quote_type") or "").strip().upper()
+    return previous if old_type and not new_type else incoming
+
+
 def main() -> None:
     with open(SRC, "r", encoding="utf-8") as f:
         payload = json.load(f)
@@ -628,8 +635,8 @@ def main() -> None:
     generated_at = payload.get("generated_at")
     schema_version = payload.get("schema_version")
 
-    # One canonical row per ticker. Last occurrence wins because late pipeline
-    # stages may carry fresher enrichment than an earlier duplicate.
+    # One canonical row per ticker. Fresher enrichment wins except when an
+    # unresolved later record would erase a known ETF/equity identity.
     rows_by_ticker: dict[str, dict] = {}
     duplicate_count = 0
     for row in source_rows:
@@ -638,6 +645,7 @@ def main() -> None:
             continue
         if ticker in rows_by_ticker:
             duplicate_count += 1
+            row = choose_duplicate_ticker_row(rows_by_ticker[ticker], row)
         rows_by_ticker[ticker] = row
     rows = list(rows_by_ticker.items())
     fund_history = update_fund_aum_history(
