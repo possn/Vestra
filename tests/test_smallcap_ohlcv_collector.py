@@ -30,6 +30,30 @@ class Provider:
         return FakeFrame()
 
 class ResearchCollectorTests(unittest.TestCase):
+    def test_geometry_shadow_counts_ma_rejected_without_promoting_setups(self):
+        rows=[{"status":"evaluable_ohlcv","technical_first_rejection":"moving_average_structure",
+               "technical_geometry_shadow":{"base_width_pass":True,"contractions_pass":True,
+                                            "both_pass":True}},
+              {"status":"evaluable_ohlcv","technical_first_rejection":"base_width",
+               "technical_geometry_shadow":{"base_width_pass":False,"contractions_pass":True,
+                                            "both_pass":False}},
+              {"status":"evaluable_ohlcv","technical_first_rejection":"below_1m_usd_turnover"},
+              {"status":"evaluable_ohlcv","technical_first_rejection":"not_recorded_legacy"}]
+        self.assertEqual(mod.independent_geometry_audit(rows),{
+            "scope":"evaluable_liquid_series_including_ma_rejections",
+            "liquid_evaluable_rows":3,"geometry_diagnosed_rows":2,
+            "base_width_pass":1,"contractions_pass":2,"both_pass":1,
+            "not_eligibility_or_success_probability":True})
+
+    def test_collector_never_turns_shadow_geometry_into_signal(self):
+        rows=[{"ticker":"A","market_cap":150e6,"quote_type":"EQUITY"}]
+        report=mod.collect(rows,Provider(),slot=0,budget=1,
+                           checked_at=datetime(2026,7,10,tzinfo=timezone.utc))
+        self.assertEqual(report["validated_prebreakout_setups"],0)
+        self.assertEqual(report["independent_geometry_audit"]["geometry_diagnosed_rows"],1)
+        self.assertEqual(report["independent_geometry_audit"]["both_pass"],0)
+        self.assertIsInstance(report["observations"][0]["technical_geometry_shadow"],dict)
+
     def test_overlapping_ma_rejections_remain_nonexclusive(self):
         sample=[{"status":"evaluable_ohlcv","technical_first_rejection":"moving_average_structure",
                  "technical_failed_ma_checks":["price_above_ma50","ma50_rising_10"]},
