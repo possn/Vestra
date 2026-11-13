@@ -12,6 +12,26 @@ mod=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 
 class FirstFailingGateAuditTests(unittest.TestCase):
+    def test_base_geometry_is_measured_even_when_ma_structure_fails(self):
+        today=date(2026,11,13)
+        bars=[]
+        for i in range(220):
+            # Flat closes deliberately fail rising MA, while later ranges
+            # contract independently of that trend filter.
+            offset=220-i
+            spread=(15 if 60<offset<=100 else
+                    10 if 40<offset<=60 else
+                    6 if 20<offset<=40 else 3)
+            bars.append({"date":(today-timedelta(days=220-i)).isoformat(),
+                         "close":100.0,"high":100.0+spread,"low":100.0-spread,
+                         "volume":1000.0})
+        audit={}
+        self.assertIsNone(mod.scan_bars("GEOMETRY",bars,today,audit=audit))
+        self.assertEqual(audit["first_rejection"],"moving_average_structure")
+        self.assertEqual(audit["geometry_shadow"],{
+            "base_width_pass":True,"contractions_pass":True,"both_pass":True,
+            "research_only_not_eligibility":True})
+
     def test_short_history_is_data_unavailable_not_bad_setup(self):
         trace = {}
         self.assertIsNone(mod.scan_bars("SHORT", [], date(2026, 11, 8), audit=trace))
