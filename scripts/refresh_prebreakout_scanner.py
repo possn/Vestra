@@ -565,39 +565,46 @@ def interior_all_null_gap_diagnostic(bars):
 
 
 
-def verified_standalone_recovery(batch_bars, standalone_bars, today):
+def verified_standalone_recovery(batch_bars, standalone_bars, today, audit=None):
     """Accept a separately fetched complete series only after cross-source consistency.
 
     Fully empty batch join rows are not evidence of trades; partial rows and
     contradictory overlapping observed OHLCV remain hard rejection conditions.
     No interpolation, forward fill or synthetic trading date is permitted.
     """
-    if not evaluable_recheck(standalone_bars, today):
+    def reject(reason):
+        if audit is not None:
+            audit["rejection_reason"] = reason
         return None
+
+    if not evaluable_recheck(standalone_bars, today):
+        return reject("independent_history_not_evaluable")
     observed = {}
     for bar in batch_bars:
         if not isinstance(bar, dict):
-            return None
+            return reject("batch_non_mapping_bar")
         fields = (bar.get("close"), bar.get("high"), bar.get("low"), bar.get("volume"))
         if all(v is None for v in fields):
             continue
         if any(v is None or isinstance(v, bool) for v in fields):
-            return None
+            return reject("batch_partial_or_boolean_bar")
         key = str(bar.get("date") or "")[:10]
         if not key or key in observed:
-            return None
+            return reject("batch_missing_or_duplicate_date")
         observed[key] = bar
     independent = {bar["date"][:10]: bar for bar in standalone_bars}
     common = set(observed) & set(independent)
     if not common or common != set(observed):
-        return None
+        return reject("independent_history_missing_observed_overlap")
     for key in common:
         for field in ("close", "high", "low", "volume"):
             a, b = float(observed[key][field]), float(independent[key][field])
             if not math.isfinite(a) or not math.isfinite(b):
-                return None
+                return reject("nonfinite_overlap")
             if abs(a-b)>max(1e-6, 1e-4*max(abs(a),abs(b))):
-                return None
+                return reject("conflicting_observed_ohlcv")
+    if audit is not None:
+        audit["verified"] = True
     return standalone_bars
 
 
@@ -849,6 +856,7 @@ def main():
     recovery_attempted=0
     recovery_verified=0
     recovery_rejected=0
+    recovery_rejection_reasons={}
     shadow={"legacy_eligible":0,"strict_eligible":0,"legacy_only":0,"strict_only":0,"neither":0,"compared":0}
     for start in range(0,len(tickers),15):
         group=tickers[start:start+15]
@@ -871,19 +879,23 @@ def main():
                 gap_profile=interior_all_null_gap_diagnostic(bars)
                 if gap_profile["gap_runs"] and recovery_attempted<recovery_budget:
                     recovery_attempted+=1
+                    recovery_trace={}
                     try:
                         independent,_=fetch_ohlcv_batch(yf,[ticker])
                         replacement=completed_sessions(dataframe_bars(independent),now.date())
                         replacement,_=trim_leading_provider_padding(replacement)
-                        verified=verified_standalone_recovery(bars,replacement,now.date())
+                        verified=verified_standalone_recovery(bars,replacement,now.date(),audit=recovery_trace)
                     except (RuntimeError,ValueError,TypeError,KeyError) as exc:
                         verified=None
+                        recovery_trace["rejection_reason"]="standalone_exception_"+type(exc).__name__
                         failures.append("standalone_recheck:"+ticker+":"+type(exc).__name__)
                     if verified is not None:
                         bars=verified
                         recovery_verified+=1
                     else:
                         recovery_rejected+=1
+                        reason=recovery_trace.get("rejection_reason","unclassified_rejection")
+                        recovery_rejection_reasons[reason]=recovery_rejection_reasons.get(reason,0)+1
                 remaining_gap_profile=interior_all_null_gap_diagnostic(bars)
                 tickers_with_remaining_interior_gaps+=int(remaining_gap_profile["gap_runs"]>0)
                 for key,value in remaining_gap_profile.items():
@@ -981,6 +993,7 @@ def main():
              "standalone_gap_recovery_audit":{"method":"independent_single_ticker_ohlcv_with_exact_overlap_checks",
                  "attempted":recovery_attempted,"verified":recovery_verified,
                  "rejected":recovery_rejected,"max_per_slot":recovery_budget,
+                 "rejection_reason_counts":dict(sorted(recovery_rejection_reasons.items())),
                  "no_imputation":True,"not_signal_or_performance":True},
              "interior_all_null_gap_audit":{"scope":"all_observed_slot_series_diagnostic_only",
                  "measurement_stage":"before_independent_recovery",

@@ -103,6 +103,19 @@ class StandaloneGapRecoveryTests(unittest.TestCase):
         batch[20]["close"]=None
         self.assertIsNone(mod.verified_standalone_recovery(batch,self.bars,self.today))
 
+    def test_recovery_audit_distinguishes_independent_and_overlap_failures(self):
+        trace={}
+        self.assertIsNone(mod.verified_standalone_recovery(self.bars,self.bars[:10],self.today,audit=trace))
+        self.assertEqual(trace["rejection_reason"],"independent_history_not_evaluable")
+        changed=[dict(x) for x in self.bars]
+        changed[15]["volume"]=2000
+        trace={}
+        self.assertIsNone(mod.verified_standalone_recovery(self.bars,changed,self.today,audit=trace))
+        self.assertEqual(trace["rejection_reason"],"conflicting_observed_ohlcv")
+        trace={}
+        self.assertEqual(mod.verified_standalone_recovery(self.bars,self.bars,self.today,audit=trace),self.bars)
+        self.assertTrue(trace["verified"])
+
 
 class ProviderBatchRetryTests(unittest.TestCase):
     def test_retry_once_recovers_transient_failure(self):
