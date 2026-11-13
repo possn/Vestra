@@ -8,6 +8,12 @@ on:
         default: '30'
   schedule:
     - cron: '23 0,6,12,18 * * 1-5'
+  push:
+    branches: [main]
+    paths:
+      - 'research/prebreakout/smallcap_ohlcv_collector.py'
+      - 'scripts/check_smallcap_publication.py'
+      - '.github/workflows/smallcap-prebreakout-research.yml'
 permissions:
   contents: write
   pull-requests: read
