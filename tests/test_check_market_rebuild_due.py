@@ -24,6 +24,7 @@ class CanonicalRecoveryTests(unittest.TestCase):
         workflow = (Path(__file__).resolve().parents[1] /
                     ".github/workflows/recover-market-data.yml").read_text()
         self.assertIn('workflows: ["Update macro events"]', workflow)
+        self.assertIn("cron: '15 10,12,14 * * *'", workflow)
         self.assertIn("github.event.workflow_run.event == 'schedule'", workflow)
         self.assertIn("UPSTREAM_SCHEDULED_AT:", workflow)
         self.assertIn("10<=stamp.astimezone(datetime.timezone.utc).hour<=14", workflow)
