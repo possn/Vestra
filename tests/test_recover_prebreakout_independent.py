@@ -10,7 +10,7 @@ SCANNER=ROOT/".github/workflows/refresh-prebreakout-scanner.yml"
 class IndependentRecoveryContract(unittest.TestCase):
     def test_dispatch_from_unrelated_dashboard_workflow(self):
         s=RECOVERY.read_text(encoding="utf-8")
-        self.assertIn('workflows: ["Update dashboard news"]',s)
+        self.assertIn('workflows: ["Update dashboard news", "Update macro events"]',s)
         self.assertIn("types: [completed]",s)
         self.assertIn("github.event.workflow_run.event == 'schedule'",s)
         self.assertIn("actions: write",s)
