@@ -82,6 +82,14 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertIn("default: '30'",workflow)
         self.assertIn("github.event.inputs.budget || '30'",workflow)
 
+    def test_weekend_slots_preserve_bounded_budget_and_rolling_coverage(self):
+        # A Friday-close daily history remains observable on the weekend;
+        # all collection slots continue through the existing 30-name budget.
+        workflow=(ROOT/".github/workflows/smallcap-prebreakout-research.yml").read_text(encoding="utf-8")
+        self.assertIn("cron: '23 0,6,12,18 * * *'",workflow)
+        self.assertIn('MAX_PER_RUN=30', (ROOT/"research/prebreakout/smallcap_ohlcv_collector.py").read_text())
+        self.assertIn("--budget \"$BUDGET\"",workflow)
+
     def test_cohort_excludes_live_floor_and_non_equities(self):
         rows=[{"ticker":"A","market_cap":120e6,"quote_type":"EQUITY"},
               {"ticker":"B","market_cap":499e6,"quote_type":"EQUITY"},

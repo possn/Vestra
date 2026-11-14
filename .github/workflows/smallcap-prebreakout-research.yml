@@ -7,7 +7,10 @@ on:
         required: false
         default: '30'
   schedule:
-    - cron: '23 0,6,12,18 * * 1-5'
+    # Weekend collection covers still-unobserved Friday-close histories.
+    # The scanner excludes unfinished bars and still enforces <=7-day freshness;
+    # this does not invent trading sessions or increase the 30-ticker run budget.
+    - cron: '23 0,6,12,18 * * *'
   push:
     branches: [main]
     paths:
