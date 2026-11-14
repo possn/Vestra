@@ -32,6 +32,17 @@ def quality_row(current_price=105.0):
 
 
 class Low52IntelligenceTests(unittest.TestCase):
+    def test_observed_low_float_precision_never_publishes_negative_zero(self):
+        row=quality_row(current_price=162.85)
+        row["price_history_1y"]=[162.850006]*219+[233.949997]
+        result=assess(row)
+        self.assertEqual(result["low52_above_low_pct"],0.0)
+        self.assertEqual(str(result["low52_above_low_pct"]),"0.0")
+        # An actual, material new low below an older observed low stays signed.
+        row["current_price"]=161.0
+        materially_below=assess(row)
+        self.assertLess(materially_below["low52_above_low_pct"],-1)
+
     def test_unrecognized_reliability_fails_closed(self):
         for reliability in (None, "", "unknown", "high", "insufficient",
                             "insufficient_data", "suppressed"):
