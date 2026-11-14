@@ -5,25 +5,28 @@
     "method": "published_pivot_future_ohlcv",
     "price_basis_audit": {
       "5": {
-        "unverifiable": 14,
+        "unverifiable": 22,
         "by_reason": {
-          "unverified_signal_price_basis": 14
+          "unverified_signal_price_basis": 17,
+          "adjusted_price_revision_without_verified_factor": 5
         },
         "price_factor_inferred": false,
         "counts_excluded_from_negative_outcomes": true
       },
       "10": {
-        "unverifiable": 14,
+        "unverifiable": 22,
         "by_reason": {
-          "unverified_signal_price_basis": 14
+          "unverified_signal_price_basis": 17,
+          "adjusted_price_revision_without_verified_factor": 5
         },
         "price_factor_inferred": false,
         "counts_excluded_from_negative_outcomes": true
       },
       "20": {
-        "unverifiable": 14,
+        "unverifiable": 22,
         "by_reason": {
-          "unverified_signal_price_basis": 14
+          "unverified_signal_price_basis": 17,
+          "adjusted_price_revision_without_verified_factor": 5
         },
         "price_factor_inferred": false,
         "counts_excluded_from_negative_outcomes": true
@@ -32,9 +35,9 @@
     "unvalidated_probability": true,
     "coverage_by_horizon": {
       "5": {
-        "cohorts": 32,
-        "evaluable": 9,
-        "matured_horizons": 9,
+        "cohorts": 33,
+        "evaluable": 4,
+        "matured_horizons": 4,
         "confirmed_before_maturity": 0,
         "post_confirmation_durability": {
           "3": {
@@ -90,20 +93,21 @@
             "calibrated_probability": null
           }
         },
-        "coverage": 0.2812,
+        "coverage": 0.1212,
         "by_status": {
-          "price_basis_unverified": 14,
-          "missing_ohlcv": 9,
+          "price_basis_unverified": 22,
+          "missing_ohlcv": 6,
           "confirmed": 1,
-          "not_confirmed": 8
+          "not_confirmed": 3,
+          "pending": 1
         },
         "breakout_rate": null,
         "reason": "insufficient_or_unverified_forward_evidence"
       },
       "10": {
-        "cohorts": 32,
-        "evaluable": 8,
-        "matured_horizons": 8,
+        "cohorts": 33,
+        "evaluable": 4,
+        "matured_horizons": 4,
         "confirmed_before_maturity": 0,
         "post_confirmation_durability": {
           "3": {
@@ -159,19 +163,19 @@
             "calibrated_probability": null
           }
         },
-        "coverage": 0.25,
+        "coverage": 0.1212,
         "by_status": {
-          "price_basis_unverified": 14,
-          "missing_ohlcv": 9,
+          "price_basis_unverified": 22,
+          "missing_ohlcv": 6,
           "confirmed": 1,
-          "not_confirmed": 7,
+          "not_confirmed": 3,
           "pending": 1
         },
         "breakout_rate": null,
         "reason": "insufficient_or_unverified_forward_evidence"
       },
       "20": {
-        "cohorts": 32,
+        "cohorts": 33,
         "evaluable": 1,
         "matured_horizons": 0,
         "confirmed_before_maturity": 1,
@@ -229,12 +233,12 @@
             "calibrated_probability": null
           }
         },
-        "coverage": 0.0312,
+        "coverage": 0.0303,
         "by_status": {
-          "price_basis_unverified": 14,
-          "missing_ohlcv": 9,
+          "price_basis_unverified": 22,
+          "missing_ohlcv": 6,
           "confirmed": 1,
-          "pending": 8
+          "pending": 4
         },
         "breakout_rate": null,
         "reason": "insufficient_or_unverified_forward_evidence"
@@ -601,7 +605,8 @@
         "published_at": "2026-10-19T21:41:39.535321+00:00",
         "horizon_sessions": 5,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -611,7 +616,8 @@
         "published_at": "2026-10-19T21:41:39.535321+00:00",
         "horizon_sessions": 10,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -621,7 +627,8 @@
         "published_at": "2026-10-19T21:41:39.535321+00:00",
         "horizon_sessions": 20,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -664,7 +671,8 @@
         "published_at": "2026-10-20T14:26:56.947259+00:00",
         "horizon_sessions": 5,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -674,7 +682,8 @@
         "published_at": "2026-10-20T14:26:56.947259+00:00",
         "horizon_sessions": 10,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -684,7 +693,8 @@
         "published_at": "2026-10-20T14:26:56.947259+00:00",
         "horizon_sessions": 20,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -727,7 +737,8 @@
         "published_at": "2026-10-21T08:49:24.729306+00:00",
         "horizon_sessions": 5,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -737,7 +748,8 @@
         "published_at": "2026-10-21T08:49:24.729306+00:00",
         "horizon_sessions": 10,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -747,7 +759,8 @@
         "published_at": "2026-10-21T08:49:24.729306+00:00",
         "horizon_sessions": 20,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -914,7 +927,7 @@
           },
           "20": {
             "status": "pending",
-            "remaining_sessions": 10
+            "remaining_sessions": 9
           }
         }
       },
@@ -949,7 +962,7 @@
           },
           "20": {
             "status": "pending",
-            "remaining_sessions": 10
+            "remaining_sessions": 9
           }
         }
       },
@@ -984,12 +997,45 @@
           },
           "20": {
             "status": "pending",
-            "remaining_sessions": 10
+            "remaining_sessions": 9
           }
         }
       },
       {
         "ticker": "TECH",
+        "stage": "compressão",
+        "published_at": "2026-10-26T15:08:23.908867+00:00",
+        "horizon_sessions": 5,
+        "base_maturity": "developing_28_to_84d",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "adjusted_price_revision_without_verified_factor",
+        "observed_sessions": 0,
+        "event_date": null
+      },
+      {
+        "ticker": "TECH",
+        "stage": "compressão",
+        "published_at": "2026-10-26T15:08:23.908867+00:00",
+        "horizon_sessions": 10,
+        "base_maturity": "developing_28_to_84d",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "adjusted_price_revision_without_verified_factor",
+        "observed_sessions": 0,
+        "event_date": null
+      },
+      {
+        "ticker": "TECH",
+        "stage": "compressão",
+        "published_at": "2026-10-26T15:08:23.908867+00:00",
+        "horizon_sessions": 20,
+        "base_maturity": "developing_28_to_84d",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "adjusted_price_revision_without_verified_factor",
+        "observed_sessions": 0,
+        "event_date": null
+      },
+      {
+        "ticker": "ZBRA",
         "stage": "compressão",
         "published_at": "2026-10-26T15:08:23.908867+00:00",
         "horizon_sessions": 5,
@@ -1000,7 +1046,7 @@
         "event_date": null
       },
       {
-        "ticker": "TECH",
+        "ticker": "ZBRA",
         "stage": "compressão",
         "published_at": "2026-10-26T15:08:23.908867+00:00",
         "horizon_sessions": 10,
@@ -1011,9 +1057,75 @@
         "event_date": null
       },
       {
-        "ticker": "TECH",
+        "ticker": "ZBRA",
         "stage": "compressão",
         "published_at": "2026-10-26T15:08:23.908867+00:00",
+        "horizon_sessions": 20,
+        "base_maturity": "developing_28_to_84d",
+        "status": "pending",
+        "horizon_matured": false,
+        "observed_sessions": 14,
+        "event_date": null
+      },
+      {
+        "ticker": "TECH",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "horizon_sessions": 5,
+        "base_maturity": "developing_28_to_84d",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "adjusted_price_revision_without_verified_factor",
+        "observed_sessions": 0,
+        "event_date": null
+      },
+      {
+        "ticker": "TECH",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "horizon_sessions": 10,
+        "base_maturity": "developing_28_to_84d",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "adjusted_price_revision_without_verified_factor",
+        "observed_sessions": 0,
+        "event_date": null
+      },
+      {
+        "ticker": "TECH",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "horizon_sessions": 20,
+        "base_maturity": "developing_28_to_84d",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "adjusted_price_revision_without_verified_factor",
+        "observed_sessions": 0,
+        "event_date": null
+      },
+      {
+        "ticker": "ZBRA",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "horizon_sessions": 5,
+        "base_maturity": "developing_28_to_84d",
+        "status": "not_confirmed",
+        "horizon_matured": true,
+        "observed_sessions": 5,
+        "event_date": null
+      },
+      {
+        "ticker": "ZBRA",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "horizon_sessions": 10,
+        "base_maturity": "developing_28_to_84d",
+        "status": "not_confirmed",
+        "horizon_matured": true,
+        "observed_sessions": 10,
+        "event_date": null
+      },
+      {
+        "ticker": "ZBRA",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
         "horizon_sessions": 20,
         "base_maturity": "developing_28_to_84d",
         "status": "pending",
@@ -1022,42 +1134,42 @@
         "event_date": null
       },
       {
-        "ticker": "ZBRA",
+        "ticker": "TECH",
         "stage": "compressão",
-        "published_at": "2026-10-26T15:08:23.908867+00:00",
+        "published_at": "2026-10-28T02:14:50.526473+00:00",
         "horizon_sessions": 5,
         "base_maturity": "developing_28_to_84d",
-        "status": "not_confirmed",
-        "horizon_matured": true,
-        "observed_sessions": 5,
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "adjusted_price_revision_without_verified_factor",
+        "observed_sessions": 0,
         "event_date": null
       },
       {
-        "ticker": "ZBRA",
+        "ticker": "TECH",
         "stage": "compressão",
-        "published_at": "2026-10-26T15:08:23.908867+00:00",
+        "published_at": "2026-10-28T02:14:50.526473+00:00",
         "horizon_sessions": 10,
         "base_maturity": "developing_28_to_84d",
-        "status": "not_confirmed",
-        "horizon_matured": true,
-        "observed_sessions": 10,
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "adjusted_price_revision_without_verified_factor",
+        "observed_sessions": 0,
         "event_date": null
       },
       {
-        "ticker": "ZBRA",
+        "ticker": "TECH",
         "stage": "compressão",
-        "published_at": "2026-10-26T15:08:23.908867+00:00",
+        "published_at": "2026-10-28T02:14:50.526473+00:00",
         "horizon_sessions": 20,
         "base_maturity": "developing_28_to_84d",
-        "status": "pending",
-        "horizon_matured": false,
-        "observed_sessions": 13,
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "adjusted_price_revision_without_verified_factor",
+        "observed_sessions": 0,
         "event_date": null
       },
       {
-        "ticker": "TECH",
+        "ticker": "ZBRA",
         "stage": "compressão",
-        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "published_at": "2026-10-28T02:14:50.526473+00:00",
         "horizon_sessions": 5,
         "base_maturity": "developing_28_to_84d",
         "status": "not_confirmed",
@@ -1066,9 +1178,9 @@
         "event_date": null
       },
       {
-        "ticker": "TECH",
+        "ticker": "ZBRA",
         "stage": "compressão",
-        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "published_at": "2026-10-28T02:14:50.526473+00:00",
         "horizon_sessions": 10,
         "base_maturity": "developing_28_to_84d",
         "status": "not_confirmed",
@@ -1077,9 +1189,9 @@
         "event_date": null
       },
       {
-        "ticker": "TECH",
+        "ticker": "ZBRA",
         "stage": "compressão",
-        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "published_at": "2026-10-28T02:14:50.526473+00:00",
         "horizon_sessions": 20,
         "base_maturity": "developing_28_to_84d",
         "status": "pending",
@@ -1088,105 +1200,6 @@
         "event_date": null
       },
       {
-        "ticker": "ZBRA",
-        "stage": "compressão",
-        "published_at": "2026-10-27T08:11:53.284392+00:00",
-        "horizon_sessions": 5,
-        "base_maturity": "developing_28_to_84d",
-        "status": "not_confirmed",
-        "horizon_matured": true,
-        "observed_sessions": 5,
-        "event_date": null
-      },
-      {
-        "ticker": "ZBRA",
-        "stage": "compressão",
-        "published_at": "2026-10-27T08:11:53.284392+00:00",
-        "horizon_sessions": 10,
-        "base_maturity": "developing_28_to_84d",
-        "status": "not_confirmed",
-        "horizon_matured": true,
-        "observed_sessions": 10,
-        "event_date": null
-      },
-      {
-        "ticker": "ZBRA",
-        "stage": "compressão",
-        "published_at": "2026-10-27T08:11:53.284392+00:00",
-        "horizon_sessions": 20,
-        "base_maturity": "developing_28_to_84d",
-        "status": "pending",
-        "horizon_matured": false,
-        "observed_sessions": 12,
-        "event_date": null
-      },
-      {
-        "ticker": "TECH",
-        "stage": "compressão",
-        "published_at": "2026-10-28T02:14:50.526473+00:00",
-        "horizon_sessions": 5,
-        "base_maturity": "developing_28_to_84d",
-        "status": "not_confirmed",
-        "horizon_matured": true,
-        "observed_sessions": 5,
-        "event_date": null
-      },
-      {
-        "ticker": "TECH",
-        "stage": "compressão",
-        "published_at": "2026-10-28T02:14:50.526473+00:00",
-        "horizon_sessions": 10,
-        "base_maturity": "developing_28_to_84d",
-        "status": "not_confirmed",
-        "horizon_matured": true,
-        "observed_sessions": 10,
-        "event_date": null
-      },
-      {
-        "ticker": "TECH",
-        "stage": "compressão",
-        "published_at": "2026-10-28T02:14:50.526473+00:00",
-        "horizon_sessions": 20,
-        "base_maturity": "developing_28_to_84d",
-        "status": "pending",
-        "horizon_matured": false,
-        "observed_sessions": 11,
-        "event_date": null
-      },
-      {
-        "ticker": "ZBRA",
-        "stage": "compressão",
-        "published_at": "2026-10-28T02:14:50.526473+00:00",
-        "horizon_sessions": 5,
-        "base_maturity": "developing_28_to_84d",
-        "status": "not_confirmed",
-        "horizon_matured": true,
-        "observed_sessions": 5,
-        "event_date": null
-      },
-      {
-        "ticker": "ZBRA",
-        "stage": "compressão",
-        "published_at": "2026-10-28T02:14:50.526473+00:00",
-        "horizon_sessions": 10,
-        "base_maturity": "developing_28_to_84d",
-        "status": "not_confirmed",
-        "horizon_matured": true,
-        "observed_sessions": 10,
-        "event_date": null
-      },
-      {
-        "ticker": "ZBRA",
-        "stage": "compressão",
-        "published_at": "2026-10-28T02:14:50.526473+00:00",
-        "horizon_sessions": 20,
-        "base_maturity": "developing_28_to_84d",
-        "status": "pending",
-        "horizon_matured": false,
-        "observed_sessions": 11,
-        "event_date": null
-      },
-      {
         "ticker": "EZJ.L",
         "stage": "pré-breakout",
         "published_at": "2026-10-28T14:34:37.210735+00:00",
@@ -1222,9 +1235,9 @@
         "published_at": "2026-10-29T02:27:16.040681+00:00",
         "horizon_sessions": 5,
         "base_maturity": "developing_28_to_84d",
-        "status": "not_confirmed",
-        "horizon_matured": true,
-        "observed_sessions": 5,
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "adjusted_price_revision_without_verified_factor",
+        "observed_sessions": 0,
         "event_date": null
       },
       {
@@ -1233,9 +1246,9 @@
         "published_at": "2026-10-29T02:27:16.040681+00:00",
         "horizon_sessions": 10,
         "base_maturity": "developing_28_to_84d",
-        "status": "not_confirmed",
-        "horizon_matured": true,
-        "observed_sessions": 10,
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "adjusted_price_revision_without_verified_factor",
+        "observed_sessions": 0,
         "event_date": null
       },
       {
@@ -1244,9 +1257,9 @@
         "published_at": "2026-10-29T02:27:16.040681+00:00",
         "horizon_sessions": 20,
         "base_maturity": "developing_28_to_84d",
-        "status": "pending",
-        "horizon_matured": false,
-        "observed_sessions": 10,
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "adjusted_price_revision_without_verified_factor",
+        "observed_sessions": 0,
         "event_date": null
       },
       {
@@ -1285,9 +1298,9 @@
         "published_at": "2026-10-30T02:44:10.505700+00:00",
         "horizon_sessions": 5,
         "base_maturity": "developing_28_to_84d",
-        "status": "not_confirmed",
-        "horizon_matured": true,
-        "observed_sessions": 5,
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "adjusted_price_revision_without_verified_factor",
+        "observed_sessions": 0,
         "event_date": null
       },
       {
@@ -1296,9 +1309,9 @@
         "published_at": "2026-10-30T02:44:10.505700+00:00",
         "horizon_sessions": 10,
         "base_maturity": "developing_28_to_84d",
-        "status": "pending",
-        "horizon_matured": false,
-        "observed_sessions": 9,
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "adjusted_price_revision_without_verified_factor",
+        "observed_sessions": 0,
         "event_date": null
       },
       {
@@ -1307,9 +1320,9 @@
         "published_at": "2026-10-30T02:44:10.505700+00:00",
         "horizon_sessions": 20,
         "base_maturity": "developing_28_to_84d",
-        "status": "pending",
-        "horizon_matured": false,
-        "observed_sessions": 9,
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "adjusted_price_revision_without_verified_factor",
+        "observed_sessions": 0,
         "event_date": null
       },
       {
@@ -1339,6 +1352,36 @@
         "horizon_sessions": 20,
         "base_maturity": "developing_28_to_84d",
         "status": "missing_ohlcv",
+        "observed_sessions": 0,
+        "event_date": null
+      },
+      {
+        "ticker": "A",
+        "stage": "compressão",
+        "published_at": "2026-11-14T02:49:50.404651+00:00",
+        "horizon_sessions": 5,
+        "base_maturity": "developing_28_to_84d",
+        "status": "pending",
+        "observed_sessions": 0,
+        "event_date": null
+      },
+      {
+        "ticker": "A",
+        "stage": "compressão",
+        "published_at": "2026-11-14T02:49:50.404651+00:00",
+        "horizon_sessions": 10,
+        "base_maturity": "developing_28_to_84d",
+        "status": "pending",
+        "observed_sessions": 0,
+        "event_date": null
+      },
+      {
+        "ticker": "A",
+        "stage": "compressão",
+        "published_at": "2026-11-14T02:49:50.404651+00:00",
+        "horizon_sessions": 20,
+        "base_maturity": "developing_28_to_84d",
+        "status": "pending",
         "observed_sessions": 0,
         "event_date": null
       }
@@ -1347,33 +1390,33 @@
   "evaluation_method": "adjusted_daily_close_after_publication",
   "cohort_policy": "first_immutable_publication_per_ticker_stage_and_verified_base_start",
   "historical_only": true,
-  "cohort_count": 32,
+  "cohort_count": 33,
   "anchor_provenance_audit": {
-    "verifiable_archived_price_basis": 12,
+    "verifiable_archived_price_basis": 13,
     "legacy_missing_or_unverified_price_basis": 20,
     "potentially_verifiable_by_horizon": {
       "5": {
-        "eligible_anchor_cohorts": 12,
-        "pending": 0,
-        "evaluated": 9,
+        "eligible_anchor_cohorts": 13,
+        "pending": 1,
+        "evaluated": 4,
         "not_a_probability": true
       },
       "10": {
-        "eligible_anchor_cohorts": 12,
+        "eligible_anchor_cohorts": 13,
         "pending": 1,
-        "evaluated": 8,
+        "evaluated": 4,
         "not_a_probability": true
       },
       "20": {
-        "eligible_anchor_cohorts": 12,
-        "pending": 8,
+        "eligible_anchor_cohorts": 13,
+        "pending": 4,
         "evaluated": 1,
         "not_a_probability": true
       }
     }
   },
   "base_identity_coverage": {
-    "anchored": 12,
+    "anchored": 13,
     "legacy_unanchored": 20
   },
   "base_maturity_evidence": {
@@ -1432,17 +1475,17 @@
         }
       },
       "developing_28_to_84d": {
-        "cohorts": 12,
+        "cohorts": 13,
         "by_horizon": {
           "5": {
             "confirmed": 1,
-            "not_confirmed": 8,
-            "pending_or_unverified": 3,
+            "not_confirmed": 3,
+            "pending_or_unverified": 9,
             "matured_confirmed": 1,
-            "evaluable": 9,
+            "evaluable": 4,
             "breakout_probability": null,
-            "matured_evaluable": 9,
-            "matured_coverage": 0.75,
+            "matured_evaluable": 4,
+            "matured_coverage": 0.3077,
             "observed_breakout_fraction": null,
             "wilson_95_descriptive": null,
             "evidence_ready": false,
@@ -1451,13 +1494,13 @@
           },
           "10": {
             "confirmed": 1,
-            "not_confirmed": 7,
-            "pending_or_unverified": 4,
+            "not_confirmed": 3,
+            "pending_or_unverified": 9,
             "matured_confirmed": 1,
-            "evaluable": 8,
+            "evaluable": 4,
             "breakout_probability": null,
-            "matured_evaluable": 8,
-            "matured_coverage": 0.6667,
+            "matured_evaluable": 4,
+            "matured_coverage": 0.3077,
             "observed_breakout_fraction": null,
             "wilson_95_descriptive": null,
             "evidence_ready": false,
@@ -1467,7 +1510,7 @@
           "20": {
             "confirmed": 1,
             "not_confirmed": 0,
-            "pending_or_unverified": 11,
+            "pending_or_unverified": 12,
             "evaluable": 1,
             "breakout_probability": null,
             "matured_evaluable": 0,
@@ -1491,39 +1534,39 @@
         "cohorts": 21,
         "by_horizon": {
           "5": {
-            "evaluable": 13,
-            "positive_net_excess": 6,
-            "missing": 8
+            "evaluable": 14,
+            "positive_net_excess": 7,
+            "missing": 7
           },
           "10": {
-            "evaluable": 11,
-            "positive_net_excess": 7,
-            "missing": 10
+            "evaluable": 13,
+            "positive_net_excess": 8,
+            "missing": 8
           },
           "20": {
-            "evaluable": 0,
-            "positive_net_excess": 0,
-            "missing": 21
+            "evaluable": 3,
+            "positive_net_excess": 3,
+            "missing": 18
           }
         }
       },
       "nonpositive_spy_20d": {
-        "cohorts": 11,
+        "cohorts": 12,
         "by_horizon": {
           "5": {
-            "evaluable": 9,
+            "evaluable": 11,
             "positive_net_excess": 5,
-            "missing": 2
+            "missing": 1
           },
           "10": {
-            "evaluable": 9,
+            "evaluable": 11,
             "positive_net_excess": 5,
-            "missing": 2
+            "missing": 1
           },
           "20": {
             "evaluable": 0,
             "positive_net_excess": 0,
-            "missing": 11
+            "missing": 12
           }
         }
       },
@@ -1572,12 +1615,12 @@
     "statistically_validated": false,
     "groups": {
       "passed_strict": {
-        "cohorts": 6,
+        "cohorts": 7,
         "by_horizon": {
           "5": {
             "confirmed_matured": 1,
-            "not_confirmed_matured": 2,
-            "unverified_or_pending": 3,
+            "not_confirmed_matured": 1,
+            "unverified_or_pending": 5,
             "durability": {
               "3": {
                 "observed": 1,
@@ -1649,17 +1692,17 @@
                 "payoff_probability_calibrated": false
               }
             },
-            "matured_evaluable": 3,
-            "matured_coverage": 0.5,
-            "observed_breakout_fraction": 0.3333,
+            "matured_evaluable": 2,
+            "matured_coverage": 0.2857,
+            "observed_breakout_fraction": 0.5,
             "observed_fraction_is_probability": false,
             "minimum_evidence_met": false,
             "selection_effect_validated": false
           },
           "10": {
             "confirmed_matured": 1,
-            "not_confirmed_matured": 2,
-            "unverified_or_pending": 3,
+            "not_confirmed_matured": 1,
+            "unverified_or_pending": 5,
             "durability": {
               "3": {
                 "observed": 1,
@@ -1731,9 +1774,9 @@
                 "payoff_probability_calibrated": false
               }
             },
-            "matured_evaluable": 3,
-            "matured_coverage": 0.5,
-            "observed_breakout_fraction": 0.3333,
+            "matured_evaluable": 2,
+            "matured_coverage": 0.2857,
+            "observed_breakout_fraction": 0.5,
             "observed_fraction_is_probability": false,
             "minimum_evidence_met": false,
             "selection_effect_validated": false
@@ -1741,7 +1784,7 @@
           "20": {
             "confirmed_matured": 0,
             "not_confirmed_matured": 0,
-            "unverified_or_pending": 6,
+            "unverified_or_pending": 7,
             "durability": {
               "3": {
                 "observed": 0,
@@ -1936,25 +1979,25 @@
                 "payoff_probability_calibrated": false
               },
               "5": {
-                "observed": 0,
-                "held_pivot": 0,
+                "observed": 1,
+                "held_pivot": 1,
                 "lost_pivot": 0,
-                "pending_or_unverified": 1,
-                "positive": 0,
+                "pending_or_unverified": 0,
+                "positive": 1,
                 "nonpositive": 0,
-                "held_positive": 0,
+                "held_positive": 1,
                 "held_nonpositive": 0,
                 "lost_positive": 0,
                 "lost_nonpositive": 0,
-                "return_evaluable": 0,
-                "joint_outcome_evaluable": 0,
+                "return_evaluable": 1,
+                "joint_outcome_evaluable": 1,
                 "joint_outcome_missing_return": 0,
-                "joint_outcome_coverage": null,
+                "joint_outcome_coverage": 1.0,
                 "joint_outcome_counts_consistent": true,
-                "joint_outcome_fraction_descriptive": null,
+                "joint_outcome_fraction_descriptive": 1.0,
                 "joint_outcome_fraction_is_probability": false,
                 "joint_outcome_definition": "pivot_state_at_window_x_positive_end_return_from_breakout",
-                "mean_end_return_from_breakout": null,
+                "mean_end_return_from_breakout": 0.015511,
                 "gain_loss_ratio_descriptive": null,
                 "payoff_probability_calibrated": false
               },
@@ -2117,12 +2160,12 @@
           }
         },
         "research_rejected": {
-          "cohorts": 2,
+          "cohorts": 3,
           "by_horizon": {
             "5": {
               "confirmed_matured": 0,
               "not_confirmed_matured": 0,
-              "unverified_or_pending": 2,
+              "unverified_or_pending": 3,
               "matured_evaluable": 0,
               "observed_breakout_fraction_descriptive": null,
               "matured_coverage": 0.0,
@@ -2132,7 +2175,7 @@
             "10": {
               "confirmed_matured": 0,
               "not_confirmed_matured": 0,
-              "unverified_or_pending": 2,
+              "unverified_or_pending": 3,
               "matured_evaluable": 0,
               "observed_breakout_fraction_descriptive": null,
               "matured_coverage": 0.0,
@@ -2142,7 +2185,7 @@
             "20": {
               "confirmed_matured": 0,
               "not_confirmed_matured": 0,
-              "unverified_or_pending": 2,
+              "unverified_or_pending": 3,
               "matured_evaluable": 0,
               "observed_breakout_fraction_descriptive": null,
               "matured_coverage": 0.0,
@@ -2156,21 +2199,21 @@
           "by_horizon": {
             "5": {
               "confirmed_matured": 1,
-              "not_confirmed_matured": 3,
-              "unverified_or_pending": 0,
-              "matured_evaluable": 4,
-              "observed_breakout_fraction_descriptive": 0.25,
-              "matured_coverage": 1.0,
+              "not_confirmed_matured": 2,
+              "unverified_or_pending": 1,
+              "matured_evaluable": 3,
+              "observed_breakout_fraction_descriptive": 0.3333,
+              "matured_coverage": 0.75,
               "minimum_evidence_met": false,
               "probability_calibrated": false
             },
             "10": {
               "confirmed_matured": 2,
-              "not_confirmed_matured": 2,
-              "unverified_or_pending": 0,
-              "matured_evaluable": 4,
-              "observed_breakout_fraction_descriptive": 0.5,
-              "matured_coverage": 1.0,
+              "not_confirmed_matured": 1,
+              "unverified_or_pending": 1,
+              "matured_evaluable": 3,
+              "observed_breakout_fraction_descriptive": 0.6667,
+              "matured_coverage": 0.75,
               "minimum_evidence_met": false,
               "probability_calibrated": false
             },
@@ -2191,11 +2234,11 @@
   },
   "daily_focus_forward_evidence": {
     "method": "first_archived_qualified_daily_focus_asof",
-    "archive_days": 25,
+    "archive_days": 26,
     "days_with_verifiable_daily_pick": 5,
-    "days_without_verifiable_daily_pick": 20,
+    "days_without_verifiable_daily_pick": 21,
     "days_with_archived_candidate_publication": 5,
-    "days_with_explicit_abstention_only": 12,
+    "days_with_explicit_abstention_only": 13,
     "days_with_invalid_or_missing_focus_publication": 8,
     "days_with_candidate_but_no_verifiable_pick": 0,
     "historical_only": true,
@@ -2204,22 +2247,22 @@
       "5": {
         "selected": 5,
         "matured_confirmed": 0,
-        "matured_not_confirmed": 1,
-        "pending_or_unverifiable": 4,
-        "evaluable": 1,
-        "matured_coverage": 0.2,
-        "observed_confirmation_fraction": 0.0,
+        "matured_not_confirmed": 0,
+        "pending_or_unverifiable": 5,
+        "evaluable": 0,
+        "matured_coverage": 0.0,
+        "observed_confirmation_fraction": null,
         "minimum_sample_met": false,
         "calibrated_probability": null
       },
       "10": {
         "selected": 5,
         "matured_confirmed": 0,
-        "matured_not_confirmed": 1,
-        "pending_or_unverifiable": 4,
-        "evaluable": 1,
-        "matured_coverage": 0.2,
-        "observed_confirmation_fraction": 0.0,
+        "matured_not_confirmed": 0,
+        "pending_or_unverifiable": 5,
+        "evaluable": 0,
+        "matured_coverage": 0.0,
+        "observed_confirmation_fraction": null,
         "minimum_sample_met": false,
         "calibrated_probability": null
       },
@@ -2519,8 +2562,8 @@
         "by_horizon": {
           "5": {
             "matured_confirmed": 0,
-            "matured_not_confirmed": 1,
-            "pending_or_unverifiable": 2,
+            "matured_not_confirmed": 0,
+            "pending_or_unverifiable": 3,
             "post_confirmation_payoff": {
               "3": {
                 "confirmed": 0,
@@ -2603,15 +2646,15 @@
                 "cost_scenario_round_trip_fraction": 0.002
               }
             },
-            "evaluable": 1,
-            "matured_coverage": 0.3333,
-            "observed_confirmation_fraction": 0.0,
+            "evaluable": 0,
+            "matured_coverage": 0.0,
+            "observed_confirmation_fraction": null,
             "calibrated_probability": null
           },
           "10": {
             "matured_confirmed": 0,
-            "matured_not_confirmed": 1,
-            "pending_or_unverifiable": 2,
+            "matured_not_confirmed": 0,
+            "pending_or_unverifiable": 3,
             "post_confirmation_payoff": {
               "3": {
                 "confirmed": 0,
@@ -2694,9 +2737,9 @@
                 "cost_scenario_round_trip_fraction": 0.002
               }
             },
-            "evaluable": 1,
-            "matured_coverage": 0.3333,
-            "observed_confirmation_fraction": 0.0,
+            "evaluable": 0,
+            "matured_coverage": 0.0,
+            "observed_confirmation_fraction": null,
             "calibrated_probability": null
           },
           "20": {
@@ -3940,7 +3983,7 @@
         "stage": "compressão",
         "published_at": "2026-10-26T15:08:23.908867+00:00",
         "horizon_sessions": 5,
-        "outcome": "not_confirmed",
+        "outcome": "pending_or_unverified",
         "joint_durability_outcomes": {
           "3": "pending_or_unverified",
           "5": "pending_or_unverified",
@@ -3958,7 +4001,7 @@
         "stage": "compressão",
         "published_at": "2026-10-26T15:08:23.908867+00:00",
         "horizon_sessions": 10,
-        "outcome": "not_confirmed",
+        "outcome": "pending_or_unverified",
         "joint_durability_outcomes": {
           "3": "pending_or_unverified",
           "5": "pending_or_unverified",
@@ -4048,7 +4091,7 @@
         "stage": "compressão",
         "published_at": "2026-10-27T08:11:53.284392+00:00",
         "horizon_sessions": 5,
-        "outcome": "not_confirmed",
+        "outcome": "pending_or_unverified",
         "joint_durability_outcomes": {
           "3": "pending_or_unverified",
           "5": "pending_or_unverified",
@@ -4066,7 +4109,7 @@
         "stage": "compressão",
         "published_at": "2026-10-27T08:11:53.284392+00:00",
         "horizon_sessions": 10,
-        "outcome": "not_confirmed",
+        "outcome": "pending_or_unverified",
         "joint_durability_outcomes": {
           "3": "pending_or_unverified",
           "5": "pending_or_unverified",
@@ -4156,7 +4199,7 @@
         "stage": "compressão",
         "published_at": "2026-10-28T02:14:50.526473+00:00",
         "horizon_sessions": 5,
-        "outcome": "not_confirmed",
+        "outcome": "pending_or_unverified",
         "joint_durability_outcomes": {
           "3": "pending_or_unverified",
           "5": "pending_or_unverified",
@@ -4174,7 +4217,7 @@
         "stage": "compressão",
         "published_at": "2026-10-28T02:14:50.526473+00:00",
         "horizon_sessions": 10,
-        "outcome": "not_confirmed",
+        "outcome": "pending_or_unverified",
         "joint_durability_outcomes": {
           "3": "pending_or_unverified",
           "5": "pending_or_unverified",
@@ -4318,7 +4361,7 @@
         "stage": "compressão",
         "published_at": "2026-10-29T02:27:16.040681+00:00",
         "horizon_sessions": 5,
-        "outcome": "not_confirmed",
+        "outcome": "pending_or_unverified",
         "joint_durability_outcomes": {
           "3": "pending_or_unverified",
           "5": "pending_or_unverified",
@@ -4336,7 +4379,7 @@
         "stage": "compressão",
         "published_at": "2026-10-29T02:27:16.040681+00:00",
         "horizon_sessions": 10,
-        "outcome": "not_confirmed",
+        "outcome": "pending_or_unverified",
         "joint_durability_outcomes": {
           "3": "pending_or_unverified",
           "5": "pending_or_unverified",
@@ -4426,7 +4469,7 @@
         "stage": "compressão",
         "published_at": "2026-10-30T02:44:10.505700+00:00",
         "horizon_sessions": 5,
-        "outcome": "not_confirmed",
+        "outcome": "pending_or_unverified",
         "joint_durability_outcomes": {
           "3": "pending_or_unverified",
           "5": "pending_or_unverified",
@@ -4515,6 +4558,60 @@
         "ticker": "EZJ.L",
         "stage": "compressão",
         "published_at": "2026-10-30T09:07:45.102218+00:00",
+        "horizon_sessions": 20,
+        "outcome": "pending_or_unverified",
+        "joint_durability_outcomes": {
+          "3": "pending_or_unverified",
+          "5": "pending_or_unverified",
+          "10": "pending_or_unverified",
+          "20": "pending_or_unverified"
+        },
+        "features": {},
+        "feature_missing": [
+          "stock_minimum_21_prior_bars"
+        ],
+        "features_point_in_time_verified": false
+      },
+      {
+        "ticker": "A",
+        "stage": "compressão",
+        "published_at": "2026-11-14T02:49:50.404651+00:00",
+        "horizon_sessions": 5,
+        "outcome": "pending_or_unverified",
+        "joint_durability_outcomes": {
+          "3": "pending_or_unverified",
+          "5": "pending_or_unverified",
+          "10": "pending_or_unverified",
+          "20": "pending_or_unverified"
+        },
+        "features": {},
+        "feature_missing": [
+          "stock_minimum_21_prior_bars"
+        ],
+        "features_point_in_time_verified": false
+      },
+      {
+        "ticker": "A",
+        "stage": "compressão",
+        "published_at": "2026-11-14T02:49:50.404651+00:00",
+        "horizon_sessions": 10,
+        "outcome": "pending_or_unverified",
+        "joint_durability_outcomes": {
+          "3": "pending_or_unverified",
+          "5": "pending_or_unverified",
+          "10": "pending_or_unverified",
+          "20": "pending_or_unverified"
+        },
+        "features": {},
+        "feature_missing": [
+          "stock_minimum_21_prior_bars"
+        ],
+        "features_point_in_time_verified": false
+      },
+      {
+        "ticker": "A",
+        "stage": "compressão",
+        "published_at": "2026-11-14T02:49:50.404651+00:00",
         "horizon_sessions": 20,
         "outcome": "pending_or_unverified",
         "joint_durability_outcomes": {
@@ -4538,33 +4635,33 @@
     "stages": {
       "compressão": {
         "5": {
-          "n": 20,
+          "n": 21,
           "n_missing": 5,
-          "n_observations": 25,
-          "coverage": 0.8,
+          "n_observations": 26,
+          "coverage": 0.8076923076923077,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "10": {
-          "n": 18,
-          "n_missing": 7,
-          "n_observations": 25,
-          "coverage": 0.72,
+          "n": 20,
+          "n_missing": 6,
+          "n_observations": 26,
+          "coverage": 0.7692307692307693,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "20": {
-          "n": 0,
-          "n_missing": 25,
-          "n_observations": 25,
-          "coverage": 0.0,
+          "n": 3,
+          "n_missing": 23,
+          "n_observations": 26,
+          "coverage": 0.11538461538461539,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "60": {
           "n": 0,
-          "n_missing": 25,
-          "n_observations": 25,
+          "n_missing": 26,
+          "n_observations": 26,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
@@ -4572,18 +4669,18 @@
       },
       "pré-breakout": {
         "5": {
-          "n": 2,
-          "n_missing": 4,
+          "n": 3,
+          "n_missing": 3,
           "n_observations": 6,
-          "coverage": 0.3333333333333333,
+          "coverage": 0.5,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "10": {
-          "n": 2,
-          "n_missing": 4,
+          "n": 3,
+          "n_missing": 3,
           "n_observations": 6,
-          "coverage": 0.3333333333333333,
+          "coverage": 0.5,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
@@ -4606,18 +4703,18 @@
       },
       "confirmado": {
         "5": {
-          "n": 0,
-          "n_missing": 1,
+          "n": 1,
+          "n_missing": 0,
           "n_observations": 1,
-          "coverage": 0.0,
+          "coverage": 1.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "10": {
-          "n": 0,
-          "n_missing": 1,
+          "n": 1,
+          "n_missing": 0,
           "n_observations": 1,
-          "coverage": 0.0,
+          "coverage": 1.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
@@ -4659,7 +4756,13 @@
           "excess_return": 0.013272303336456459,
           "max_adverse_excursion": -0.011529659738899856
         },
-        "20": null,
+        "20": {
+          "exit": "2026-11-13",
+          "return": 0.03808508163648572,
+          "spy_return": -0.011634464307648251,
+          "excess_return": 0.04971954594413397,
+          "max_adverse_excursion": -0.03365744402963844
+        },
         "60": null
       },
       "published_at": "2026-10-15T07:09:31.724375+00:00",
@@ -4684,7 +4787,13 @@
           "excess_return": -0.02873423133847597,
           "max_adverse_excursion": -0.03859997558593753
         },
-        "20": null,
+        "20": {
+          "exit": "2026-11-13",
+          "return": 0.0666400146484376,
+          "spy_return": -0.011634464307648251,
+          "excess_return": 0.07827447895608586,
+          "max_adverse_excursion": -0.03859997558593753
+        },
         "60": null
       },
       "published_at": "2026-10-15T07:09:31.724375+00:00",
@@ -4722,7 +4831,13 @@
           "excess_return": 0.03899666618683739,
           "max_adverse_excursion": -0.03411176041444053
         },
-        "20": null,
+        "20": {
+          "exit": "2026-11-13",
+          "return": -0.004675194519042414,
+          "spy_return": -0.011634464307648251,
+          "excess_return": 0.0069592697886058374,
+          "max_adverse_excursion": -0.03411176041444053
+        },
         "60": null
       },
       "published_at": "2026-10-15T07:09:31.724375+00:00",
@@ -4855,11 +4970,28 @@
     },
     {
       "ticker": "LOGN.SW",
-      "stage": "pré-breakout",
+      "entry": "2026-10-20",
+      "results": {
+        "5": {
+          "exit": "2026-10-27",
+          "return": 0.03349062278167292,
+          "spy_return": 0.0007931673639487435,
+          "excess_return": 0.032697455417724175,
+          "max_adverse_excursion": 0.0
+        },
+        "10": {
+          "exit": "2026-11-03",
+          "return": -0.1418296501513746,
+          "spy_return": -0.01911450808187065,
+          "excess_return": -0.12271514206950396,
+          "max_adverse_excursion": -0.1418296501513746
+        },
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-19T21:41:39.535321+00:00",
       "signal_date": "2026-10-16",
-      "entry": null,
-      "results": {}
+      "stage": "pré-breakout"
     },
     {
       "ticker": "TECH",
@@ -4867,17 +4999,17 @@
       "results": {
         "5": {
           "exit": "2026-10-27",
-          "return": 0.00027551174651319066,
+          "return": 0.0002754989656688078,
           "spy_return": 0.0007931673639487435,
-          "excess_return": -0.0005176556174355529,
-          "max_adverse_excursion": -0.00041332017828688006
+          "excess_return": -0.0005176683982799357,
+          "max_adverse_excursion": -0.0004133536811102845
         },
         "10": {
           "exit": "2026-11-03",
-          "return": 0.001102257220121139,
+          "return": 0.0011022063278891547,
           "spy_return": -0.01911450808187065,
-          "excess_return": 0.02021676530199179,
-          "max_adverse_excursion": -0.00041332017828688006
+          "excess_return": 0.020216714409759806,
+          "max_adverse_excursion": -0.0004133536811102845
         },
         "20": null,
         "60": null
@@ -4888,11 +5020,28 @@
     },
     {
       "ticker": "LOGN.SW",
-      "stage": "compressão",
+      "entry": "2026-10-21",
+      "results": {
+        "5": {
+          "exit": "2026-10-28",
+          "return": -0.09310045965329283,
+          "spy_return": -0.001008976018029517,
+          "excess_return": -0.09209148363526332,
+          "max_adverse_excursion": -0.09310045965329283
+        },
+        "10": {
+          "exit": "2026-11-04",
+          "return": -0.0820434055510677,
+          "spy_return": -0.008123283290070282,
+          "excess_return": -0.07392012226099742,
+          "max_adverse_excursion": -0.15568334200540035
+        },
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-20T14:26:56.947259+00:00",
       "signal_date": "2026-10-19",
-      "entry": null,
-      "results": {}
+      "stage": "compressão"
     },
     {
       "ticker": "CVE",
@@ -4921,11 +5070,28 @@
     },
     {
       "ticker": "LOGN.SW",
-      "stage": "confirmado",
+      "entry": "2026-10-22",
+      "results": {
+        "5": {
+          "exit": "2026-10-29",
+          "return": -0.09327108732175204,
+          "spy_return": 0.007068384763070146,
+          "excess_return": -0.10033947208482219,
+          "max_adverse_excursion": -0.09327108732175204
+        },
+        "10": {
+          "exit": "2026-11-05",
+          "return": -0.10837213825689929,
+          "spy_return": -0.04052570956882395,
+          "excess_return": -0.06784642868807533,
+          "max_adverse_excursion": -0.15212077858795037
+        },
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-21T08:49:24.729306+00:00",
       "signal_date": "2026-10-20",
-      "entry": null,
-      "results": {}
+      "stage": "confirmado"
     },
     {
       "ticker": "ZBRA",
@@ -5058,16 +5224,16 @@
       "results": {
         "5": {
           "exit": "2026-11-03",
-          "return": 0.0008265177582569283,
+          "return": 0.0008264796679269271,
           "spy_return": -0.019891897841644357,
-          "excess_return": 0.020718415599901285,
+          "excess_return": 0.020718377509571284,
           "max_adverse_excursion": 0.0
         },
         "10": {
           "exit": "2026-11-10",
-          "return": 0.0030303199080856658,
+          "return": 0.0030302851775669826,
           "spy_return": -0.025647676796449526,
-          "excess_return": 0.02867799670453519,
+          "excess_return": 0.028677961974016508,
           "max_adverse_excursion": 0.0
         },
         "20": null,
@@ -5108,17 +5274,17 @@
       "results": {
         "5": {
           "exit": "2026-11-04",
-          "return": 0.000550294596008305,
+          "return": 0.0005502691979539787,
           "spy_return": -0.007121492687374831,
-          "excess_return": 0.007671787283383136,
-          "max_adverse_excursion": -0.0004126947075157039
+          "excess_return": 0.007671761885328809,
+          "max_adverse_excursion": -0.0004127281668060423
         },
         "10": {
           "exit": "2026-11-11",
-          "return": 0.001513283899532647,
+          "return": 0.0015132665627139996,
           "spy_return": -0.016185210653124615,
-          "excess_return": 0.017698494552657262,
-          "max_adverse_excursion": -0.0004126947075157039
+          "excess_return": 0.017698477215838615,
+          "max_adverse_excursion": -0.0004127281668060423
         },
         "20": null,
         "60": null
@@ -5158,17 +5324,17 @@
       "results": {
         "5": {
           "exit": "2026-11-05",
-          "return": -0.000687600371239161,
+          "return": -0.0006876210768780311,
           "spy_return": -0.04726004216991819,
-          "excess_return": 0.04657244179867903,
-          "max_adverse_excursion": -0.000687600371239161
+          "excess_return": 0.04657242109304016,
+          "max_adverse_excursion": -0.0006876210768780311
         },
         "10": {
           "exit": "2026-11-12",
-          "return": 0.0017878868801379788,
+          "return": 0.0017878568176694642,
           "spy_return": -0.015909314842754485,
-          "excess_return": 0.017697201722892464,
-          "max_adverse_excursion": -0.000687600371239161
+          "excess_return": 0.01769717166042395,
+          "max_adverse_excursion": -0.0006876210768780311
         },
         "20": null,
         "60": null
@@ -5216,12 +5382,18 @@
       "results": {
         "5": {
           "exit": "2026-11-06",
-          "return": 0.0016514603790209748,
+          "return": 0.0016514892099761536,
           "spy_return": -0.027033813406800777,
-          "excess_return": 0.028685273785821752,
+          "excess_return": 0.02868530261677693,
           "max_adverse_excursion": 0.0
         },
-        "10": null,
+        "10": {
+          "exit": "2026-11-13",
+          "return": 0.0030284134771443316,
+          "spy_return": -0.0017863436699727675,
+          "excess_return": 0.004814757147117099,
+          "max_adverse_excursion": 0.0
+        },
         "20": null,
         "60": null
       },
@@ -5243,10 +5415,10 @@
       "results": {
         "5": {
           "exit": "2026-11-09",
-          "return": 0.002201784314586064,
+          "return": 0.0022017877688476073,
           "spy_return": 0.0007845058830231455,
-          "excess_return": 0.0014172784315629183,
-          "max_adverse_excursion": -0.000137532779520666
+          "excess_return": 0.0014172818858244618,
+          "max_adverse_excursion": -0.00013757889108889643
         },
         "10": null,
         "20": null,
@@ -5263,18 +5435,25 @@
       "signal_date": "2026-10-29",
       "entry": null,
       "results": {}
+    },
+    {
+      "ticker": "A",
+      "entry": null,
+      "results": {},
+      "published_at": "2026-11-14T02:49:50.404651+00:00",
+      "signal_date": "2026-11-13",
+      "stage": "compressão"
     }
   ],
   "price_metadata": {
     "provider": "yahoo_finance",
     "auto_adjust": true,
-    "completed_before_utc_date": "2026-11-13",
+    "completed_before_utc_date": "2026-11-14",
     "benchmark": "SPY",
-    "downloaded": 13,
-    "complete_ohlcv": 13,
+    "downloaded": 15,
+    "complete_ohlcv": 15,
     "failed": {
       "EZJ.L": "ValueError",
-      "LOGN.SW": "ValueError",
       "OMV.DE": "ValueError",
       "WPP.L": "ValueError"
     },
