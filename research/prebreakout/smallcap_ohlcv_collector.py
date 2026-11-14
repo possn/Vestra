@@ -71,6 +71,33 @@ def independent_geometry_audit(observations):
             "liquid_evaluable_rows":len(eligible),"geometry_diagnosed_rows":len(observed),
             **counts,"not_eligibility_or_success_probability":True}
 
+def cohort_churn_audit(current,previous,observations):
+    """Reconcile exact small-cap universe membership across canonical slots.
+
+    The old report's fingerprint alone cannot establish which names entered or
+    exited. Never infer cohort turnover from changes in the denominator.
+    """
+    now=current.get("universe_tickers")
+    before=previous.get("universe_tickers") if isinstance(previous,dict) else None
+    if not isinstance(now,list) or not isinstance(before,list):
+        return {"status":"previous_exact_membership_unavailable",
+                "added":None,"removed":None,"retained":None,
+                "not_market_cap_point_in_time_history":True}
+    now_set=set(now);before_set=set(before)
+    if len(now_set)!=len(now) or len(before_set)!=len(before):
+        raise ValueError("smallcap cohort roster contains duplicate tickers")
+    added=now_set-before_set
+    retained=now_set&before_set
+    evaluable={str(row.get("ticker") or "").upper() for row in observations
+               if row.get("status")=="evaluable_ohlcv"}
+    return {"status":"exact_roster_compared","added":len(added),
+            "removed":len(before_set-now_set),"retained":len(retained),
+            "newly_added_evaluable":len(added&evaluable),
+            "retained_evaluable":len(retained&evaluable),
+            "newly_added_unobserved":len(added-{str(row.get("ticker") or "").upper()
+                                                for row in observations}),
+            "not_market_cap_point_in_time_history":True}
+
 def inspect(ticker,frame,currency,checked_at):
     if currency!="USD":
         return {"ticker":ticker,"status":"currency_not_verified_usd","currency":currency}
@@ -232,7 +259,8 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
     return {"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
             "status":"observed_research_only_not_breakout_signals",
             "generated_at":checked_at.isoformat(),"source":"yfinance",
-            "universe_100m_500m_count":len(names),"universe_tickers_sha256":cohort_sha256,"slot":slot,"budget":budget,
+            "universe_100m_500m_count":len(names),"universe_tickers_sha256":cohort_sha256,
+            "universe_tickers":names,"slot":slot,"budget":budget,
             "provider_tickers_attempted":len(observed),
             "provider_attempt_status_counts":attempt_status_counts,
             "provider_error_type_counts":provider_error_type_counts,
@@ -240,6 +268,7 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
             "technical_first_rejection_counts":technical_rejections,
             "technical_structure_audit":technical_structure_audit(observed),
             "independent_geometry_audit":independent_geometry_audit(observed),
+            "cohort_churn_audit":cohort_churn_audit({"universe_tickers":names},previous,observed),
             "not_observed":len(names)-len(observed),
             "universe_coverage_pct":round(100*evaluable/len(names),2) if names else None,
             "point_in_time_caveat":"market_caps_from_current_index_not_historical_asof_snapshots",
@@ -314,6 +343,7 @@ def merge_slots(current, previous, now, ttl_hours=96, *, eligible_tickers=None):
             "technical_first_rejection_counts":technical_rejections,
             "technical_structure_audit":technical_structure_audit(all_rows),
             "independent_geometry_audit":independent_geometry_audit(all_rows),
+            "cohort_churn_audit":cohort_churn_audit(current,previous,all_rows),
             "not_observed":max(0,count-len(all_rows)),
             "universe_coverage_pct":round(100*evaluable/count,2) if count else None,
             "validated_prebreakout_setups":len(signals),
