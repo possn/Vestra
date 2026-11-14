@@ -290,7 +290,11 @@ def assess(row: dict) -> dict:
         "low52_score": round(opportunity, 1),
         "low52_resilience_score": round(_clamp(resilience), 1),
         "low52_deterioration_penalty": round(deterioration, 1),
-        "low52_above_low_pct": round(pos["above_low_pct"], 2),
+        # Avoid a spurious negative zero when Yahoo's observed close carries
+        # float32 precision but the current quote is rounded to cents.
+        # Materially negative moves below an old observed minimum stay negative.
+        "low52_above_low_pct": (0.0 if round(pos["above_low_pct"], 2) == 0
+                                else round(pos["above_low_pct"], 2)),
         "low52_drawdown_from_high_pct": round(pos["drawdown_from_high_pct"], 2),
         "low52_range_position_pct": round(pos["range_position_pct"], 1),
         "low52_price_low": round(pos["low"], 6),
