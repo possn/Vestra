@@ -28,6 +28,22 @@ vm.runInContext(source, context);
 const api = context.window.VestraMarketOpportunities;
 assert(api, 'Opportunity API should be exposed');
 
+{
+  const near={earningsRiskGate:{status:'near_term',next_date:'2026-11-23',
+                               method:'conservative_17_calendar_day_proxy'}};
+  assert.match(api.earningsRiskText(near), /Risco de resultados próximos/);
+  assert.match(api.earningsRiskText(near), /2026-11-23/);
+  assert.match(api.earningsRiskText(near), /confirmar calendário/);
+  assert.match(api.earningsRiskText({earningsRiskGate:{status:'unknown'}}), /não verificado/);
+  assert.match(api.earningsRiskText({earningsRiskGate:'unknown'}), /não verificado/);
+  assert.match(api.earningsRiskText({earningsRiskGate:{status:'dated_beyond_buffer'}}),
+               /fora da janela conservadora/);
+  assert(!api.earningsRiskText({earningsRiskGate:{status:'unknown'}}).includes('sem risco'),
+         'Missing earnings evidence cannot be shown as a clear risk gate');
+  assert(source.includes('${esc(earningsRiskText(setup))}'),
+         'Published pre-breakout row must display the evidence-backed earnings risk');
+}
+
 function candidate(ticker, score, sector, industry) {
   return {
     ticker,
