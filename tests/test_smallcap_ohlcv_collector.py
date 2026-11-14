@@ -30,6 +30,27 @@ class Provider:
         return FakeFrame()
 
 class ResearchCollectorTests(unittest.TestCase):
+    def test_universe_churn_requires_exact_prior_roster_not_only_hash(self):
+        current={"universe_tickers":["A","B","C"]}
+        prior={"universe_tickers_sha256":"hash_only","universe_100m_500m_count":2}
+        unavailable=mod.cohort_churn_audit(current,prior,[])
+        self.assertEqual(unavailable["status"],"previous_exact_membership_unavailable")
+        self.assertIsNone(unavailable["added"])
+        self.assertIsNone(unavailable["removed"])
+
+    def test_cohort_turnover_and_current_observation_reconcile(self):
+        current={"universe_tickers":["A","B","C","D"]}
+        prior={"universe_tickers":["A","C","X"]}
+        rows=[{"ticker":"A","status":"evaluable_ohlcv"},
+              {"ticker":"B","status":"no_ohlcv"},
+              {"ticker":"C","status":"evaluable_ohlcv"}]
+        audit=mod.cohort_churn_audit(current,prior,rows)
+        self.assertEqual(audit,{"status":"exact_roster_compared",
+            "added":2,"removed":1,"retained":2,"newly_added_evaluable":0,
+            "retained_evaluable":2,"newly_added_unobserved":1,
+            "not_market_cap_point_in_time_history":True})
+        self.assertEqual(audit["added"]+audit["retained"],len(current["universe_tickers"]))
+
     def test_geometry_shadow_counts_ma_rejected_without_promoting_setups(self):
         rows=[{"status":"evaluable_ohlcv","technical_first_rejection":"moving_average_structure",
                "technical_geometry_shadow":{"base_width_pass":True,"contractions_pass":True,
