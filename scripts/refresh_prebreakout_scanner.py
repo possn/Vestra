@@ -543,6 +543,27 @@ def trim_leading_provider_padding(bars):
         first += 1
     return bars[first:], first
 
+def trim_trailing_provider_padding(bars):
+    """Remove only fully null terminal dates from batch outer-join alignment.
+
+    Requires a preceding observed OHLCV bar. Missing interior/partial bars
+    remain fatal; subsequent strict age and session checks still apply.
+    """
+    last=len(bars)
+    while last>0:
+        bar=bars[last-1]
+        if not isinstance(bar,dict) or not isinstance(bar.get("date"),str):
+            break
+        try: date.fromisoformat(bar["date"][:10])
+        except ValueError: break
+        if not all(key in bar and bar[key] is None
+                   for key in ("close","high","low","volume")):
+            break
+        last-=1
+    # Do not manufacture a valid empty history from provider-wide failure.
+    if last==0:return bars,0
+    return bars[:last],len(bars)-last
+
 
 def interior_all_null_gap_diagnostic(bars):
     """Describe fully absent interior OHLCV dates without changing price evidence.
@@ -882,6 +903,7 @@ def main():
                             "both_pass":0,"ma_rejected_both_pass":0}
     missing_close_locations={};missing_close_patterns={}
     padding_rows_trimmed=0;tickers_with_padding_trimmed=0
+    trailing_rows_trimmed=0;tickers_with_trailing_trimmed=0
     interior_null_gap_totals={key:0 for key in interior_all_null_gap_diagnostic([])}
     tickers_with_interior_null_gaps=0
     remaining_interior_gap_totals={key:0 for key in interior_all_null_gap_diagnostic([])}
@@ -918,6 +940,7 @@ def main():
                 # Only batch-alignment padding before the first observed bar
                 # can be removed. Gaps inside actual trading history remain fatal.
                 bars,trimmed=trim_leading_provider_padding(bars)
+                bars,trailing_trimmed=trim_trailing_provider_padding(bars)
                 gap_profile=interior_all_null_gap_diagnostic(bars)
                 if gap_profile["gap_runs"] and recovery_attempted<recovery_budget:
                     recovery_attempted+=1
@@ -927,6 +950,7 @@ def main():
                         independent_frame=single_ticker_ohlcv_frame(independent,ticker)
                         replacement=completed_sessions(dataframe_bars(independent_frame),now.date())
                         replacement,_=trim_leading_provider_padding(replacement)
+                        replacement,_=trim_trailing_provider_padding(replacement)
                         verified=verified_standalone_recovery(bars,replacement,now.date(),audit=recovery_trace)
                     except (RuntimeError,ValueError,TypeError,KeyError) as exc:
                         verified=None
@@ -954,6 +978,8 @@ def main():
                         interior_null_gap_totals[key]+=value
                 padding_rows_trimmed+=trimmed
                 tickers_with_padding_trimmed+=int(trimmed>0)
+                trailing_rows_trimmed+=trailing_trimmed
+                tickers_with_trailing_trimmed+=int(trailing_trimmed>0)
                 checked+=bool(bars)
                 row_missing_ohlcv+=int(not bool(bars))
                 if evaluable_recheck(bars,now.date()):successful.append(ticker)
@@ -1035,9 +1061,11 @@ def main():
                  "structurally_passed":gate_exclusions.get("passed_structural_gates",0),
                  "currency_or_usd_liquidity_rejections_after_structural_pass":currency_rejected,
                  "missing_downloads_not_negative_evidence":True,"probability_or_forward_performance":None},
-             "provider_padding_audit":{"scope":"leading_all_four_ohlcv_null_only",
+             "provider_padding_audit":{"scope":"boundary_all_four_ohlcv_null_only",
                  "tickers_with_trimmed_prefix":tickers_with_padding_trimmed,
                  "null_prefix_rows_trimmed":padding_rows_trimmed,
+                 "tickers_with_trimmed_suffix":tickers_with_trailing_trimmed,
+                 "null_suffix_rows_trimmed":trailing_rows_trimmed,
                  "interior_or_partial_rows_never_trimmed":True,
                  "not_eligibility_or_performance":True},
              "standalone_gap_recovery_audit":{"method":"independent_single_ticker_ohlcv_with_exact_overlap_checks",

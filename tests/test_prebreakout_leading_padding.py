@@ -26,6 +26,42 @@ def empty(day):
 
 
 class LeadingPaddingTests(unittest.TestCase):
+    def test_full_null_batch_suffix_removed_without_imputing_prices(self):
+        observed=rows()
+        cleaned,dropped=scanner.trim_trailing_provider_padding(
+            [*observed,empty("2026-11-11"),empty("2026-11-12")])
+        self.assertEqual(dropped,2)
+        self.assertEqual(cleaned,observed)
+        audit={}
+        scanner.scan_bars("NO_PIVOT",cleaned,date(2026,11,12),audit=audit)
+        self.assertNotEqual(audit["first_rejection"],"invalid_ohlcv_or_date")
+
+    def test_interior_null_or_partial_suffix_remains_fatal(self):
+        observed=rows()
+        observed[80]=empty(observed[80]["date"])
+        cleaned,dropped=scanner.trim_trailing_provider_padding(
+            [*observed,empty("2026-11-11")])
+        self.assertEqual(dropped,1)
+        audit={}
+        scanner.scan_bars("GAP",cleaned,date(2026,11,12),audit=audit)
+        self.assertEqual(audit["first_rejection"],"invalid_ohlcv_or_date")
+        partial=empty("2026-11-11");partial["volume"]=1000
+        self.assertEqual(scanner.trim_trailing_provider_padding([*rows(),partial])[1],0)
+
+    def test_all_empty_or_invalid_trailing_dates_not_cleaned(self):
+        only_empty=[empty("2026-11-10"),empty("2026-11-11")]
+        self.assertEqual(scanner.trim_trailing_provider_padding(only_empty),(only_empty,0))
+        invalid=empty("bad-date")
+        self.assertEqual(scanner.trim_trailing_provider_padding([*rows(),invalid])[1],0)
+
+    def test_stale_history_stays_stale_after_suffix_removal(self):
+        older=rows()
+        cleaned,_=scanner.trim_trailing_provider_padding(
+            [*older,empty("2026-11-11")])
+        audit={}
+        scanner.scan_bars("STALE",cleaned,date(2026,12,1),audit=audit)
+        self.assertEqual(audit["first_rejection"],"stale_or_future_daily_session")
+
     def test_absent_prefix_dates_only_are_trimmed(self):
         observed = rows()
         raw = [empty("2025-01-01"), empty("2025-01-02"), *observed]
