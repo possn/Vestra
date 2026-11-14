@@ -369,6 +369,17 @@
     if(basis==='provider_reported_52week_extrema')return 'Extremo de 52 semanas comunicado pelo fornecedor';
     return 'Origem do mínimo não verificada';
   }
+  function earningsRiskText(setup){
+    const gate=setup?.earningsRiskGate;
+    const status=t(typeof gate==='string'?gate:gate?.status).toLowerCase();
+    if(status==='near_term'){
+      const date=t(gate?.next_date);
+      const dated=/^\d{4}-\d{2}-\d{2}$/.test(date)?` · data indicada ${date}`:'';
+      return `Risco de resultados próximos${dated} · janela conservadora, confirmar calendário`;
+    }
+    if(status==='dated_beyond_buffer')return 'Resultados fora da janela conservadora · confirmar calendário';
+    return 'Resultados: calendário não verificado';
+  }
   function coreCandidate(s,{scoreMin=54,coverageMin=50,confidenceMin=45,criticalMin=30}={}){
     const qt=t(s?.quote_type||s?.quoteType).toUpperCase();if(['ETF','FUND','CRYPTO','CRYPTOCURRENCY','MUTUALFUND'].includes(qt))return false;
     const sc=n(s?.score),cov=n(s?.data_coverage_pct),conf=n(s?.confidence_score),crit=n(s?.critical_metric_coverage_pct),rel=t(s?.score_reliability).toLowerCase(),risk=t(s?.risk_gate).toLowerCase();
@@ -654,7 +665,7 @@
     if(lens==='breakout'||lens==='smallcap_breakout'){
       const setup=breakoutSetup(s,lens);if(!setup)return '';
       const fmt=x=>x.toFixed(1).replace('.',',');
-      return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(setup.stage)} · Base 40 sessões ${fmt(setup.widthPct)}% (anterior ${fmt(setup.priorWidthPct)}%) · ${fmt(setup.distancePct)}% da resistência</div><div class="ux453-thesis">Preço acima da MM150 · MM50 acima MM200 · três médias ascendentes${setup.goldenCrossRecent?' · cruzamento MM50/MM200 recente':''}</div><div class="ux453-opportunity-type">${setup.volumeConfirmed?'Volume ≥ 1,5× média':setup.volumeDry?'Volume a secar; confirmação pendente':'Sem secagem de volume verificada'} · ${setup.stage==='compressão'?'Apenas em observação · ':''}Dados até ${esc(setup.date||'—')} · Setup técnico, não previsão${lens==='smallcap_breakout'?' · Spread/gap por validar · Resultados: risco desconhecido':''}</div></div><div class="ux453-entry"><small>SETUP</small><strong>${setup.score}</strong><em>${esc(setup.stage)}</em></div></div>`;
+      return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(setup.stage)} · Base 40 sessões ${fmt(setup.widthPct)}% (anterior ${fmt(setup.priorWidthPct)}%) · ${fmt(setup.distancePct)}% da resistência</div><div class="ux453-thesis">Preço acima da MM150 · MM50 acima MM200 · três médias ascendentes${setup.goldenCrossRecent?' · cruzamento MM50/MM200 recente':''}</div><div class="ux453-opportunity-type">${setup.volumeConfirmed?'Volume ≥ 1,5× média':setup.volumeDry?'Volume a secar; confirmação pendente':'Sem secagem de volume verificada'} · ${setup.stage==='compressão'?'Apenas em observação · ':''}Dados até ${esc(setup.date||'—')} · ${esc(earningsRiskText(setup))} · Setup técnico, não previsão${lens==='smallcap_breakout'?' · Spread/gap por validar':''}</div></div><div class="ux453-entry"><small>SETUP</small><strong>${setup.score}</strong><em>${esc(setup.stage)}</em></div></div>`;
     }
     if(lens==='low52'){
       const above=low52Above(s),status=t(s?.low52_status).toLowerCase();
@@ -852,5 +863,5 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,low52BasisLabel,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,breakoutSetup,get activeLens(){return activeLens;},get prebreakoutFeedStatus(){return prebreakoutFeedStatus;},get smallcapFeedStatus(){return smallcapFeedStatus;},get smallcapCoveragePct(){return smallcapCoveragePct;},version:'1.19'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,low52BasisLabel,earningsRiskText,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,breakoutSetup,get activeLens(){return activeLens;},get prebreakoutFeedStatus(){return prebreakoutFeedStatus;},get smallcapFeedStatus(){return smallcapFeedStatus;},get smallcapCoveragePct(){return smallcapCoveragePct;},version:'1.20'});
 })();
