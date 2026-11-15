@@ -153,15 +153,25 @@ class SmallcapPublishedHealthTests(unittest.TestCase):
         report = {**self.report, "schema": "unknown"}
         self.assertEqual(health.assess_publication(report, self.now)["reason"], "invalid_schema")
 
-    def test_watchdog_runs_independently_on_weekdays(self):
+    def test_watchdog_runs_independently_every_day(self):
         workflow = (ROOT / ".github/workflows/smallcap-publication-health.yml").read_text()
         self.assertIn("workflow_dispatch:", workflow)
-        self.assertIn("40 9,15,21 * * 1-5", workflow)
+        self.assertIn("40 9,15,17,21 * * *", workflow)
         self.assertIn("ref: main", workflow)
         self.assertIn("scripts/check_smallcap_publication.py --max-age-hours 8", workflow)
         self.assertIn("if: always()", workflow)
         self.assertNotIn("yfinance", workflow)
         self.assertNotIn("contents: write", workflow)
+
+    def test_recovery_only_dispatches_after_failed_health_and_caps_provider_budget(self):
+        recovery = (ROOT / ".github/workflows/recover-smallcap-publication.yml").read_text()
+        self.assertIn('workflows: ["Smallcap published-data health"]', recovery)
+        self.assertIn("github.event.workflow_run.conclusion == 'failure'", recovery)
+        self.assertIn('actions: write', recovery)
+        self.assertIn('contents: read', recovery)
+        self.assertIn('smallcap-prebreakout-research.yml --repo "$GITHUB_REPOSITORY" --ref main -f budget=30', recovery)
+        self.assertIn('status=="in_progress"', recovery)
+        self.assertNotIn('yfinance', recovery)
 
 
 if __name__ == "__main__":
