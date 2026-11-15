@@ -45,12 +45,12 @@ class ResearchCollectorTests(unittest.TestCase):
                    observed("D","provider_error")]}
         names=["A","B","C","D","E"]
         self.assertEqual(mod.pick_research_tickers(names,0,5,prior,now),
-                         ["E","D","B","A","C"])
-        self.assertEqual(mod.pick_research_tickers(names,0,2,prior,now),["E","D"])
-        # Legacy geometry is ahead of fully diagnosed records only after
-        # never-observed and provider-failed names have been given a chance.
+                         ["E","B","D","A","C"])
+        self.assertEqual(mod.pick_research_tickers(names,0,2,prior,now),["E","B"])
+        # Recently failed provider requests wait before another attempt;
+        # missing geometry is prioritized during that cooling-off window.
         prior["observations"].append(observed("E",technical_geometry_shadow={"both_pass":False}))
-        self.assertEqual(mod.pick_research_tickers(names,0,3,prior,now),["D","B","A"])
+        self.assertEqual(mod.pick_research_tickers(names,0,3,prior,now),["B","D","A"])
 
     def test_universe_churn_requires_exact_prior_roster_not_only_hash(self):
         current={"universe_tickers":["A","B","C"]}
@@ -242,13 +242,13 @@ class ResearchCollectorTests(unittest.TestCase):
                       record("D","evaluable_ohlcv",20)]}
         names=["A","B","C","D","E","F"]
         self.assertEqual(mod.pick_research_tickers(names,0,2,previous,now),["E","F"])
-        self.assertEqual(mod.pick_research_tickers(names,0,4,previous,now),["E","F","C","B"])
+        self.assertEqual(mod.pick_research_tickers(names,0,4,previous,now),["E","F","D","A"])
         self.assertEqual(mod.pick_research_tickers(names,0,6,previous,now),
-                         ["E","F","C","B","D","A"])
+                         ["E","F","D","A","C","B"])
         # A legacy record without status retains the old observed priority.
         previous["observations"].append({"ticker":"F",
             "observation_checked_at":now.isoformat()})
-        self.assertEqual(mod.pick_research_tickers(names,0,2,previous,now),["E","C"])
+        self.assertEqual(mod.pick_research_tickers(names,0,2,previous,now),["E","D"])
 
     def test_stale_outside_cohort_and_future_dates_do_not_block_new_coverage(self):
         from datetime import timedelta
@@ -269,6 +269,36 @@ class ResearchCollectorTests(unittest.TestCase):
                               (now-timedelta(hours=1)).isoformat()}]
         self.assertEqual(mod.pick_research_tickers(["A","B","C"],0,2,old,now),
                          ["B","C"])
+
+    def test_recent_failures_do_not_starve_missing_geometry_diagnostics(self):
+        from datetime import timedelta
+        now=datetime(2026,11,15,12,tzinfo=timezone.utc)
+        def record(ticker,status,hours,**extra):
+            return {"ticker":ticker,"status":status,
+                    "observation_checked_at":(now-timedelta(hours=hours)).isoformat(),
+                    **extra}
+        old={"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
+             "generated_at":now.isoformat(),"observations":[
+                 record("A","provider_error",2),
+                 record("B","zero_volume_interrupted_history",3),
+                 record("C","evaluable_ohlcv",5,
+                        average_dollar_volume_20_usd=2_000_000,
+                        technical_first_rejection="moving_average_structure"),
+                 record("D","evaluable_ohlcv",6,
+                        average_dollar_volume_20_usd=3_000_000,
+                        technical_first_rejection="moving_average_structure",
+                        technical_geometry_shadow={"both_pass":False}),
+                 record("E","insufficient_ohlcv",25),
+                 record("F","evaluable_ohlcv",7,
+                        average_dollar_volume_20_usd=500_000,
+                        technical_first_rejection="below_1m_usd_turnover")]}
+        # Unseen names first, then due failure retries, then missing geometry.
+        self.assertEqual(mod.pick_research_tickers(
+            ["A","B","C","D","E","F","G"],0,4,old,now),["G","E","C","B"])
+        # After one day the provider failures are eligible for another try.
+        self.assertEqual(mod.pick_research_tickers(
+            ["A","B","C","D","E","F"],0,3,old,now+timedelta(hours=25)),
+            ["E","B","A"])
 
     def test_collect_uses_previous_evidence_for_bounded_provider_budget(self):
         now=datetime(2026,7,10,tzinfo=timezone.utc)
