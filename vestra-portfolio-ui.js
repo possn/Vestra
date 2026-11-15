@@ -61,6 +61,13 @@
     if(hero.dataset.signature!==signature){
       hero.dataset.signature=signature;
       hero.innerHTML=`<div class="vpu-kicker">MINHAS POSIÇÕES</div><div class="vpu-status is-${st.tone}"><div><strong>${st.title}</strong><span>${st.sub}</span></div><button type="button" data-vpu-detail>Ver diagnóstico</button></div><div class="vpu-grid"><div><small>Posições</small><strong>${m.positions||'—'}</strong><span>na carteira</span></div><div><small>A rever</small><strong>${m.review||0}</strong><span>pedem atenção</span></div><div><small>Cobertura</small><strong>${m.coverage||'—'}</strong><span>do research disponível</span></div></div><p class="vpu-evidence">${m.research||'—'} posições com research · As classificações dependem dos dados disponíveis. Risk Fit: maior é melhor, mas não representa certeza sobre posições sem cobertura.</p><div class="vpu-actions"><button data-vpu-jump="review">Rever <b>${m.review||0}</b></button><button data-vpu-jump="reinforce">Investigar reforços <b>${m.reinforce||0}</b></button><button data-vpu-jump="swap">Comparar alternativas <b>${m.swaps||0}</b></button></div><details class="vpu-snapshot"><summary>Ver saúde e métricas da carteira</summary><div class="vpu-snapshot-head"><div><small>SAÚDE DA CARTEIRA</small><strong>Indicadores das posições analisáveis</strong></div></div><div class="vpu-health">${healthBar('Convicção',m.conviction)}${healthBar('Risk Fit',m.risk)}<div class="vpu-health-row"><div><span>Cobertura</span><b>${covText}</b></div><div class="vpu-track"><i class="is-${cov!=null&&cov>=70?'good':cov!=null&&cov>=40?'warn':'bad'}" style="width:${Math.max(0,Math.min(100,cov??0))}%"></i></div></div></div></details>`;
+      // The research count is a number of distinct resolved tickers. Coverage
+      // instead measures their value / all research-eligible portfolio value.
+      // They have different denominators and must never look interchangeable.
+      hero.querySelector('.vpu-grid>div:last-child small').textContent='Cobertura por valor';
+      hero.querySelector('.vpu-grid>div:last-child span').textContent='dos ativos elegíveis';
+      hero.querySelector('.vpu-evidence').textContent=`${m.research||'—'} instrumentos distintos identificados no research · A cobertura mede valor, não percentagem de títulos. Risk Fit: maior é melhor, mas não representa certeza sobre posições sem cobertura.`;
+      hero.querySelector('.vpu-health-row:last-child span').textContent='Cobertura por valor';
     }
     if(created){const dc=decisionCenter(c); if(dc)dc.hidden=true;}
     return hero;
