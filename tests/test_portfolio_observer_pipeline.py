@@ -135,7 +135,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
     def test_exploration_avoids_repeated_header_copy(self):
         ui = (ROOT / "vestra-portfolio-ui.js").read_text(encoding="utf-8")
         self.assertIn("<strong>Escolhe o foco</strong>", ui)
-        self.assertEqual(ui.count("<small>EXPLORAR A CARTEIRA</small>"), 1)
+        self.assertEqual(ui.count("<small>ANÁLISE DAS POSIÇÕES</small>"), 1)
         self.assertIn("active==='optimize'?'Segue os três passos abaixo.':''", ui)
 
     def test_exploration_is_scan_first_until_explicit_card_intent(self):

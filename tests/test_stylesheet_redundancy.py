@@ -21,7 +21,7 @@ class StylesheetRedundancyTests(unittest.TestCase):
 
     def test_clean_stylesheet_generation_is_explicit(self):
         self.assertRegex(self.index, r"styles[.]css[?]v=[a-zA-Z0-9._-]+")
-        self.assertIn("market.css?v=20260926v3", self.index)
+        self.assertIn("market.css?v=20261115-contrast", self.index)
 
 
 if __name__ == "__main__":

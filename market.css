@@ -719,3 +719,24 @@ html.modal-open,body.modal-open{
   #viewMarket .market-row__end {gap:6px;}
   #viewMarket .market-row .market-score {min-width:43px;height:43px;}
 }
+
+/* Valuation methods must use the active dossier surface palette, never white-on-ivory. */
+#marketSheet .market-detail-card .market-watchpoints{
+  background:var(--soft,var(--card2));
+  border:1px solid var(--line);
+  padding:12px;
+}
+#marketSheet .market-detail-card .market-watchpoints>span{
+  background:var(--card);
+  border:1px solid var(--line);
+  color:var(--text)!important;
+  font-size:12px;
+  line-height:1.45;
+  font-weight:700;
+  white-space:normal;
+}
+#marketSheet .market-detail-card .market-score-layers .market-case-note{
+  color:var(--text2)!important;
+  font-size:12px!important;
+  line-height:1.6;
+}
