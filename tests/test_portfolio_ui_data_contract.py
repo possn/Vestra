@@ -37,6 +37,14 @@ class PortfolioUiDataContractTests(unittest.TestCase):
         self.assertIn('de ${m.reviewTotal} na fila', self.ui)
         self.assertIn('Ver destaques', self.ui)
 
+    def test_materially_partial_coverage_cannot_be_labelled_solid_risk_fit(self):
+        status = self.ui.split('function status(m){', 1)[1].split('function tone(', 1)[0]
+        self.assertIn('const materiallyPartial=cov!=null&&cov<80', status)
+        self.assertIn('Avaliação parcial da carteira', status)
+        self.assertIn('Risk Fit apenas da parte analisada', status)
+        self.assertIn('if(materiallyPartial)', status)
+        self.assertIn('else bits.push(\'Risk Fit sólido\')', status)
+
     def test_portfolio_ui_prefers_structured_metrics_before_text_fallbacks(self):
         block = self.ui.split('function metrics(c){', 1)[1].split('function status(m){', 1)[0]
         self.assertIn("summary?.dataset.vpuPositions", block)

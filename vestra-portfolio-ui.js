@@ -42,11 +42,12 @@
   }
   function status(m){
     const conv=num(m.conviction), riskFit=num(m.risk), cov=num(m.coverage), review=num(m.review);
-    let title='Carteira equilibrada, com pontos a acompanhar', tone='neutral'; const bits=[];
-    if(conv!=null) bits.push(conv>=70?'convicção forte':conv<45?'convicção frágil':'convicção moderada');
-    if(riskFit!=null){ if(riskFit<65){bits.push('Risk Fit baixo');tone='warn';title='A diversificação merece atenção';} else if(riskFit<85){bits.push('Risk Fit intermédio');tone='warn';} else bits.push('Risk Fit sólido'); }
-    if(cov!=null&&cov<35) bits.push('research ainda incompleto');
+    const materiallyPartial=cov!=null&&cov<80;
+    let title=materiallyPartial?'Avaliação parcial da carteira':'Carteira equilibrada, com pontos a acompanhar', tone=materiallyPartial?'warn':'neutral'; const bits=[];
+    if(materiallyPartial)bits.push(`${cov}% do valor elegível com research`);
     if(review>0){bits.push(`${review} destaques${m.reviewTotal!=null?` de ${m.reviewTotal} na fila`:''}`);tone='warn';}
+    if(riskFit!=null){if(materiallyPartial)bits.push('Risk Fit apenas da parte analisada');else if(riskFit<65){bits.push('Risk Fit baixo');tone='warn';title='A diversificação merece atenção';}else if(riskFit<85){bits.push('Risk Fit intermédio');tone='warn';}else bits.push('Risk Fit sólido');}
+    if(conv!=null)bits.push(conv>=70?'convicção forte':conv<45?'convicção frágil':'convicção moderada');
     return {title,tone,sub:bits.slice(0,3).join(' · ')||'Visão consolidada da carteira.'};
   }
   function tone(v,reverse=false){ const x=num(v); if(x==null)return'neutral'; if(reverse)return x>=75?'bad':x>=55?'warn':'good'; return x>=70?'good':x>=50?'warn':'bad'; }
