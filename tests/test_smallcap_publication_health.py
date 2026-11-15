@@ -10,6 +10,42 @@ spec.loader.exec_module(health)
 
 
 class SmallcapPublishedHealthTests(unittest.TestCase):
+    def test_independent_vcp_geometry_must_match_observations(self):
+        valid = {**self.report,
+                 "independent_geometry_audit": {
+                     "scope": "evaluable_liquid_series_including_ma_rejections",
+                     "liquid_evaluable_rows": 1, "geometry_diagnosed_rows": 1,
+                     "base_width_pass": 1, "contractions_pass": 1, "both_pass": 1,
+                     "not_eligibility_or_success_probability": True},
+                 "observations": [
+                     {"ticker": "A", "status": "evaluable_ohlcv",
+                      "technical_geometry_shadow": {"base_width_pass": True,
+                                                    "contractions_pass": True,
+                                                    "both_pass": True}},
+                     {"ticker": "B", "status": "invalid_ohlcv"}]}
+        self.assertEqual(health.assess_publication(valid, self.now)["status"], "healthy")
+        for field, wrong in [("liquid_evaluable_rows", 0),
+                             ("geometry_diagnosed_rows", 0),
+                             ("base_width_pass", 0),
+                             ("contractions_pass", 0),
+                             ("both_pass", 0),
+                             ("not_eligibility_or_success_probability", False)]:
+            with self.subTest(field=field):
+                audit = {**valid["independent_geometry_audit"], field: wrong}
+                verdict = health.assess_publication(
+                    {**valid, "independent_geometry_audit": audit}, self.now)
+                self.assertEqual(verdict["reason"], "unreconciled_vcp_geometry")
+        inconsistent = [{**valid["observations"][0],
+                         "technical_geometry_shadow": {"base_width_pass": False,
+                                                       "contractions_pass": True,
+                                                       "both_pass": True}},
+                        valid["observations"][1]]
+        self.assertEqual(health.assess_publication(
+            {**valid, "observations": inconsistent,
+             "independent_geometry_audit": {
+                 **valid["independent_geometry_audit"], "base_width_pass": 0}},
+            self.now)["reason"], "inconsistent_vcp_geometry_flags")
+
     def test_ma_detail_rollup_must_reconcile(self):
         row={"ticker":"A","status":"evaluable_ohlcv",
              "technical_first_rejection":"moving_average_structure",
