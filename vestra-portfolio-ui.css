@@ -384,3 +384,51 @@ body.modal-open #viewMarket{
     background:#d1d2cc!important;
   }
 }
+
+/* v2.3 — editorial portfolio reading, legible on iPhone in both themes. */
+.vpu-portfolio .vpu-overview{padding:20px 18px;background:linear-gradient(150deg,#123b43,#175f61);color:#fff}
+.vpu-portfolio .vpu-kicker{font-size:12px;letter-spacing:.1em;opacity:.85}
+.vpu-portfolio .vpu-status{align-items:center;gap:15px}
+.vpu-portfolio .vpu-status strong{font-size:clamp(19px,4.5vw,25px);line-height:1.22}
+.vpu-portfolio .vpu-status span{font-size:13px;line-height:1.55;opacity:.9}
+.vpu-portfolio .vpu-status button{font-size:13px;min-height:42px;padding:10px 13px}
+.vpu-portfolio .vpu-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:18px}
+.vpu-portfolio .vpu-grid>div{gap:5px;padding:14px 12px;background:rgba(255,255,255,.12)}
+.vpu-portfolio .vpu-grid small{font-size:12px;opacity:.88}
+.vpu-portfolio .vpu-grid strong{font-size:clamp(21px,5vw,30px);font-variant-numeric:tabular-nums}
+.vpu-portfolio .vpu-grid span{font-size:11px;line-height:1.3;opacity:.82}
+.vpu-portfolio .vpu-evidence{font-size:12px;line-height:1.5;color:rgba(255,255,255,.88);margin:13px 0 0}
+.vpu-portfolio .vpu-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:17px}
+.vpu-portfolio .vpu-actions button{min-height:48px;font-size:12px;line-height:1.3;padding:10px 8px}
+.vpu-portfolio .vpu-snapshot{padding-top:13px;margin-top:16px}
+.vpu-portfolio .vpu-snapshot summary{font-size:13px;font-weight:750;line-height:1.4;cursor:pointer;color:#fff;min-height:34px}
+.vpu-portfolio .vpu-snapshot-head{margin-top:12px}
+.vpu-portfolio .vpu-snapshot-head small{font-size:11px}
+.vpu-portfolio .vpu-snapshot-head strong{font-size:15px}
+.vpu-portfolio .vpu-health-row{padding:13px;gap:9px}
+.vpu-portfolio .vpu-health-row span,.vpu-portfolio .vpu-health-row b{font-size:13px}
+.vpu-portfolio .vpu-track{height:7px}
+.vpu-portfolio .vpu-reveal{gap:14px}
+.vpu-portfolio .vpu-reveal small{font-size:11px}
+.vpu-portfolio .vpu-reveal strong{font-size:18px}
+.vpu-portfolio .vpu-reveal span{font-size:13px;line-height:1.45}
+.vpu-portfolio .vpu-reveal button{font-size:13px;min-height:44px;padding:11px 16px;white-space:nowrap}
+.vpu-portfolio .vpu-tabs-head strong{font-size:19px}
+.vpu-portfolio .vpu-tabs-head>button{width:42px;height:42px;font-size:23px}
+.vpu-portfolio .vpu-tabs button strong{font-size:14px}
+.vpu-portfolio .vpu-tabs button span{font-size:12px}
+.vpu-portfolio .vpu-tab-count{font-size:11px;min-width:23px;height:23px}
+.vpu-portfolio .vpu-tab-intro strong{font-size:18px}
+.vpu-portfolio .vpu-tab-intro span{font-size:13px}
+@media(max-width:620px){
+  .vpu-portfolio .vpu-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .vpu-portfolio .vpu-grid>div{padding:12px 9px}
+  .vpu-portfolio .vpu-grid span{font-size:10px}
+  .vpu-portfolio .vpu-actions{grid-template-columns:1fr}
+  .vpu-portfolio .vpu-actions button{text-align:left;padding:12px 16px}
+  .vpu-portfolio .vpu-tabs button{min-height:58px;padding:10px 9px}
+  .vpu-portfolio .vpu-tabs button strong{font-size:13px}
+  .vpu-portfolio .vpu-tabs button span{display:none}
+  .vpu-portfolio .vpu-reveal{flex-wrap:wrap}
+  .vpu-portfolio .vpu-reveal button{width:100%}
+}
