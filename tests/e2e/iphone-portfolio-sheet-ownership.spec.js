@@ -85,3 +85,20 @@ test('iPhone/WebKit: expanded portfolio explorer hides base market and keeps clo
   await closeExplorer.click();
   await expect(explorer).toBeHidden();
 });
+
+
+test('iPhone/WebKit: portfolio stylesheet loads before any sheet opens', async ({ page }) => {
+  await page.goto('/index.html');
+  const link = page.locator('head link[href*="vestra-portfolio-ui.css"]');
+  await expect(link).toHaveCount(1);
+  const probe = await page.evaluate(async () => {
+    await document.fonts.ready;
+    const node = document.createElement('div');
+    node.className = 'vpu-grid';
+    document.body.appendChild(node);
+    const display = getComputedStyle(node).display;
+    node.remove();
+    return display;
+  });
+  expect(probe).toBe('grid');
+});
