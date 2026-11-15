@@ -28,9 +28,14 @@ class FirstFailingGateAuditTests(unittest.TestCase):
         audit={}
         self.assertIsNone(mod.scan_bars("GEOMETRY",bars,today,audit=audit))
         self.assertEqual(audit["first_rejection"],"moving_average_structure")
-        self.assertEqual(audit["geometry_shadow"],{
+        self.assertEqual({key:audit["geometry_shadow"][key] for key in (
+            "base_width_pass","contractions_pass","both_pass",
+            "research_only_not_eligibility")},{
             "base_width_pass":True,"contractions_pass":True,"both_pass":True,
             "research_only_not_eligibility":True})
+        self.assertTrue(all(isinstance(audit["geometry_shadow"][key],float)
+                            for key in ("prior_width_pct","base_width_pct",
+                                        "w1_pct","w2_pct","w3_pct")))
 
     def test_short_history_is_data_unavailable_not_bad_setup(self):
         trace = {}
