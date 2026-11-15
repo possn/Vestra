@@ -130,6 +130,14 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
         audit["geometry_shadow"]={"base_width_pass":bool(base_width_ok),
                                   "contractions_pass":bool(vcp_ok),
                                   "both_pass":bool(base_width_ok and vcp_ok),
+                                  # Raw observed geometry, in percentage points.
+                                  # Supports threshold-distance audits without
+                                  # altering the canonical eligibility rules.
+                                  "prior_width_pct":round(old_width*100,3),
+                                  "base_width_pct":round(base_width*100,3),
+                                  "w1_pct":round(w1*100,3),
+                                  "w2_pct":round(w2*100,3),
+                                  "w3_pct":round(w3*100,3),
                                   "research_only_not_eligibility":True}
     end=len(clean)-1
     values=[b["close"] for b in clean]
