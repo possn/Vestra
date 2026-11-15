@@ -178,7 +178,8 @@ def inspect(ticker,frame,currency,checked_at):
             "currency":"USD","price_basis":"yfinance_auto_adjusted",
             "ohlcv_observed_at":checked_at.isoformat()}
 
-def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96):
+def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96,
+                          failure_retry_hours=24):
     """Prioritize CURRENT universe names absent from the recent observed window.
 
     Keep the old cyclic slot order as a deterministic tiebreaker; once every
@@ -220,15 +221,17 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96):
                 and row.get("technical_first_rejection")!="below_1m_usd_turnover"
                 and (liquid or turnover is None)
                 and not isinstance(row.get("technical_geometry_shadow"),dict))
-    # Never-observed names first. Once they are exhausted, retry recent
-    # non-evaluable requests, then complete missing technical diagnostics before
-    # refreshing already fully diagnosed usable OHLCV evidence.
-    # Provider errors do not count as verified bars, yet are not allowed to
-    # starve entirely unseen names on repeated collection slots.
+    # Recent failures cannot be cured by immediately requesting the same
+    # ticker again every six hours. Allow a bounded retry delay so that the
+    # independent VCP geometry backlog makes progress when the unseen cohort
+    # is exhausted. After 24h, failures regain priority over geometry.
+    retry_cutoff=checked_at-timedelta(hours=failure_retry_hours)
     ordered=sorted(rotated,key=lambda ticker:(
         0 if ticker not in last_seen else
-        (1 if last_status.get(ticker)!="evaluable_ohlcv" else
-         2 if needs_geometry.get(ticker) else 3),
+        (1 if last_status.get(ticker)!="evaluable_ohlcv"
+              and last_seen[ticker]<=retry_cutoff else
+         2 if needs_geometry.get(ticker) else
+         3 if last_status.get(ticker)!="evaluable_ohlcv" else 4),
         last_seen.get(ticker,cutoff)))
     return ordered[:min(budget,len(names))]
 
