@@ -28,13 +28,14 @@
     const summary=c?.querySelector('.market-portfolio-summary');
     const dc=decisionCenter(c), dcTxt=t(dc?.textContent);
     const positions=t(summary?.dataset.vpuPositions)||kpiByLabel(c,'Posições')||'';
+    const reviewTotal=num(c?.querySelector('.market-research-queue')?.dataset.queuePending);
     const research=t(summary?.dataset.vpuResearch)||kpiByLabel(c,'Com research')||'';
     const coverageRaw=t(summary?.dataset.vpuCoverage);
     const coverage=coverageRaw?coverageRaw+'%':kpiByLabel(c,'Cobertura')||'';
     const conviction=t(dc?.dataset.vpuConviction)||(dcTxt.match(/CONVICÇÃO\s*([0-9.,]+)/i)||[])[1]||'';
     const risk=t(dc?.dataset.vpuRisk)||(dcTxt.match(/RISK (?:FIT|BUDGET)\s*([0-9.,]+)/i)||[])[1]||'';
     return {
-      positions,research,coverage,conviction,risk,
+      positions,research,coverage,conviction,risk,reviewTotal,
       reinforce:countRows(card('reinforce',c)), review:countRows(card('review',c)), swaps:countRows(card('swap',c)),
       researchPending:num(text(card('research',c),/\d+\s*pendentes/i))||countRows(card('research',c))
     };
@@ -45,7 +46,7 @@
     if(conv!=null) bits.push(conv>=70?'convicção forte':conv<45?'convicção frágil':'convicção moderada');
     if(riskFit!=null){ if(riskFit<65){bits.push('Risk Fit baixo');tone='warn';title='A diversificação merece atenção';} else if(riskFit<85){bits.push('Risk Fit intermédio');tone='warn';} else bits.push('Risk Fit sólido'); }
     if(cov!=null&&cov<35) bits.push('research ainda incompleto');
-    if(review>0){bits.push(`${review} itens para rever`);tone='warn';}
+    if(review>0){bits.push(`${review} destaques${m.reviewTotal!=null?` de ${m.reviewTotal} na fila`:''}`);tone='warn';}
     return {title,tone,sub:bits.slice(0,3).join(' · ')||'Visão consolidada da carteira.'};
   }
   function tone(v,reverse=false){ const x=num(v); if(x==null)return'neutral'; if(reverse)return x>=75?'bad':x>=55?'warn':'good'; return x>=70?'good':x>=50?'warn':'bad'; }
@@ -57,10 +58,10 @@
     let hero=c.querySelector('.vpu-overview'), created=false; const m=metrics(c), st=status(m);
     if(!hero){ hero=document.createElement('section'); hero.className='vpu-overview'; created=true; const dc=decisionCenter(c); if(dc)dc.insertAdjacentElement('beforebegin',hero); else c.prepend(hero); }
     const cov=num(m.coverage), covText=m.coverage||'—';
-    const signature=JSON.stringify([m.positions,m.research,m.coverage,m.conviction,m.risk,m.reinforce,m.review,m.swaps,st.title,st.tone,st.sub]);
+    const signature=JSON.stringify([m.positions,m.research,m.coverage,m.conviction,m.risk,m.reinforce,m.review,m.reviewTotal,m.swaps,st.title,st.tone,st.sub]);
     if(hero.dataset.signature!==signature){
       hero.dataset.signature=signature;
-      hero.innerHTML=`<div class="vpu-kicker">MINHAS POSIÇÕES</div><div class="vpu-status is-${st.tone}"><div><strong>${st.title}</strong><span>${st.sub}</span></div><button type="button" data-vpu-detail>Ver diagnóstico</button></div><div class="vpu-grid"><div><small>Posições</small><strong>${m.positions||'—'}</strong><span>na carteira</span></div><div><small>A rever</small><strong>${m.review||0}</strong><span>pedem atenção</span></div><div><small>Cobertura</small><strong>${m.coverage||'—'}</strong><span>do research disponível</span></div></div><p class="vpu-evidence">${m.research||'—'} posições com research · As classificações dependem dos dados disponíveis. Risk Fit: maior é melhor, mas não representa certeza sobre posições sem cobertura.</p><div class="vpu-actions"><button data-vpu-jump="review">Rever <b>${m.review||0}</b></button><button data-vpu-jump="reinforce">Investigar reforços <b>${m.reinforce||0}</b></button><button data-vpu-jump="swap">Comparar alternativas <b>${m.swaps||0}</b></button></div><details class="vpu-snapshot"><summary>Ver saúde e métricas da carteira</summary><div class="vpu-snapshot-head"><div><small>SAÚDE DA CARTEIRA</small><strong>Indicadores das posições analisáveis</strong></div></div><div class="vpu-health">${healthBar('Convicção',m.conviction)}${healthBar('Risk Fit',m.risk)}<div class="vpu-health-row"><div><span>Cobertura</span><b>${covText}</b></div><div class="vpu-track"><i class="is-${cov!=null&&cov>=70?'good':cov!=null&&cov>=40?'warn':'bad'}" style="width:${Math.max(0,Math.min(100,cov??0))}%"></i></div></div></div></details>`;
+      hero.innerHTML=`<div class="vpu-kicker">MINHAS POSIÇÕES</div><div class="vpu-status is-${st.tone}"><div><strong>${st.title}</strong><span>${st.sub}</span></div><button type="button" data-vpu-detail>Ver diagnóstico</button></div><div class="vpu-grid"><div><small>Posições</small><strong>${m.positions||'—'}</strong><span>na carteira</span></div><div><small>Em destaque</small><strong>${m.review||0}</strong><span>${m.reviewTotal==null?'para investigar':`de ${m.reviewTotal} na fila`}</span></div><div><small>Cobertura</small><strong>${m.coverage||'—'}</strong><span>do research disponível</span></div></div><p class="vpu-evidence">${m.research||'—'} posições com research · As classificações dependem dos dados disponíveis. Risk Fit: maior é melhor, mas não representa certeza sobre posições sem cobertura.</p><div class="vpu-actions"><button data-vpu-jump="review">Ver destaques <b>${m.review||0}</b></button><button data-vpu-jump="reinforce">Investigar reforços <b>${m.reinforce||0}</b></button><button data-vpu-jump="swap">Comparar alternativas <b>${m.swaps||0}</b></button></div><details class="vpu-snapshot"><summary>Ver saúde e métricas da carteira</summary><div class="vpu-snapshot-head"><div><small>SAÚDE DA CARTEIRA</small><strong>Indicadores das posições analisáveis</strong></div></div><div class="vpu-health">${healthBar('Convicção',m.conviction)}${healthBar('Risk Fit',m.risk)}<div class="vpu-health-row"><div><span>Cobertura</span><b>${covText}</b></div><div class="vpu-track"><i class="is-${cov!=null&&cov>=70?'good':cov!=null&&cov>=40?'warn':'bad'}" style="width:${Math.max(0,Math.min(100,cov??0))}%"></i></div></div></div></details>`;
       // The research count is a number of distinct resolved tickers. Coverage
       // instead measures their value / all research-eligible portfolio value.
       // They have different denominators and must never look interchangeable.
@@ -115,7 +116,8 @@
       if(!labels[kind]){cue?.remove();return;}
       if(!cue){cue=document.createElement('span');cue.className='vpu-card-cue';el.appendChild(cue);}
       const countable=['research','reinforce','review'].includes(kind);
-      cue.textContent=countable&&rows?`${labels[kind]} · ${rows}`:labels[kind];
+      const pending=kind==='research'?num(el.dataset.queuePending):null;
+      cue.textContent=kind==='research'&&pending!=null?`Fila de revisão · ${pending} pendentes`:countable&&rows?`${labels[kind]} · ${rows}`:labels[kind];
       el.classList.toggle('vpu-support-start',active==='optimize'&&kind==='overlap');
     });
     const intro=tabs.querySelector('.vpu-tab-intro');if(intro)intro.dataset.vpuMode=active;
