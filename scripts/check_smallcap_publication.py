@@ -70,6 +70,30 @@ def assess_publication(report: dict, now: datetime, max_age_hours: int = 8) -> d
             structure_audit.get("nonexclusive_failed_check_counts")!=counted or
             structure_audit.get("not_independent_pass_rates") is not True):
             return {"status":"invalid","reason":"unreconciled_ma_diagnostics"}
+    geometry_audit = report.get("independent_geometry_audit")
+    if geometry_audit is not None:
+        eligible = [row for row in rows if row.get("status") == "evaluable_ohlcv"
+                    and row.get("technical_first_rejection") != "below_1m_usd_turnover"]
+        diagnosed = [row for row in eligible
+                     if isinstance(row.get("technical_geometry_shadow"), dict)]
+        geometry_counts = {key: sum(row["technical_geometry_shadow"].get(key) is True
+                                    for row in diagnosed)
+                           for key in ("base_width_pass", "contractions_pass", "both_pass")}
+        if (not isinstance(geometry_audit, dict)
+            or geometry_audit.get("scope") != "evaluable_liquid_series_including_ma_rejections"
+            or type(geometry_audit.get("liquid_evaluable_rows")) is not int
+            or geometry_audit["liquid_evaluable_rows"] != len(eligible)
+            or type(geometry_audit.get("geometry_diagnosed_rows")) is not int
+            or geometry_audit["geometry_diagnosed_rows"] != len(diagnosed)
+            or any(type(geometry_audit.get(key)) is not int
+                   or geometry_audit[key] != value for key, value in geometry_counts.items())
+            or geometry_audit.get("not_eligibility_or_success_probability") is not True):
+            return {"status": "invalid", "reason": "unreconciled_vcp_geometry"}
+        if any(row["technical_geometry_shadow"].get("both_pass") is True
+               and not (row["technical_geometry_shadow"].get("base_width_pass") is True
+                        and row["technical_geometry_shadow"].get("contractions_pass") is True)
+               for row in diagnosed):
+            return {"status": "invalid", "reason": "inconsistent_vcp_geometry_flags"}
     if report.get("not_observed") != total - len(rows):
         return {"status": "invalid", "reason": "unreconciled_unobserved_count"}
     # A recent publication timestamp alone does not make old per-ticker
