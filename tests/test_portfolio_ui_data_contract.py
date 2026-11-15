@@ -28,6 +28,15 @@ class PortfolioUiDataContractTests(unittest.TestCase):
             self.assertIn(token.replace('\\',''), self.market)
         self.assertNotIn('data-vpu-health=', self.market)
 
+    def test_review_total_is_not_confused_with_twelve_preview_or_three_highlights(self):
+        self.assertIn('data-queue-pending="${activeItems.length}"', self.market)
+        self.assertIn('data-queue-preview="${visible.length}"', self.market)
+        self.assertIn('const featured=visible.slice(0,3), more=visible.slice(3)', self.market)
+        self.assertIn('market-research-queue-more', self.market)
+        self.assertIn('dataset.queuePending', self.ui)
+        self.assertIn('de ${m.reviewTotal} na fila', self.ui)
+        self.assertIn('Ver destaques', self.ui)
+
     def test_portfolio_ui_prefers_structured_metrics_before_text_fallbacks(self):
         block = self.ui.split('function metrics(c){', 1)[1].split('function status(m){', 1)[0]
         self.assertIn("summary?.dataset.vpuPositions", block)
