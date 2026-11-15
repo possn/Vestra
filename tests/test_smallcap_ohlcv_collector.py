@@ -30,6 +30,28 @@ class Provider:
         return FakeFrame()
 
 class ResearchCollectorTests(unittest.TestCase):
+    def test_legacy_geometry_is_rechecked_after_coverage_without_starving_it(self):
+        from datetime import timedelta
+        now=datetime(2026,11,15,12,tzinfo=timezone.utc)
+        stamp=(now-timedelta(hours=2)).isoformat()
+        def observed(ticker,status="evaluable_ohlcv",**other):
+            return {"ticker":ticker,"status":status,"observation_checked_at":stamp,**other}
+        prior={"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
+               "generated_at":now.isoformat(),"observations":[
+                   observed("A",technical_geometry_shadow={"both_pass":False}),
+                   observed("B",average_dollar_volume_20_usd=1_800_000),
+                   observed("C",technical_first_rejection="below_1m_usd_turnover",
+                            average_dollar_volume_20_usd=400_000),
+                   observed("D","provider_error")]}
+        names=["A","B","C","D","E"]
+        self.assertEqual(mod.pick_research_tickers(names,0,5,prior,now),
+                         ["E","D","B","A","C"])
+        self.assertEqual(mod.pick_research_tickers(names,0,2,prior,now),["E","D"])
+        # Legacy geometry is ahead of fully diagnosed records only after
+        # never-observed and provider-failed names have been given a chance.
+        prior["observations"].append(observed("E",technical_geometry_shadow={"both_pass":False}))
+        self.assertEqual(mod.pick_research_tickers(names,0,3,prior,now),["D","B","A"])
+
     def test_universe_churn_requires_exact_prior_roster_not_only_hash(self):
         current={"universe_tickers":["A","B","C"]}
         prior={"universe_tickers_sha256":"hash_only","universe_100m_500m_count":2}
