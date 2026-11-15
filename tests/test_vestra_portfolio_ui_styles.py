@@ -20,6 +20,8 @@ class VestraPortfolioUiStyleTests(unittest.TestCase):
         self.assertIn('style="width:${x}%"', js)
         self.assertNotIn('x.style.display=', js)
         self.assertIn('MINHAS POSIÇÕES', js)
+        self.assertIn("textContent='Cobertura por valor'", js)
+        self.assertIn('A cobertura mede valor, não percentagem de títulos.', js)
         self.assertIn('Ver saúde e métricas da carteira', js)
         self.assertIn('Abrir análise', js)
         self.assertIn('.vpu-portfolio .vpu-grid small{font-size:12px', css)
