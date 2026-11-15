@@ -194,6 +194,7 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96):
     cutoff=checked_at-timedelta(hours=ttl_hours)
     last_seen={}
     last_status={}
+    needs_geometry={}
     for row in previous.get("observations",[]):
         if not isinstance(row,dict):continue
         ticker=str(row.get("ticker") or "").strip().upper()
@@ -209,13 +210,25 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96):
             # Older reports omitted status, so preserve their original rotation
             # priority rather than treating legacy evidence as a provider failure.
             last_status[ticker]=row.get("status","evaluable_ohlcv")
+            # Once data coverage is addressed, revisit usable but historically
+            # undiagnosed VCP geometry before already diagnosed OHLCV. Never
+            # waste a geometry request on verified sub-$1m daily turnover.
+            turnover=row.get("average_dollar_volume_20_usd")
+            liquid=(type(turnover) in (int,float) and math.isfinite(turnover)
+                    and turnover>=1_000_000)
+            needs_geometry[ticker]=(last_status[ticker]=="evaluable_ohlcv"
+                and row.get("technical_first_rejection")!="below_1m_usd_turnover"
+                and (liquid or turnover is None)
+                and not isinstance(row.get("technical_geometry_shadow"),dict))
     # Never-observed names first. Once they are exhausted, retry recent
-    # non-evaluable requests before refreshing already usable OHLCV evidence.
+    # non-evaluable requests, then complete missing technical diagnostics before
+    # refreshing already fully diagnosed usable OHLCV evidence.
     # Provider errors do not count as verified bars, yet are not allowed to
     # starve entirely unseen names on repeated collection slots.
     ordered=sorted(rotated,key=lambda ticker:(
         0 if ticker not in last_seen else
-        (1 if last_status.get(ticker)!="evaluable_ohlcv" else 2),
+        (1 if last_status.get(ticker)!="evaluable_ohlcv" else
+         2 if needs_geometry.get(ticker) else 3),
         last_seen.get(ticker,cutoff)))
     return ordered[:min(budget,len(names))]
 
