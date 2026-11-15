@@ -1,7 +1,7 @@
 {
   "schema": "vestra_breakout_lab_smallcap_ohlcv_research_v1",
   "status": "observed_research_only_not_breakout_signals",
-  "generated_at": "2026-11-15T08:47:56.246328+00:00",
+  "generated_at": "2026-11-15T17:21:26.578837+00:00",
   "source": "yfinance",
   "universe_100m_500m_count": 361,
   "universe_tickers_sha256": "738c16def0a5924aa654c65633e467ab7ad4fcf3e498b103a37ddd614e8e01e6",
@@ -368,41 +368,42 @@
     "ZUMZ",
     "ZURA"
   ],
-  "slot": 2959741,
+  "slot": 2959742,
   "budget": 30,
   "provider_tickers_attempted": 30,
   "provider_attempt_status_counts": {
-    "evaluable_ohlcv": 22,
-    "insufficient_ohlcv": 1,
-    "invalid_ohlcv": 2,
-    "zero_volume_interrupted_history": 5
+    "currency_not_verified_usd": 5,
+    "evaluable_ohlcv": 4,
+    "insufficient_ohlcv": 6,
+    "invalid_ohlcv": 3,
+    "zero_volume_interrupted_history": 12
   },
   "provider_error_type_counts": {},
-  "evaluable_ohlcv": 302,
-  "observed_incomplete": 54,
+  "evaluable_ohlcv": 306,
+  "observed_incomplete": 55,
   "technical_first_rejection_counts": {
     "base_width": 7,
     "below_1m_usd_turnover": 78,
-    "moving_average_structure": 179,
+    "moving_average_structure": 183,
     "not_recorded_legacy": 38
   },
   "technical_structure_audit": {
-    "ma_rejected_rows": 179,
-    "diagnosed_ma_rejected_rows": 164,
+    "ma_rejected_rows": 183,
+    "diagnosed_ma_rejected_rows": 168,
     "nonexclusive_failed_check_counts": {
-      "ma150_above_ma200": 90,
-      "ma150_rising_10": 125,
-      "ma200_rising_10": 131,
-      "ma50_above_ma150": 140,
-      "ma50_rising_10": 140,
-      "price_above_ma50": 139
+      "ma150_above_ma200": 92,
+      "ma150_rising_10": 128,
+      "ma200_rising_10": 134,
+      "ma50_above_ma150": 144,
+      "ma50_rising_10": 142,
+      "price_above_ma50": 142
     },
     "not_independent_pass_rates": true
   },
   "independent_geometry_audit": {
     "scope": "evaluable_liquid_series_including_ma_rejections",
-    "liquid_evaluable_rows": 224,
-    "geometry_diagnosed_rows": 135,
+    "liquid_evaluable_rows": 228,
+    "geometry_diagnosed_rows": 139,
     "base_width_pass": 1,
     "contractions_pass": 4,
     "both_pass": 0,
@@ -414,12 +415,12 @@
     "removed": 0,
     "retained": 361,
     "newly_added_evaluable": 0,
-    "retained_evaluable": 302,
+    "retained_evaluable": 306,
     "newly_added_unobserved": 0,
     "not_market_cap_point_in_time_history": true
   },
-  "not_observed": 5,
-  "universe_coverage_pct": 83.66,
+  "not_observed": 0,
+  "universe_coverage_pct": 84.76,
   "point_in_time_caveat": "market_caps_from_current_index_not_historical_asof_snapshots",
   "not_breakout_candidates": true,
   "no_success_probability": true,
@@ -786,11 +787,11 @@
     {
       "ticker": "AIBZ",
       "status": "insufficient_ohlcv",
-      "bars": 109,
+      "bars": 111,
       "zero_volume_sessions": 0,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-12T20:06:24.157227+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "AIRO",
@@ -830,13 +831,13 @@
       "ticker": "ALCPB.PA",
       "status": "currency_not_verified_usd",
       "currency": "EUR",
-      "observation_checked_at": "2026-11-12T20:06:24.157227+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "ALGIL.PA",
       "status": "currency_not_verified_usd",
       "currency": "EUR",
-      "observation_checked_at": "2026-11-12T20:06:24.157227+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "ALMU",
@@ -1150,11 +1151,11 @@
     {
       "ticker": "FJDI",
       "status": "zero_volume_interrupted_history",
-      "bars": 2,
+      "bars": 3,
       "zero_volume_sessions": 9,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-13T15:34:42.124142+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "FLWS",
@@ -1231,7 +1232,7 @@
     {
       "ticker": "GGT",
       "status": "invalid_ohlcv",
-      "observation_checked_at": "2026-11-13T15:34:42.124142+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "GLATF",
@@ -1254,11 +1255,11 @@
     {
       "ticker": "GMTL",
       "status": "insufficient_ohlcv",
-      "bars": 165,
+      "bars": 166,
       "zero_volume_sessions": 0,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-13T15:34:42.124142+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "GOOD",
@@ -1407,11 +1408,11 @@
     {
       "ticker": "HMH",
       "status": "insufficient_ohlcv",
-      "bars": 157,
+      "bars": 158,
       "zero_volume_sessions": 0,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-13T15:34:42.124142+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "HSDT",
@@ -1568,11 +1569,11 @@
     {
       "ticker": "INAC",
       "status": "zero_volume_interrupted_history",
-      "bars": 2,
+      "bars": 3,
       "zero_volume_sessions": 117,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-13T15:44:49.181417+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "INGN",
@@ -1780,11 +1781,11 @@
     {
       "ticker": "KXIN",
       "status": "zero_volume_interrupted_history",
-      "bars": 70,
+      "bars": 71,
       "zero_volume_sessions": 1,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-13T15:44:49.181417+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "LAES",
@@ -1912,11 +1913,11 @@
     {
       "ticker": "LIXMF",
       "status": "insufficient_ohlcv",
-      "bars": 0,
+      "bars": 1,
       "zero_volume_sessions": 0,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-13T15:44:49.181417+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "LODE",
@@ -2179,11 +2180,11 @@
     {
       "ticker": "NVA",
       "status": "zero_volume_interrupted_history",
-      "bars": 104,
+      "bars": 105,
       "zero_volume_sessions": 16,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "OPRX",
@@ -2313,7 +2314,7 @@
     {
       "ticker": "SNGSF",
       "status": "invalid_ohlcv",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "SPIR",
@@ -2344,7 +2345,7 @@
       "ticker": "SWP.PA",
       "status": "currency_not_verified_usd",
       "currency": "EUR",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "TDUP",
@@ -2375,11 +2376,11 @@
     {
       "ticker": "TOUBF",
       "status": "zero_volume_interrupted_history",
-      "bars": 0,
-      "zero_volume_sessions": 233,
+      "bars": 1,
+      "zero_volume_sessions": 232,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "TOYO",
@@ -2525,11 +2526,11 @@
     {
       "ticker": "USDE",
       "status": "insufficient_ohlcv",
-      "bars": 98,
+      "bars": 99,
       "zero_volume_sessions": 0,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "VELO",
@@ -2560,7 +2561,7 @@
       "ticker": "VIB3.DE",
       "status": "currency_not_verified_usd",
       "currency": "EUR",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "VLN",
@@ -2814,11 +2815,11 @@
     {
       "ticker": "DTREF",
       "status": "zero_volume_interrupted_history",
-      "bars": 66,
+      "bars": 67,
       "zero_volume_sessions": 17,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-13T22:49:01.311057+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "EARN",
@@ -2895,11 +2896,11 @@
     {
       "ticker": "EGG",
       "status": "zero_volume_interrupted_history",
-      "bars": 4,
+      "bars": 5,
       "zero_volume_sessions": 6,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-13T22:49:01.311057+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "EHI",
@@ -3099,7 +3100,7 @@
       "ticker": "EQS.PA",
       "status": "currency_not_verified_usd",
       "currency": "EUR",
-      "observation_checked_at": "2026-11-13T22:49:01.311057+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "EU",
@@ -3136,11 +3137,11 @@
     {
       "ticker": "EWAV",
       "status": "zero_volume_interrupted_history",
-      "bars": 0,
+      "bars": 1,
       "zero_volume_sessions": 22,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-13T22:49:01.311057+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "EXFY",
@@ -3236,11 +3237,11 @@
     {
       "ticker": "GSCCF",
       "status": "zero_volume_interrupted_history",
-      "bars": 8,
+      "bars": 9,
       "zero_volume_sessions": 22,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-13T22:49:01.311057+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "GSVRF",
@@ -3289,7 +3290,7 @@
       "zero_volume_sessions": 0,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-14T11:51:32.186844+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "ANTX",
@@ -3323,7 +3324,7 @@
     {
       "ticker": "AOMR",
       "status": "invalid_ohlcv",
-      "observation_checked_at": "2026-11-14T11:51:32.186844+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "AP",
@@ -3502,7 +3503,7 @@
       "zero_volume_sessions": 42,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-14T11:51:32.186844+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "BHR",
@@ -3595,7 +3596,7 @@
       "zero_volume_sessions": 44,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-14T11:51:32.186844+00:00"
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     },
     {
       "ticker": "BNC",
@@ -8308,12 +8309,142 @@
       "price_basis": "yfinance_auto_adjusted",
       "ohlcv_observed_at": "2026-11-15T08:47:56.246328+00:00",
       "observation_checked_at": "2026-11-15T08:47:56.246328+00:00"
+    },
+    {
+      "ticker": "RM",
+      "status": "evaluable_ohlcv",
+      "bars": 379,
+      "zero_volume_sessions_before_contiguous_window": 0,
+      "verified_prebreakout_setup": null,
+      "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "research_only_not_eligibility": true
+      },
+      "technical_failed_ma_checks": [
+        "ma50_above_ma150"
+      ],
+      "first_session": "2025-05-14",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 3445319.93,
+      "liquidity_5m_usd_verified": false,
+      "spread_verified": false,
+      "gap_risk_not_assessed": true,
+      "currency": "USD",
+      "price_basis": "yfinance_auto_adjusted",
+      "ohlcv_observed_at": "2026-11-15T17:21:26.578837+00:00",
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
+    },
+    {
+      "ticker": "RR",
+      "status": "evaluable_ohlcv",
+      "bars": 379,
+      "zero_volume_sessions_before_contiguous_window": 0,
+      "verified_prebreakout_setup": null,
+      "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "research_only_not_eligibility": true
+      },
+      "technical_failed_ma_checks": [
+        "ma150_above_ma200",
+        "ma150_rising_10",
+        "ma200_rising_10",
+        "ma50_above_ma150",
+        "ma50_rising_10",
+        "price_above_ma50"
+      ],
+      "first_session": "2025-05-14",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 5618825.48,
+      "liquidity_5m_usd_verified": true,
+      "spread_verified": false,
+      "gap_risk_not_assessed": true,
+      "currency": "USD",
+      "price_basis": "yfinance_auto_adjusted",
+      "ohlcv_observed_at": "2026-11-15T17:21:26.578837+00:00",
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
+    },
+    {
+      "ticker": "SAFS",
+      "status": "zero_volume_interrupted_history",
+      "bars": 0,
+      "zero_volume_sessions": 378,
+      "research_only": true,
+      "setup_blocked": true,
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
+    },
+    {
+      "ticker": "SES",
+      "status": "evaluable_ohlcv",
+      "bars": 379,
+      "zero_volume_sessions_before_contiguous_window": 0,
+      "verified_prebreakout_setup": null,
+      "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "research_only_not_eligibility": true
+      },
+      "technical_failed_ma_checks": [
+        "ma150_above_ma200",
+        "ma150_rising_10",
+        "ma200_rising_10",
+        "ma50_above_ma150",
+        "price_above_ma50"
+      ],
+      "first_session": "2025-05-14",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 17623696.46,
+      "liquidity_5m_usd_verified": true,
+      "spread_verified": false,
+      "gap_risk_not_assessed": true,
+      "currency": "USD",
+      "price_basis": "yfinance_auto_adjusted",
+      "ohlcv_observed_at": "2026-11-15T17:21:26.578837+00:00",
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
+    },
+    {
+      "ticker": "SLNH",
+      "status": "evaluable_ohlcv",
+      "bars": 379,
+      "zero_volume_sessions_before_contiguous_window": 0,
+      "verified_prebreakout_setup": null,
+      "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "research_only_not_eligibility": true
+      },
+      "technical_failed_ma_checks": [
+        "ma150_rising_10",
+        "ma200_rising_10",
+        "ma50_above_ma150",
+        "ma50_rising_10",
+        "price_above_ma50"
+      ],
+      "first_session": "2025-05-14",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 6473866.48,
+      "liquidity_5m_usd_verified": true,
+      "spread_verified": false,
+      "gap_risk_not_assessed": true,
+      "currency": "USD",
+      "price_basis": "yfinance_auto_adjusted",
+      "ohlcv_observed_at": "2026-11-15T17:21:26.578837+00:00",
+      "observation_checked_at": "2026-11-15T17:21:26.578837+00:00"
     }
   ],
   "universe_source_index_sha256": "699b5aae08211224430171b0e66b9fccad0429b3475c970a441d0ae8c9b57bdb",
   "setup_verification_window_hours": 18,
   "historical_setups_excluded_as_stale": 0,
   "coverage_window_hours": 96,
-  "distinct_tickers_observed": 356,
+  "distinct_tickers_observed": 361,
   "excluded_outside_current_universe": 0
 }
