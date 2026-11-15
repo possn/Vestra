@@ -15,6 +15,7 @@ ACTIVE_WORKFLOWS = {
     'publish-vestra-mobile-icons.yml',
     'rebuild-market-startup.yml',
     'recover-market-data.yml',
+    'recover-smallcap-publication.yml',
     'recover-prebreakout-independent.yml',
     'refresh-weekly-earnings.yml',
     'refresh-prebreakout-scanner.yml',

@@ -1,0 +1,31 @@
+name: Recover stale smallcap publication
+on:
+  workflow_run:
+    workflows: ["Smallcap published-data health"]
+    types: [completed]
+    branches: [main]
+permissions:
+  actions: write
+  contents: read
+concurrency:
+  group: recover-stale-smallcap-publication
+  cancel-in-progress: false
+jobs:
+  dispatch-recovery:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Dispatch bounded collector only if it is not running already
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          active=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow smallcap-prebreakout-research.yml --limit 20 --json status --jq '[.[] | select(.status=="queued" or .status=="in_progress" or .status=="waiting" or .status=="pending")] | length')
+          if [ "$active" -gt 0 ]; then
+            echo "Collector already queued/running: recovery not dispatched." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          gh workflow run smallcap-prebreakout-research.yml --repo "$GITHUB_REPOSITORY" --ref main -f budget=30
+          echo "Published-data health failed; dispatched bounded 30-ticker collector." >> "$GITHUB_STEP_SUMMARY"
+          echo "This is a recovery attempt, not verified financial data or a successful publication." >> "$GITHUB_STEP_SUMMARY"

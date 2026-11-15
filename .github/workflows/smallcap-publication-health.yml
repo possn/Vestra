@@ -2,9 +2,10 @@ name: Smallcap published-data health
 on:
   workflow_dispatch:
   schedule:
-    # Independently verify the 00/06/12/18 UTC collection schedule on weekdays.
+    # Independently verify the 00/06/12/18 UTC collection schedule every day.
     # ~3h after the latest expected slot; >8h means one or more missed publishes.
-    - cron: '40 9,15,21 * * 1-5'
+    # 17:40 catches a missing 12:23 slot before the following 18:23 slot.
+    - cron: '40 9,15,17,21 * * *'
 permissions:
   contents: read
 jobs:
