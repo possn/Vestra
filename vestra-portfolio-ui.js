@@ -174,7 +174,7 @@
     return null;
   }
   function jump(kind){ const c=root(), target=card(kind,c); if(!target)return; c.dataset.vpuExpanded='1'; active=classify(target)||active; try{localStorage.setItem('vestra.portfolio.analysisTab',active);}catch{} apply(); focusCard(c,target); setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30); }
-  function style(){ if(document.getElementById('vestra-portfolio-ui-style'))return; const link=document.createElement('link'); link.id='vestra-portfolio-ui-style'; link.rel='stylesheet'; link.href='vestra-portfolio-ui.css?v=2.3'; document.head.appendChild(link); }
+  function style(){ if(document.querySelector('link[rel="stylesheet"][href*="vestra-portfolio-ui.css"]') || document.getElementById('vestra-portfolio-ui-style'))return; const link=document.createElement('link'); link.id='vestra-portfolio-ui-style'; link.rel='stylesheet'; link.href='vestra-portfolio-ui.css?v=2.3'; document.head.appendChild(link); }
   document.addEventListener('click',e=>{
     const toggle=e.target.closest?.('[data-collapse-toggle]');
     if(toggle&&!focusing){
