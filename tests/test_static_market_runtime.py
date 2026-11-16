@@ -54,7 +54,7 @@ class StaticMarketRuntimeTests(unittest.TestCase):
         self.assertIn("market-opportunity-lenses.js?v=3.3", universe)
         for module in (
             "vestra-swap-lab.js?v=1.2",
-            "vestra-portfolio-ui.js?v=3.3",
+            "vestra-portfolio-ui.js?v=3.5",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
             "vestra-portfolio-hierarchy.js?v=2.4",
