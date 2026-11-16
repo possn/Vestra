@@ -52,6 +52,26 @@ class ResearchCollectorTests(unittest.TestCase):
         prior["observations"].append(observed("E",technical_geometry_shadow={"both_pass":False}))
         self.assertEqual(mod.pick_research_tickers(names,0,3,prior,now),["B","D","A"])
 
+    def test_legacy_boolean_geometry_is_prioritized_for_quantitative_backfill(self):
+        from datetime import timedelta
+        now=datetime(2026,11,16,12,tzinfo=timezone.utc)
+        stamp=(now-timedelta(hours=2)).isoformat()
+        measured={"prior_width_pct":35.0,"base_width_pct":20.0,
+                  "w1_pct":15.0,"w2_pct":10.0,"w3_pct":5.0,"both_pass":False}
+        previous={"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
+                  "observations":[
+                      {"ticker":"FULL","status":"evaluable_ohlcv","observation_checked_at":stamp,
+                       "average_dollar_volume_20_usd":2_000_000,"technical_geometry_shadow":measured},
+                      {"ticker":"LEGACY","status":"evaluable_ohlcv","observation_checked_at":stamp,
+                       "average_dollar_volume_20_usd":2_000_000,
+                       "technical_geometry_shadow":{"base_width_pass":False,"both_pass":False}},
+                      {"ticker":"ILLIQUID","status":"evaluable_ohlcv","observation_checked_at":stamp,
+                       "average_dollar_volume_20_usd":100_000,
+                       "technical_first_rejection":"below_1m_usd_turnover"}]}
+        self.assertEqual(mod.pick_research_tickers(
+            ["FULL","LEGACY","ILLIQUID"],0,3,previous,now),
+            ["LEGACY","FULL","ILLIQUID"])
+
     def test_universe_churn_requires_exact_prior_roster_not_only_hash(self):
         current={"universe_tickers":["A","B","C"]}
         prior={"universe_tickers_sha256":"hash_only","universe_100m_500m_count":2}
