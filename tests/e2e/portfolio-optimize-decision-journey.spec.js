@@ -49,7 +49,7 @@ test('iPhone/WebKit: Portfolio Optimize follows one canonical decision journey',
   await expect(overview).toContainText('maior é melhor');
   await expect(overview).not.toContainText('risco elevado');
 
-  const explore = sheet.locator('[data-vpu-toggle]').first();
+  const explore = sheet.locator('[data-vpu-open-analysis]');
   await expect(explore).toBeVisible();
   await explore.click();
   await sheet.locator('[data-vpu-tab="optimize"]').click();
