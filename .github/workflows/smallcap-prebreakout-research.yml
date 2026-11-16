@@ -71,6 +71,24 @@ jobs:
               f"- Observed status counts: {json.dumps(dict(sorted(counts.items())), sort_keys=True)}",
               "- These are observed OHLCV counts, not pre-breakout success rates.",
           ]
+          before = prior.get("independent_geometry_audit") or {}
+          after = report.get("independent_geometry_audit") or {}
+          lines.append("#### Quantitative VCP backfill — observed before / after")
+          for key, label in (
+              ("liquid_evaluable_rows", "Liquid evaluable"),
+              ("geometry_diagnosed_rows", "Geometry diagnosed"),
+              ("continuous_geometry_measurement_rows", "Complete quantitative measurements"),
+              ("legacy_boolean_only_geometry_rows", "Legacy boolean-only"),
+              ("both_pass", "Both VCP gates pass"),
+          ):
+              old, new = before.get(key), after.get(key)
+              if type(old) is int and type(new) is int:
+                  lines.append(f"- {label}: {old} → {new} ({new-old:+d})")
+              else:
+                  lines.append(f"- {label}: unavailable (not inferred)")
+          lines += [
+              "- This compares two actual snapshots, not planned coverage or a success probability.",
+          ]
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
               summary.write("\n".join(lines) + "\n")
           PY
