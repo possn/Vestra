@@ -1,7 +1,7 @@
 {
   "schema": "vestra_breakout_lab_smallcap_ohlcv_research_v1",
   "status": "observed_research_only_not_breakout_signals",
-  "generated_at": "2026-11-16T07:34:49.141259+00:00",
+  "generated_at": "2026-11-16T15:28:33.150932+00:00",
   "source": "yfinance",
   "universe_100m_500m_count": 360,
   "universe_tickers_sha256": "da3224a8680f222def7de8b6b51d3d4e24218b3ab6fc9615441ccef931e6616e",
@@ -367,21 +367,21 @@
     "ZUMZ",
     "ZURA"
   ],
-  "slot": 2959745,
+  "slot": 2959746,
   "budget": 30,
   "provider_tickers_attempted": 30,
   "provider_attempt_status_counts": {
-    "currency_not_verified_usd": 1,
-    "evaluable_ohlcv": 26,
-    "insufficient_ohlcv": 2,
-    "zero_volume_interrupted_history": 1
+    "evaluable_ohlcv": 23,
+    "insufficient_ohlcv": 1,
+    "invalid_ohlcv": 1,
+    "zero_volume_interrupted_history": 5
   },
   "provider_error_type_counts": {},
-  "evaluable_ohlcv": 305,
-  "observed_incomplete": 55,
+  "evaluable_ohlcv": 306,
+  "observed_incomplete": 54,
   "technical_first_rejection_counts": {
     "base_width": 7,
-    "below_1m_usd_turnover": 78,
+    "below_1m_usd_turnover": 79,
     "moving_average_structure": 219,
     "not_recorded_legacy": 1
   },
@@ -393,17 +393,17 @@
       "ma150_rising_10": 171,
       "ma200_rising_10": 180,
       "ma50_above_ma150": 189,
-      "ma50_rising_10": 191,
-      "price_above_ma50": 188
+      "ma50_rising_10": 190,
+      "price_above_ma50": 189
     },
     "not_independent_pass_rates": true
   },
   "independent_geometry_audit": {
     "scope": "evaluable_liquid_series_including_ma_rejections",
     "liquid_evaluable_rows": 227,
-    "geometry_diagnosed_rows": 207,
-    "continuous_geometry_measurement_rows": 48,
-    "legacy_boolean_only_geometry_rows": 159,
+    "geometry_diagnosed_rows": 226,
+    "continuous_geometry_measurement_rows": 70,
+    "legacy_boolean_only_geometry_rows": 156,
     "base_width_pass": 2,
     "contractions_pass": 5,
     "both_pass": 0,
@@ -415,12 +415,12 @@
     "removed": 0,
     "retained": 360,
     "newly_added_evaluable": 0,
-    "retained_evaluable": 305,
+    "retained_evaluable": 306,
     "newly_added_unobserved": 0,
     "not_market_cap_point_in_time_history": true
   },
   "not_observed": 0,
-  "universe_coverage_pct": 84.72,
+  "universe_coverage_pct": 85.0,
   "point_in_time_caveat": "market_caps_from_current_index_not_historical_asof_snapshots",
   "not_breakout_candidates": true,
   "no_success_probability": true,
@@ -3073,53 +3073,86 @@
     {
       "ticker": "LUNG",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "base_width",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 112.393,
+        "base_width_pct": 88.953,
+        "w1_pct": 42.7,
+        "w2_pct": 21.453,
+        "w3_pct": 86.246,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": null,
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 3485251.86,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 3562935.16,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "MGNX",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 50.595,
+        "base_width_pct": 117.617,
+        "w1_pct": 15.424,
+        "w2_pct": 31.661,
+        "w3_pct": 90.155,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma150_rising_10",
         "ma50_above_ma150",
         "ma50_rising_10",
         "price_above_ma50"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 2565356.56,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 2608392.06,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "NAGE",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 26.829,
+        "base_width_pct": 52.941,
+        "w1_pct": 13.22,
+        "w2_pct": 26.829,
+        "w3_pct": 26.961,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma150_above_ma200",
         "ma150_rising_10",
@@ -3128,24 +3161,35 @@
         "ma50_rising_10",
         "price_above_ma50"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 1292319.94,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 1255694.29,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "NCMI",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 97.685,
+        "base_width_pct": 66.429,
+        "w1_pct": 31.163,
+        "w2_pct": 17.085,
+        "w3_pct": 50.714,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma150_above_ma200",
         "ma150_rising_10",
@@ -3154,16 +3198,16 @@
         "ma50_rising_10",
         "price_above_ma50"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 1276146.9,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 1545717.76,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "NGEN",
@@ -3187,25 +3231,36 @@
     {
       "ticker": "NRXP",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 64.539,
+        "base_width_pct": 60.664,
+        "w1_pct": 16.772,
+        "w2_pct": 36.694,
+        "w3_pct": 34.597,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma50_above_ma150",
         "ma50_rising_10",
         "price_above_ma50"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 4203074.51,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 4156198.27,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "NVA",
@@ -3219,32 +3274,55 @@
     {
       "ticker": "OPRX",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 91.158,
+        "base_width_pct": 56.714,
+        "w1_pct": 21.72,
+        "w2_pct": 28.752,
+        "w3_pct": 56.714,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma150_above_ma200",
-        "ma200_rising_10"
+        "ma200_rising_10",
+        "price_above_ma50"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 1900197.49,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 2081571.29,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "ORGO",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 74.675,
+        "base_width_pct": 104.795,
+        "w1_pct": 39.552,
+        "w2_pct": 51.01,
+        "w3_pct": 51.37,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma150_above_ma200",
         "ma150_rising_10",
@@ -3253,24 +3331,35 @@
         "ma50_rising_10",
         "price_above_ma50"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 1105365.7,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 1069828.0,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "PRQR",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 81.111,
+        "base_width_pct": 59.167,
+        "w1_pct": 37.43,
+        "w2_pct": 46.923,
+        "w3_pct": 25.0,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma150_rising_10",
         "ma200_rising_10",
@@ -3278,24 +3367,35 @@
         "ma50_rising_10",
         "price_above_ma50"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 1085724.95,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 1056106.15,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "PUSA",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 60.769,
+        "base_width_pct": 211.024,
+        "w1_pct": 27.134,
+        "w2_pct": 96.517,
+        "w3_pct": 69.528,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma150_above_ma200",
         "ma150_rising_10",
@@ -3304,24 +3404,35 @@
         "ma50_rising_10",
         "price_above_ma50"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 1402551.68,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 1360734.08,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "RILY",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 39.403,
+        "base_width_pct": 80.994,
+        "w1_pct": 23.051,
+        "w2_pct": 38.17,
+        "w3_pct": 38.596,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma150_above_ma200",
         "ma150_rising_10",
@@ -3330,16 +3441,16 @@
         "ma50_rising_10",
         "price_above_ma50"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 3523320.64,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 3504140.69,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "SNGSF",
@@ -3349,10 +3460,21 @@
     {
       "ticker": "SPIR",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 93.487,
+        "base_width_pct": 75.037,
+        "w1_pct": 30.909,
+        "w2_pct": 46.921,
+        "w3_pct": 36.11,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma150_rising_10",
         "ma200_rising_10",
@@ -3360,16 +3482,16 @@
         "ma50_rising_10",
         "price_above_ma50"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 4510419.58,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 4500612.03,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "SWP.PA",
@@ -3380,10 +3502,21 @@
     {
       "ticker": "TDUP",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 166.543,
+        "base_width_pct": 103.306,
+        "w1_pct": 21.186,
+        "w2_pct": 20.622,
+        "w3_pct": 91.935,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma150_above_ma200",
         "ma150_rising_10",
@@ -3392,16 +3525,16 @@
         "ma50_rising_10",
         "price_above_ma50"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 3449377.25,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 3430696.75,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "TOUBF",
@@ -3415,34 +3548,56 @@
     {
       "ticker": "TOYO",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 88.967,
+        "base_width_pct": 49.865,
+        "w1_pct": 18.204,
+        "w2_pct": 15.25,
+        "w3_pct": 49.865,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma150_above_ma200",
         "ma150_rising_10",
         "ma200_rising_10",
         "ma50_above_ma150"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 2722791.48,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 2806916.28,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "TROX",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 29.695,
+        "base_width_pct": 87.19,
+        "w1_pct": 40.488,
+        "w2_pct": 35.224,
+        "w3_pct": 57.025,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma150_above_ma200",
         "ma150_rising_10",
@@ -3451,24 +3606,35 @@
         "ma50_rising_10",
         "price_above_ma50"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 9866867.91,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 10135111.28,
       "liquidity_5m_usd_verified": true,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "TSSI",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 48.268,
+        "base_width_pct": 80.678,
+        "w1_pct": 22.572,
+        "w2_pct": 51.852,
+        "w3_pct": 32.712,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma150_rising_10",
         "ma200_rising_10",
@@ -3476,63 +3642,84 @@
         "ma50_rising_10",
         "price_above_ma50"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 5476720.82,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 5314135.62,
       "liquidity_5m_usd_verified": true,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "TTEC",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 101.449,
+        "base_width_pct": 165.0,
+        "w1_pct": 25.424,
+        "w2_pct": 40.833,
+        "w3_pct": 140.909,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma150_above_ma200",
         "ma150_rising_10",
         "ma200_rising_10",
         "ma50_above_ma150"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 4135066.48,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 4359021.34,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "UIS",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 64.259,
+        "base_width_pct": 40.566,
+        "w1_pct": 15.966,
+        "w2_pct": 18.396,
+        "w3_pct": 35.455,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma200_rising_10",
-        "ma50_above_ma150",
-        "ma50_rising_10"
+        "ma50_above_ma150"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 3041060.65,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 3084126.3,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "USDE",
@@ -3546,10 +3733,21 @@
     {
       "ticker": "VELO",
       "status": "evaluable_ohlcv",
-      "bars": 379,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 144.497,
+        "base_width_pct": 191.272,
+        "w1_pct": 42.709,
+        "w2_pct": 83.216,
+        "w3_pct": 81.297,
+        "research_only_not_eligibility": true
+      },
       "technical_failed_ma_checks": [
         "ma150_rising_10",
         "ma200_rising_10",
@@ -3557,16 +3755,16 @@
         "ma50_rising_10",
         "price_above_ma50"
       ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 9532813.95,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 9184598.7,
       "liquidity_5m_usd_verified": true,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "VIB3.DE",
@@ -3596,32 +3794,7 @@
     {
       "ticker": "VUZI",
       "status": "evaluable_ohlcv",
-      "bars": 379,
-      "zero_volume_sessions_before_contiguous_window": 0,
-      "verified_prebreakout_setup": null,
-      "technical_first_rejection": "moving_average_structure",
-      "technical_failed_ma_checks": [
-        "ma150_rising_10",
-        "ma200_rising_10",
-        "ma50_above_ma150",
-        "ma50_rising_10",
-        "price_above_ma50"
-      ],
-      "first_session": "2025-05-13",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 1947884.5,
-      "liquidity_5m_usd_verified": false,
-      "spread_verified": false,
-      "gap_risk_not_assessed": true,
-      "currency": "USD",
-      "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T19:51:56.764889+00:00",
-      "observation_checked_at": "2026-11-13T19:51:56.764889+00:00"
-    },
-    {
-      "ticker": "CVGI",
-      "status": "evaluable_ohlcv",
-      "bars": 378,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
@@ -3629,27 +3802,68 @@
         "base_width_pass": false,
         "contractions_pass": false,
         "both_pass": false,
+        "prior_width_pct": 59.524,
+        "base_width_pct": 144.615,
+        "w1_pct": 30.38,
+        "w2_pct": 55.122,
+        "w3_pct": 81.538,
+        "research_only_not_eligibility": true
+      },
+      "technical_failed_ma_checks": [
+        "ma150_rising_10",
+        "ma200_rising_10",
+        "ma50_above_ma150",
+        "ma50_rising_10",
+        "price_above_ma50"
+      ],
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 2124168.7,
+      "liquidity_5m_usd_verified": false,
+      "spread_verified": false,
+      "gap_risk_not_assessed": true,
+      "currency": "USD",
+      "price_basis": "yfinance_auto_adjusted",
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
+    },
+    {
+      "ticker": "CVGI",
+      "status": "evaluable_ohlcv",
+      "bars": 377,
+      "zero_volume_sessions_before_contiguous_window": 0,
+      "verified_prebreakout_setup": null,
+      "technical_first_rejection": "moving_average_structure",
+      "technical_geometry_shadow": {
+        "base_width_pass": false,
+        "contractions_pass": false,
+        "both_pass": false,
+        "prior_width_pct": 70.358,
+        "base_width_pct": 51.515,
+        "w1_pct": 13.746,
+        "w2_pct": 15.242,
+        "w3_pct": 51.515,
         "research_only_not_eligibility": true
       },
       "technical_failed_ma_checks": [
         "ma150_rising_10",
         "ma50_above_ma150"
       ],
-      "first_session": "2025-05-14",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 1068799.7,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 1070539.3,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T22:49:01.311057+00:00",
-      "observation_checked_at": "2026-11-13T22:49:01.311057+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "CXDO",
       "status": "evaluable_ohlcv",
-      "bars": 378,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
@@ -3657,6 +3871,11 @@
         "base_width_pass": false,
         "contractions_pass": false,
         "both_pass": false,
+        "prior_width_pct": 46.075,
+        "base_width_pct": 28.247,
+        "w1_pct": 18.751,
+        "w2_pct": 14.558,
+        "w3_pct": 28.247,
         "research_only_not_eligibility": true
       },
       "technical_failed_ma_checks": [
@@ -3666,16 +3885,16 @@
         "ma50_rising_10",
         "price_above_ma50"
       ],
-      "first_session": "2025-05-14",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 1361714.49,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 1329769.19,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T22:49:01.311057+00:00",
-      "observation_checked_at": "2026-11-13T22:49:01.311057+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "DERM",
@@ -3720,7 +3939,7 @@
     {
       "ticker": "DHX",
       "status": "evaluable_ohlcv",
-      "bars": 378,
+      "bars": 377,
       "zero_volume_sessions_before_contiguous_window": 0,
       "verified_prebreakout_setup": null,
       "technical_first_rejection": "moving_average_structure",
@@ -3728,21 +3947,26 @@
         "base_width_pass": false,
         "contractions_pass": false,
         "both_pass": false,
+        "prior_width_pct": 31.965,
+        "base_width_pct": 28.571,
+        "w1_pct": 32.737,
+        "w2_pct": 12.996,
+        "w3_pct": 28.571,
         "research_only_not_eligibility": true
       },
       "technical_failed_ma_checks": [
         "price_above_ma50"
       ],
-      "first_session": "2025-05-14",
-      "last_session": "2026-11-12",
-      "average_dollar_volume_20_usd": 1161195.46,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 1157361.66,
       "liquidity_5m_usd_verified": false,
       "spread_verified": false,
       "gap_risk_not_assessed": true,
       "currency": "USD",
       "price_basis": "yfinance_auto_adjusted",
-      "ohlcv_observed_at": "2026-11-13T22:49:01.311057+00:00",
-      "observation_checked_at": "2026-11-13T22:49:01.311057+00:00"
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "DMRC",
@@ -8722,10 +8946,10 @@
       "ticker": "MLMLF",
       "status": "zero_volume_interrupted_history",
       "bars": 214,
-      "zero_volume_sessions": 85,
+      "zero_volume_sessions": 83,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-15T08:47:56.246328+00:00"
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "MNTK",
@@ -8823,7 +9047,7 @@
       "zero_volume_sessions": 19,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-15T08:47:56.246328+00:00"
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "MRLN",
@@ -8864,7 +9088,7 @@
       "zero_volume_sessions": 27,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-15T08:47:56.246328+00:00"
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "MXCT",
@@ -8901,7 +9125,7 @@
       "zero_volume_sessions": 0,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-15T08:47:56.246328+00:00"
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "NATR",
@@ -9112,17 +9336,32 @@
     },
     {
       "ticker": "NNY",
-      "status": "invalid_ohlcv",
-      "observation_checked_at": "2026-11-15T08:47:56.246328+00:00"
+      "status": "evaluable_ohlcv",
+      "bars": 377,
+      "zero_volume_sessions_before_contiguous_window": 0,
+      "verified_prebreakout_setup": null,
+      "technical_first_rejection": "below_1m_usd_turnover",
+      "technical_geometry_shadow": null,
+      "technical_failed_ma_checks": null,
+      "first_session": "2025-05-16",
+      "last_session": "2026-11-13",
+      "average_dollar_volume_20_usd": 714193.44,
+      "liquidity_5m_usd_verified": false,
+      "spread_verified": false,
+      "gap_risk_not_assessed": true,
+      "currency": "USD",
+      "price_basis": "yfinance_auto_adjusted",
+      "ohlcv_observed_at": "2026-11-16T15:28:33.150932+00:00",
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "NOURF",
       "status": "zero_volume_interrupted_history",
       "bars": 6,
-      "zero_volume_sessions": 114,
+      "zero_volume_sessions": 112,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-15T08:47:56.246328+00:00"
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "NXH",
@@ -9160,10 +9399,10 @@
       "ticker": "ONVVF",
       "status": "zero_volume_interrupted_history",
       "bars": 0,
-      "zero_volume_sessions": 378,
+      "zero_volume_sessions": 376,
       "research_only": true,
       "setup_blocked": true,
-      "observation_checked_at": "2026-11-15T08:47:56.246328+00:00"
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "OSS",
@@ -9229,7 +9468,7 @@
     {
       "ticker": "OXSQ",
       "status": "invalid_ohlcv",
-      "observation_checked_at": "2026-11-15T08:47:56.246328+00:00"
+      "observation_checked_at": "2026-11-16T15:28:33.150932+00:00"
     },
     {
       "ticker": "PALI",
@@ -9472,7 +9711,7 @@
       "observation_checked_at": "2026-11-16T07:34:49.141259+00:00"
     }
   ],
-  "universe_source_index_sha256": "3087f846c5343488f3b3116c119f8fabb0726fcff77f1f22ff28e9ac98a1d1a3",
+  "universe_source_index_sha256": "f2df3f90d09041689374184f81fdac56e7bb7a0ff6acaa935d28357b5edd9156",
   "setup_verification_window_hours": 18,
   "historical_setups_excluded_as_stale": 0,
   "coverage_window_hours": 96,
