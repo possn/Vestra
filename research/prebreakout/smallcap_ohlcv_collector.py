@@ -218,7 +218,7 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96,
             # priority rather than treating legacy evidence as a provider failure.
             last_status[ticker]=row.get("status","evaluable_ohlcv")
             # Once data coverage is addressed, revisit usable but historically
-            # undiagnosed VCP geometry before already diagnosed OHLCV. Never
+            # unquantified VCP geometry before already quantified OHLCV. Never
             # waste a geometry request on verified sub-$1m daily turnover.
             turnover=row.get("average_dollar_volume_20_usd")
             liquid=(type(turnover) in (int,float) and math.isfinite(turnover)
@@ -226,7 +226,10 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96,
             needs_geometry[ticker]=(last_status[ticker]=="evaluable_ohlcv"
                 and row.get("technical_first_rejection")!="below_1m_usd_turnover"
                 and (liquid or turnover is None)
-                and not isinstance(row.get("technical_geometry_shadow"),dict))
+                and (not isinstance(row.get("technical_geometry_shadow"),dict)
+                     or not all(type(row["technical_geometry_shadow"].get(k)) in (int,float)
+                         and math.isfinite(row["technical_geometry_shadow"][k])
+                         for k in ("prior_width_pct","base_width_pct","w1_pct","w2_pct","w3_pct"))))
     # Recent failures cannot be cured by immediately requesting the same
     # ticker again every six hours. Allow a bounded retry delay so that the
     # independent VCP geometry backlog makes progress when the unseen cohort
