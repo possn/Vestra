@@ -432,3 +432,25 @@ body.modal-open #viewMarket{
   .vpu-portfolio .vpu-reveal{flex-wrap:wrap}
   .vpu-portfolio .vpu-reveal button{width:100%}
 }
+
+/* iPhone: compact closed analysis cards, readable titles and unobstructed toggle. */
+@media(max-width:620px){
+  .vpu-portfolio .vpu-section-card.is-collapsed{
+    min-height:72px!important;padding:15px 62px 15px 16px!important;
+  }
+  .vpu-portfolio .vpu-section-card.is-collapsed>.market-perspective-head,
+  .vpu-portfolio .vpu-section-card.is-collapsed>h4{
+    padding-right:0!important;min-height:0!important;min-width:0!important;
+    font-size:17px!important;line-height:1.3!important;
+    overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important;
+  }
+  .vpu-portfolio .vpu-section-card.is-collapsed .market-perspective-head h4{
+    font-size:17px!important;line-height:1.3!important;
+  }
+  .vpu-portfolio .vpu-section-card.is-collapsed .market-perspective-head small,
+  .vpu-portfolio .vpu-section-card.is-collapsed>.vpu-card-cue,
+  .vpu-portfolio .vpu-section-card.is-collapsed .market-target-fit-score,
+  .vpu-portfolio .vpu-section-card.is-collapsed .market-data-age{
+    display:none!important;
+  }
+}
