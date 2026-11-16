@@ -74,6 +74,16 @@
       hero.querySelector('.vpu-evidence').textContent=`${m.research||'—'} instrumentos distintos identificados no research · A cobertura mede valor, não percentagem de títulos. Risk Fit: maior é melhor, mas não representa certeza sobre posições sem cobertura.`;
       hero.querySelector('.vpu-health-row:last-child span').textContent='Cobertura por valor';
     }
+    // Do not offer dead-end actions when the underlying analysis has no rows.
+    // Availability is derived from actual rendered cards, not stale headline counts.
+    for(const button of hero.querySelectorAll('[data-vpu-jump]')){
+      const kind=button.dataset.vpuJump;
+      const target=card(kind,c);
+      const available=!!target && countRows(target)>0;
+      button.disabled=!available;
+      button.setAttribute('aria-disabled',available?'false':'true');
+      button.title=available?'Abrir análise':'Sem resultados disponíveis nesta análise';
+    }
     if(created){const dc=decisionCenter(c); if(dc)dc.hidden=true;}
     return hero;
   }
