@@ -27,7 +27,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
             self.assertNotIn(direct, h)
         expected = (
             "vestra-swap-lab.js?v=1.2",
-            "vestra-portfolio-ui.js?v=3.3",
+            "vestra-portfolio-ui.js?v=3.5",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
             "vestra-portfolio-hierarchy.js?v=2.4",
@@ -66,7 +66,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         self.assertIn("evolução da carteira", ui)
         self.assertIn("como reage a parte analisável", ui)
         self.assertIn("como reage a parte classificável à inflação", ui)
-        self.assertIn("el.classList.toggle('vpu-hidden',!expanded||g!==active)", ui)
+        self.assertIn("el.classList.toggle('vpu-hidden',!expanded||g!==active||(secondary&&!showSupport))", ui)
 
     def test_hierarchy_preserves_final_card_order_and_swap_hooks(self):
         s=read('vestra-portfolio-hierarchy.js')
