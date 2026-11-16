@@ -39,12 +39,12 @@ class PortfolioDiagnosticsTests(unittest.TestCase):
         self.assertNotIn('src="vestra-portfolio-ui.js', h)
         self.assertNotIn('src="portfolio-diagnostics.js', h)
         self.assertLess(
-            loader.index('vestra-portfolio-ui.js?v=3.3'),
+            loader.index('vestra-portfolio-ui.js?v=3.5'),
             loader.index('portfolio-diagnostics.js?v=1.2'),
         )
         self.assertIn('./portfolio-diagnostics.js', sw)
-        self.assertIn('vestra-portfolio-ui.css?v=3.4-mobile-reading', h)
-        self.assertLess(h.index('vestra-portfolio-ui.css?v=3.4-mobile-reading'), h.index('market-static-universe.js'))
+        self.assertIn('vestra-portfolio-ui.css?v=3.5-guided', h)
+        self.assertLess(h.index('vestra-portfolio-ui.css?v=3.5-guided'), h.index('market-static-universe.js'))
 
 
 if __name__ == '__main__':
