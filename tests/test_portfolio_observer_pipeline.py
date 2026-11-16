@@ -143,7 +143,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("function collapseActive(c)", ui)
         self.assertNotIn("function openFirstActive(c)", ui)
         self.assertIn("if(opening){collapseActive(c);", ui)
-        self.assertIn("apply();const c=root();if(c){collapseActive(c);", ui)
+        self.assertIn("apply();if(c){collapseActive(c);", ui)
         self.assertIn("focusCard(c,target)", ui)
 
     def test_foundation_helpers_defer_dom_work_to_hierarchy_bootstrap(self):
