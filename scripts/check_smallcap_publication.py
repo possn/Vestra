@@ -175,7 +175,8 @@ def coverage_triage(report: dict) -> dict:
         type(row["technical_geometry_shadow"].get(key)) in (int, float)
         and math.isfinite(row["technical_geometry_shadow"][key]) for key in measures)]
     pending = [row for row in liquid if not isinstance(row.get("technical_geometry_shadow"), dict)]
-    legacy = [row for row in diagnosed if row not in quantified]
+    quantified_ids = {id(row) for row in quantified}
+    legacy = [row for row in diagnosed if id(row) not in quantified_ids]
     return {
         "measurement": "observed_snapshot_not_prediction",
         "incomplete_count": len(incomplete),
