@@ -58,7 +58,7 @@ test('iPhone/WebKit: expanded portfolio explorer hides base market and keeps clo
   await expect(sheet).toBeVisible();
   await expect(page.locator('#viewMarket')).toHaveCSS('visibility', 'hidden');
 
-  const toggle = sheet.locator('[data-vpu-toggle]').first();
+  const toggle = sheet.locator('[data-vpu-open-analysis]');
   await expect(toggle).toBeVisible();
   await toggle.click();
 
