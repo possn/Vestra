@@ -46,7 +46,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         classifier=read('portfolio-card-classifier.js')
         ui=read('vestra-portfolio-ui.js')
         self.assertIn("{q:'Aderência desta carteira aos objetivos',kind:'target'", classifier)
-        self.assertIn("monitor:{label:'Monitorizar'", ui)
+        self.assertIn("monitor:{label:'Explorar'", ui)
         self.assertIn("kinds:['target','history','risk','stress','inflation']", ui)
         self.assertIn("{q:'Evolução da carteira',kind:'history'", classifier)
         self.assertIn("{q:'Como reage a parte analisável?',kind:'stress'", classifier)
