@@ -1,4 +1,4 @@
-/* Vestra Portfolio UI v3.3 — exploration focus mode separates analysis from base holdings. */
+/* Vestra Portfolio UI v3.5 — exploration focus mode separates analysis from base holdings. */
 (() => {
   'use strict';
 
@@ -104,10 +104,9 @@
     const meta=GROUPS[active]||GROUPS.decide;
     tabs.querySelectorAll('[data-vpu-tab]').forEach(b=>{
       const group=b.dataset.vpuTab, cards=[...c.querySelectorAll('.vpu-section-card')].filter(el=>el.dataset.vpuGroup===group);
-      let badge=b.querySelector('.vpu-tab-count');
-      if(!badge){badge=document.createElement('i');badge.className='vpu-tab-count';b.appendChild(badge);}
-      badge.textContent=String(cards.length);
-      badge.title=`${cards.length} análises nesta área`;
+      // The tab label is the navigation target. Counts are metadata, never competing text.
+      b.querySelector('.vpu-tab-count')?.remove();
+      b.setAttribute('aria-label',`${GROUPS[group].label}: ${cards.length} análises`);
     });
     c.querySelectorAll('.vpu-section-card').forEach(el=>{
       let cue=el.querySelector(':scope > .vpu-card-cue');
@@ -164,16 +163,19 @@
     let current='';
     if(target)current=steps.find(step=>optimizeTarget(c,step)===target)||'';
     guide.querySelectorAll('[data-vpu-guide]').forEach((b,i)=>{
+      const available=!!optimizeTarget(c,b.dataset.vpuGuide);
+      b.disabled=!available;
+      b.title=available?'Abrir esta análise':'Análise indisponível para os dados atuais';
       const on=b.dataset.vpuGuide===current;b.classList.toggle('is-current',on);
       b.setAttribute('aria-current',on?'step':'false');
       const state=b.querySelector('.vpu-step-state');if(state)state.textContent=on?'Agora':i===0?'Comparar':i===1?'Simular':'Decidir';
     });
   }
   function optimizeTarget(c,step){
-    const cards=[...c.querySelectorAll('.vpu-section-card')];
-    if(step==='swap') return cards.find(el=>/alternativas no mesmo setor|trocar só quando melhora/i.test(t(el.textContent)))||null;
-    if(step==='scenario') return cards.find(el=>/se substituíres pelo mesmo valor/i.test(t(el.textContent)))||null;
-    if(step==='rebalance') return card('rebalance',c)||cards.find(el=>/onde melhora mais este capital/i.test(t(el.textContent)))||null;
+    // Stable semantic identity first: text headings can change or be localized.
+    if(step==='swap')return card('swap',c);
+    if(step==='scenario')return card('scenario',c);
+    if(step==='rebalance')return card('rebalance',c);
     return null;
   }
   function jump(kind){ const c=root(), target=card(kind,c); if(!target)return; c.dataset.vpuExpanded='1'; active=classify(target)||active; try{localStorage.setItem('vestra.portfolio.analysisTab',active);}catch{} apply(); focusCard(c,target); setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30); }
@@ -205,6 +207,6 @@
     const guide=e.target.closest?.('[data-vpu-guide]'); if(guide){const c=root();if(!c)return;const target=optimizeTarget(c,guide.dataset.vpuGuide);if(!target)return;focusCard(c,target);syncOptimizeGuide(c,target);setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30);return;}
   },true);
   function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{}}
-  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'3.3'});
+  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'3.5'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
