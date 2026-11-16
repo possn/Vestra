@@ -493,3 +493,91 @@ body.modal-open #viewMarket{
     right:14px!important;top:50%!important;transform:translateY(-50%)!important;
   }
 }
+
+/* v3.6 — unified portfolio sheet: inherit the app theme and keep actions outside title flow.
+   These rules deliberately supersede the older v1.8–v3.5 mobile overrides. */
+#marketSheet[data-tool="portfolio"]:not([hidden]),
+#marketSheet[data-tool="portfolio"]:not([hidden])>.market-sheet__panel{
+  background:var(--bg)!important;
+  color:var(--text);
+}
+#marketSheet[data-tool="portfolio"]::before{background:var(--bg)!important;pointer-events:none}
+.vpu-portfolio .vpu-section-card.is-collapsed{
+  box-sizing:border-box;
+  position:relative;
+  opacity:1;
+  min-height:64px!important;
+  padding:14px 64px 14px 16px!important;
+  border-radius:16px;
+  background:var(--card);
+}
+.vpu-portfolio .vpu-section-card.is-collapsed>.market-perspective-head,
+.vpu-portfolio .vpu-section-card.is-collapsed>h4{
+  display:block!important;
+  width:auto!important;
+  max-width:100%!important;
+  min-width:0!important;
+  padding:0!important;
+  margin:0!important;
+  font-size:clamp(15px,3.8vw,18px)!important;
+  font-weight:700!important;
+  line-height:1.35!important;
+  letter-spacing:-.02em;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+}
+.vpu-portfolio .vpu-section-card.is-collapsed .market-perspective-head>div,
+.vpu-portfolio .vpu-section-card.is-collapsed .market-perspective-head h4{
+  box-sizing:border-box;
+  width:auto!important;
+  max-width:100%!important;
+  min-width:0!important;
+  padding:0!important;
+  margin:0!important;
+  font-size:inherit!important;
+  line-height:inherit!important;
+  overflow-wrap:anywhere!important;
+}
+.vpu-portfolio .vpu-section-card.is-collapsed>[data-collapse-toggle],
+.vpu-portfolio .vpu-section-card.is-collapsed>.market-collapse-toggle{
+  position:absolute!important;
+  right:14px!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  width:38px!important;
+  height:38px!important;
+  min-width:38px!important;
+  padding:0!important;
+  display:grid!important;
+  place-items:center;
+  z-index:2;
+}
+.vpu-portfolio .vpu-section-card[data-vpu-scan-title].is-collapsed::after{content:none!important}
+.vpu-portfolio .vpu-section-card[data-vpu-scan-title].is-collapsed>h4{visibility:visible!important}
+.vpu-portfolio .vpu-section-card.is-collapsed>.vpu-card-cue{display:none!important}
+.vpu-portfolio .vpu-tabs-shell{
+  box-shadow:none;
+  border-color:var(--line);
+  background:var(--card);
+}
+@media(max-width:899px){
+  .vpu-portfolio[data-vpu-expanded="1"] .vpu-tabs-shell{
+    position:relative;
+    top:auto;
+    z-index:auto;
+    background:var(--card);
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+  }
+}
+@media(max-width:620px){
+  .vpu-portfolio .vpu-section-card.is-collapsed{
+    min-height:64px!important;
+    padding:14px 64px 14px 16px!important;
+  }
+  .vpu-portfolio .vpu-section-card.is-collapsed>.market-perspective-head,
+  .vpu-portfolio .vpu-section-card.is-collapsed>h4{font-size:16px!important}
+  .vpu-portfolio .vpu-section-card.is-collapsed .market-perspective-head h4{font-size:16px!important}
+  .vpu-portfolio .vpu-tabs-shell{padding:12px}
+  .vpu-portfolio .vpu-tabs button{min-height:44px}
+}
