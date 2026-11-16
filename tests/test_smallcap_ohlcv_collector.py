@@ -85,6 +85,8 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertEqual(mod.independent_geometry_audit(rows),{
             "scope":"evaluable_liquid_series_including_ma_rejections",
             "liquid_evaluable_rows":3,"geometry_diagnosed_rows":2,
+            "continuous_geometry_measurement_rows":0,
+            "legacy_boolean_only_geometry_rows":2,
             "base_width_pass":1,"contractions_pass":2,"both_pass":1,
             "not_eligibility_or_success_probability":True})
 
