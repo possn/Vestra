@@ -3,9 +3,9 @@
   'use strict';
 
   const GROUPS = {
-    decide: {label:'Prioridades', title:'O que merece atenção', sub:'Research, reforços e posições que merecem atenção.', kinds:['research','priority','reinforce','review']},
-    monitor:{label:'Monitorizar', title:'Como está a carteira', sub:'Saúde, objetivos, concentração e resistência da carteira.', kinds:['target','history','risk','stress','inflation']},
-    optimize:{label:'Otimizar', title:'Onde posso melhorar', sub:'Compara, simula e só depois decide onde redistribuir.', kinds:['swap','etfopt','scenario','rebalance','overlap','map','plan']}
+    decide: {label:'Atenção', title:'O que merece atenção', sub:'Research, reforços e posições que merecem atenção.', kinds:['research','priority','reinforce','review']},
+    monitor:{label:'Explorar', title:'Como está a carteira', sub:'Saúde, objetivos, concentração e resistência da carteira.', kinds:['target','history','risk','stress','inflation']},
+    optimize:{label:'Melhorar', title:'Onde posso melhorar', sub:'Compara, simula e só depois decide onde redistribuir.', kinds:['swap','etfopt','scenario','rebalance','overlap','map','plan']}
   };
   const SUPPORT_KINDS=new Set(['overlap','map','plan','stress','inflation']);
   const t=v=>String(v??'').trim();
@@ -44,17 +44,19 @@
   function status(m){
     const conv=num(m.conviction), riskFit=num(m.risk), cov=num(m.coverage), review=num(m.review);
     const materiallyPartial=cov!=null&&cov<80;
-    let title=materiallyPartial?'Avaliação parcial da carteira':'Carteira equilibrada, com pontos a acompanhar', tone=materiallyPartial?'warn':'neutral'; const bits=[];
+    const evidenceAvailable=cov!=null||riskFit!=null||conv!=null||review>0;
+    let title=!evidenceAvailable?'Dados insuficientes para avaliar a carteira':materiallyPartial?'Avaliação parcial da carteira':'Carteira com indicadores disponíveis para revisão', tone=materiallyPartial?'warn':'neutral'; const bits=[];
     if(materiallyPartial)bits.push(`${cov}% do valor elegível com research`);
     if(review>0){bits.push(`${review} destaques${m.reviewTotal!=null?` de ${m.reviewTotal} na fila`:''}`);tone='warn';}
     if(riskFit!=null){if(materiallyPartial)bits.push('Risk Fit apenas da parte analisada');else if(riskFit<65){bits.push('Risk Fit baixo');tone='warn';title='A diversificação merece atenção';}else if(riskFit<85){bits.push('Risk Fit intermédio');tone='warn';}else bits.push('Risk Fit sólido');}
     if(conv!=null)bits.push(conv>=70?'convicção forte':conv<45?'convicção frágil':'convicção moderada');
-    return {title,tone,sub:bits.slice(0,3).join(' · ')||'Visão consolidada da carteira.'};
+    return {title,tone,sub:bits.slice(0,3).join(' · ')||(evidenceAvailable?'Consultar indicadores e respetiva cobertura.':'Sem indicadores suficientes para uma conclusão fiável.')};
   }
   function tone(v,reverse=false){ const x=num(v); if(x==null)return'neutral'; if(reverse)return x>=75?'bad':x>=55?'warn':'good'; return x>=70?'good':x>=50?'warn':'bad'; }
   function healthBar(label,value,reverse=false){
-    const x=Math.max(0,Math.min(100,num(value)??0));
-    return `<div class="vpu-health-row"><div><span>${label}</span><b>${value||'—'}${value&&String(value).includes('%')?'':'/100'}</b></div><div class="vpu-track"><i class="is-${tone(value,reverse)}" style="width:${x}%"></i></div></div>`;
+    const raw=num(value), available=raw!=null;
+    const x=available?Math.max(0,Math.min(100,raw)):0;
+    return `<div class="vpu-health-row"><div><span>${label}</span><b>${available?value:'—'}${available&&!String(value).includes('%')?'/100':''}</b></div><div class="vpu-track"><i class="is-${tone(value,reverse)}" style="width:${x}%"></i></div></div>`;
   }
   function ensureHero(c){
     let hero=c.querySelector('.vpu-overview'), created=false; const m=metrics(c), st=status(m);
