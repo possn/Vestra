@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone, timedelta
 import json
+import math
 from pathlib import Path
 
 DEFAULT_PATH = Path(__file__).resolve().parents[1] / "data" / "breakout-lab-smallcap-ohlcv-research.json"
@@ -89,6 +90,17 @@ def assess_publication(report: dict, now: datetime, max_age_hours: int = 8) -> d
                    or geometry_audit[key] != value for key, value in geometry_counts.items())
             or geometry_audit.get("not_eligibility_or_success_probability") is not True):
             return {"status": "invalid", "reason": "unreconciled_vcp_geometry"}
+        if ("continuous_geometry_measurement_rows" in geometry_audit
+            or "legacy_boolean_only_geometry_rows" in geometry_audit):
+            measures = ("prior_width_pct", "base_width_pct", "w1_pct", "w2_pct", "w3_pct")
+            quantified = sum(all(type(row["technical_geometry_shadow"].get(key)) in (int, float)
+                                 and math.isfinite(row["technical_geometry_shadow"][key])
+                                 for key in measures) for row in diagnosed)
+            if (type(geometry_audit.get("continuous_geometry_measurement_rows")) is not int
+                or geometry_audit["continuous_geometry_measurement_rows"] != quantified
+                or type(geometry_audit.get("legacy_boolean_only_geometry_rows")) is not int
+                or geometry_audit["legacy_boolean_only_geometry_rows"] != len(diagnosed)-quantified):
+                return {"status": "invalid", "reason": "unreconciled_vcp_geometry_measurement_coverage"}
         if any(row["technical_geometry_shadow"].get("both_pass") is True
                and not (row["technical_geometry_shadow"].get("base_width_pass") is True
                         and row["technical_geometry_shadow"].get("contractions_pass") is True)
