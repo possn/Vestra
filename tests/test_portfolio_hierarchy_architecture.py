@@ -66,7 +66,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         self.assertIn("evolução da carteira", ui)
         self.assertIn("como reage a parte analisável", ui)
         self.assertIn("como reage a parte classificável à inflação", ui)
-        self.assertIn("el.classList.toggle('vpu-hidden',!expanded||g!==active)", ui)
+        self.assertIn("el.classList.toggle('vpu-hidden',!expanded||g!==active||(secondary&&!showSupport))", ui)
 
     def test_hierarchy_preserves_final_card_order_and_swap_hooks(self):
         s=read('vestra-portfolio-hierarchy.js')
