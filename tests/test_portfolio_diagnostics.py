@@ -43,8 +43,8 @@ class PortfolioDiagnosticsTests(unittest.TestCase):
             loader.index('portfolio-diagnostics.js?v=1.2'),
         )
         self.assertIn('./portfolio-diagnostics.js', sw)
-        self.assertIn('vestra-portfolio-ui.css?v=3.3-critical', h)
-        self.assertLess(h.index('vestra-portfolio-ui.css?v=3.3-critical'), h.index('market-static-universe.js'))
+        self.assertIn('vestra-portfolio-ui.css?v=3.4-mobile-reading', h)
+        self.assertLess(h.index('vestra-portfolio-ui.css?v=3.4-mobile-reading'), h.index('market-static-universe.js'))
 
 
 if __name__ == '__main__':
