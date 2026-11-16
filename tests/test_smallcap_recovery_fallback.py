@@ -13,8 +13,8 @@ class SmallcapRecoveryFallbackTests(unittest.TestCase):
 
     def test_recovery_remains_bounded_and_deduplicated(self):
         workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/recover-smallcap-publication.yml").read_text()
-        self.assertIn("status==\\\"queued\\\"", workflow)
-        self.assertIn("status==\\\"in_progress\\\"", workflow)
+        self.assertIn('status=="queued"', workflow)
+        self.assertIn('status=="in_progress"', workflow)
         self.assertIn('if [ "$active" -gt 0 ]; then', workflow)
         self.assertIn("budget=30", workflow)
         self.assertIn("cancel-in-progress: false", workflow)
