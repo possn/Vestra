@@ -592,3 +592,38 @@ body.modal-open #viewMarket{
 .vpu-portfolio .vpu-reveal{display:none}
 .vpu-portfolio .vpu-evidence{font-size:11px;line-height:1.5;opacity:.82}
 @media(max-width:380px){.vpu-portfolio .vpu-actions{grid-template-columns:1fr}}
+
+/* Compact editorial index: one line per closed analysis, not giant repeated tiles. */
+.vpu-portfolio .vpu-section-card.is-collapsed{
+  min-height:52px!important;
+  margin-top:5px!important;
+  padding:10px 56px 10px 14px!important;
+  border-radius:12px!important;
+  box-shadow:none!important;
+  border:1px solid var(--line)!important;
+}
+.vpu-portfolio .vpu-section-card.is-collapsed>.market-perspective-head,
+.vpu-portfolio .vpu-section-card.is-collapsed>h4,
+.vpu-portfolio .vpu-section-card.is-collapsed .market-perspective-head h4{
+  font-family:inherit!important;
+  font-size:14px!important;
+  font-weight:650!important;
+  line-height:1.3!important;
+  letter-spacing:-.01em!important;
+}
+.vpu-portfolio .vpu-section-card.is-collapsed>[data-collapse-toggle],
+.vpu-portfolio .vpu-section-card.is-collapsed>.market-collapse-toggle{
+  width:32px!important;height:32px!important;min-width:32px!important;
+  right:10px!important;border-radius:10px!important;
+}
+.vpu-portfolio .vpu-tabs-shell{padding:10px!important;margin-bottom:8px!important}
+.vpu-portfolio .vpu-tabs-head{margin-bottom:6px!important}
+.vpu-portfolio .vpu-tab-intro{padding:6px 2px 2px!important}
+.vpu-portfolio .vpu-tab-intro strong{font-size:14px!important}
+.vpu-portfolio .vpu-optimize-guide{margin:6px 0!important}
+@media(max-width:620px){
+ .vpu-portfolio .vpu-section-card.is-collapsed{min-height:52px!important;padding:10px 56px 10px 14px!important}
+ .vpu-portfolio .vpu-section-card.is-collapsed>.market-perspective-head,
+ .vpu-portfolio .vpu-section-card.is-collapsed>h4,
+ .vpu-portfolio .vpu-section-card.is-collapsed .market-perspective-head h4{font-size:14px!important}
+}
