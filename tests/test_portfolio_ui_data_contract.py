@@ -35,7 +35,9 @@ class PortfolioUiDataContractTests(unittest.TestCase):
         self.assertIn('market-research-queue-more', self.market)
         self.assertIn('dataset.queuePending', self.ui)
         self.assertIn('de ${m.reviewTotal} na fila', self.ui)
-        self.assertIn('Ver destaques', self.ui)
+        self.assertIn('Ver as minhas posições', self.ui)
+        self.assertIn('Explorar análises', self.ui)
+        self.assertIn('data-vpu-positions', self.ui)
 
     def test_materially_partial_coverage_cannot_be_labelled_solid_risk_fit(self):
         status = self.ui.split('function status(m){', 1)[1].split('function tone(', 1)[0]
