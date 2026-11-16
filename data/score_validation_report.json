@@ -1,11 +1,11 @@
 {
   "schema_version": 5,
   "generator_version": "score-forward-validation/cohort-aware-model-evidence-v3",
-  "generated_at": "2026-11-15T17:54:55.760910+00:00",
+  "generated_at": "2026-11-16T16:09:22.191937+00:00",
   "freshness": {
     "status": "current_at_generation",
-    "as_of_date": "2026-11-15",
-    "valid_through": "2026-11-17T05:54:55.760910+00:00",
+    "as_of_date": "2026-11-16",
+    "valid_through": "2026-11-18T04:09:22.191937+00:00",
     "validity_hours": 36,
     "latest_snapshot_date": "2026-11-09",
     "stale_if": "expired valid_through or generator/schema version differs from the current validator"
@@ -16,9 +16,9 @@
     84,
     168
   ],
-  "snapshots_available": 12,
-  "realised_outcomes": 12516,
-  "new_outcomes_this_run": 0,
+  "snapshots_available": 13,
+  "realised_outcomes": 13969,
+  "new_outcomes_this_run": 1453,
   "repaired_corporate_action_outcomes_this_run": 0,
   "horizons": {
     "28": {
@@ -177,8 +177,8 @@
         ]
       },
       "cohort_count": 7,
-      "expected_matured_cohorts": 8,
-      "cohort_capture_pct": 87.5,
+      "expected_matured_cohorts": 9,
+      "cohort_capture_pct": 77.8,
       "median_cohort_rank_ic": 0.2696,
       "positive_ic_cohorts": 6,
       "median_cohort_top_minus_bottom_pct": 7.63,
@@ -2066,7 +2066,7 @@
       "status": "early_signal",
       "outcome_eligibility_audit": {
         "explicitly_validated": 7925,
-        "explicitly_ineligible": 1608,
+        "explicitly_ineligible": 3061,
         "legacy_or_unknown_eligibility": 2983,
         "interpretation": "Only outcomes with validation_eligible=true enter Score performance statistics; unknown is not validated."
       },
@@ -2075,13 +2075,13 @@
         "duplicate_records_ignored": 0,
         "conflicting_keys_excluded": 0,
         "outcomes_outside_frozen_cohorts": 0,
-        "ineligible_unique_keys": 1608,
+        "ineligible_unique_keys": 3061,
         "unverified_or_incomplete_unique_keys": 2983,
         "invalid_or_unverified_evaluation_windows": 0,
         "interpretation": "Only unique, explicitly validated and scored outcomes in matured frozen cohorts enter Score statistics; conflicts are excluded, raw history preserved."
       },
       "first_possible_maturity_date": "2026-09-24",
-      "next_pending_maturity_date": "2026-11-16"
+      "next_pending_maturity_date": "2026-11-23"
     },
     "84": {
       "n": 0,
@@ -2262,6 +2262,7 @@
         "reasons": [
           "no_independent_score_candidate",
           "fewer_than_8_matured_cohorts",
+          "cohort_capture_below_80pct",
           "shadow_has_fewer_than_8_cohorts",
           "shadow_rank_ic_not_better",
           "shadow_spread_worse_or_unavailable"
