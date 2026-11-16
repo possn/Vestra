@@ -46,6 +46,35 @@ class SmallcapPublishedHealthTests(unittest.TestCase):
                  **valid["independent_geometry_audit"], "base_width_pass": 0}},
             self.now)["reason"], "inconsistent_vcp_geometry_flags")
 
+    def test_continuous_geometry_measurement_coverage_reconciles(self):
+        values = {key: 12.5 for key in
+                  ("prior_width_pct", "base_width_pct", "w1_pct", "w2_pct", "w3_pct")}
+        row = {"ticker": "A", "status": "evaluable_ohlcv",
+               "technical_geometry_shadow": {"base_width_pass": False,
+                   "contractions_pass": False, "both_pass": False, **values}}
+        audit = {"scope": "evaluable_liquid_series_including_ma_rejections",
+                 "liquid_evaluable_rows": 1, "geometry_diagnosed_rows": 1,
+                 "continuous_geometry_measurement_rows": 1,
+                 "legacy_boolean_only_geometry_rows": 0,
+                 "base_width_pass": 0, "contractions_pass": 0, "both_pass": 0,
+                 "not_eligibility_or_success_probability": True}
+        valid = {**self.report, "observations": [row, self.report["observations"][1]],
+                 "independent_geometry_audit": audit}
+        self.assertEqual(health.assess_publication(valid, self.now)["status"], "healthy")
+        for key, wrong in [("continuous_geometry_measurement_rows", 0),
+                           ("legacy_boolean_only_geometry_rows", 1)]:
+            with self.subTest(key=key):
+                invalid = {**valid, "independent_geometry_audit": {**audit, key: wrong}}
+                self.assertEqual(health.assess_publication(invalid, self.now)["reason"],
+                                 "unreconciled_vcp_geometry_measurement_coverage")
+        missing_measure = {**row, "technical_geometry_shadow": {
+            **row["technical_geometry_shadow"], "w3_pct": None}}
+        legacy = {**valid, "observations": [missing_measure, self.report["observations"][1]],
+                  "independent_geometry_audit": {**audit,
+                      "continuous_geometry_measurement_rows": 0,
+                      "legacy_boolean_only_geometry_rows": 1}}
+        self.assertEqual(health.assess_publication(legacy, self.now)["status"], "healthy")
+
     def test_ma_detail_rollup_must_reconcile(self):
         row={"ticker":"A","status":"evaluable_ohlcv",
              "technical_first_rejection":"moving_average_structure",
