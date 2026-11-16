@@ -584,3 +584,11 @@ body.modal-open #viewMarket{
 
 /* Empty portfolio analyses must never appear actionable. */
 .vpu-portfolio .vpu-actions button:disabled{opacity:.46;cursor:not-allowed;box-shadow:none}
+
+/* Portfolio editorial hierarchy: holdings first, optional analysis second. */
+.vpu-portfolio .vpu-actions{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:10px;margin-top:14px}
+.vpu-portfolio .vpu-actions button{min-height:44px;padding:11px 12px;font-size:13px;line-height:1.25;font-weight:750}
+.vpu-portfolio .vpu-actions .vpu-primary-action{background:#fff;color:#173c43}
+.vpu-portfolio .vpu-reveal{display:none}
+.vpu-portfolio .vpu-evidence{font-size:11px;line-height:1.5;opacity:.82}
+@media(max-width:380px){.vpu-portfolio .vpu-actions{grid-template-columns:1fr}}
