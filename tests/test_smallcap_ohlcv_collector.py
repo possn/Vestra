@@ -45,12 +45,32 @@ class ResearchCollectorTests(unittest.TestCase):
                    observed("D","provider_error")]}
         names=["A","B","C","D","E"]
         self.assertEqual(mod.pick_research_tickers(names,0,5,prior,now),
-                         ["E","B","D","A","C"])
-        self.assertEqual(mod.pick_research_tickers(names,0,2,prior,now),["E","B"])
+                         ["E","A","B","D","C"])
+        self.assertEqual(mod.pick_research_tickers(names,0,2,prior,now),["E","A"])
         # Recently failed provider requests wait before another attempt;
         # missing geometry is prioritized during that cooling-off window.
         prior["observations"].append(observed("E",technical_geometry_shadow={"both_pass":False}))
-        self.assertEqual(mod.pick_research_tickers(names,0,3,prior,now),["B","D","A"])
+        self.assertEqual(mod.pick_research_tickers(names,0,3,prior,now),["A","B","E"])
+
+    def test_legacy_boolean_geometry_is_prioritized_for_quantitative_backfill(self):
+        from datetime import timedelta
+        now=datetime(2026,11,16,12,tzinfo=timezone.utc)
+        stamp=(now-timedelta(hours=2)).isoformat()
+        measured={"prior_width_pct":35.0,"base_width_pct":20.0,
+                  "w1_pct":15.0,"w2_pct":10.0,"w3_pct":5.0,"both_pass":False}
+        previous={"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
+                  "observations":[
+                      {"ticker":"FULL","status":"evaluable_ohlcv","observation_checked_at":stamp,
+                       "average_dollar_volume_20_usd":2_000_000,"technical_geometry_shadow":measured},
+                      {"ticker":"LEGACY","status":"evaluable_ohlcv","observation_checked_at":stamp,
+                       "average_dollar_volume_20_usd":2_000_000,
+                       "technical_geometry_shadow":{"base_width_pass":False,"both_pass":False}},
+                      {"ticker":"ILLIQUID","status":"evaluable_ohlcv","observation_checked_at":stamp,
+                       "average_dollar_volume_20_usd":100_000,
+                       "technical_first_rejection":"below_1m_usd_turnover"}]}
+        self.assertEqual(mod.pick_research_tickers(
+            ["FULL","LEGACY","ILLIQUID"],0,3,previous,now),
+            ["LEGACY","FULL","ILLIQUID"])
 
     def test_universe_churn_requires_exact_prior_roster_not_only_hash(self):
         current={"universe_tickers":["A","B","C"]}
@@ -296,7 +316,7 @@ class ResearchCollectorTests(unittest.TestCase):
                         technical_first_rejection="below_1m_usd_turnover")]}
         # Unseen names first, then due failure retries, then missing geometry.
         self.assertEqual(mod.pick_research_tickers(
-            ["A","B","C","D","E","F","G"],0,4,old,now),["G","E","C","B"])
+            ["A","B","C","D","E","F","G"],0,4,old,now),["G","E","D","C"])
         # After one day the provider failures are eligible for another try.
         self.assertEqual(mod.pick_research_tickers(
             ["A","B","C","D","E","F"],0,3,old,now+timedelta(hours=25)),
