@@ -215,7 +215,7 @@
       setTimeout(()=>direct.scrollIntoView({behavior:'smooth',block:'nearest'}),20);
       return;
     }
-    const support=e.target.closest?.('[data-vpu-support]');if(support){const c=root();if(!c)return;e.preventDefault();c.dataset.vpuShowSupport=c.dataset.vpuShowSupport==='1'?'0':'1';apply();return;}
+    const support=e.target.closest?.('[data-vpu-support]');if(support){const c=root();if(!c)return;e.preventDefault();const opening=c.dataset.vpuShowSupport!=='1';c.dataset.vpuShowSupport=opening?'1':'0';apply();if(opening)collapseActive(c);return;}
     const exit=e.target.closest?.('[data-vpu-exit]'); if(exit){const c=root();if(!c)return;e.preventDefault();c.dataset.vpuExpanded='0';apply();setTimeout(()=>c.querySelector(':scope > .market-portfolio-section,:scope > details.market-detail-disclosure')?.scrollIntoView({behavior:'smooth',block:'start'}),20);return;}
     const j=e.target.closest?.('[data-vpu-jump]'); if(j){e.preventDefault();jump(j.dataset.vpuJump);return;}
     const q=e.target.closest?.('[data-vpu-toggle]'); if(q){const c=root();if(!c)return;const opening=c.dataset.vpuExpanded!=='1';c.dataset.vpuExpanded=opening?'1':'0';apply();if(opening){collapseActive(c);setTimeout(()=>c.querySelector('.vpu-tabs-shell')?.scrollIntoView({behavior:'smooth',block:'start'}),20);}return;}
