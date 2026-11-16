@@ -158,10 +158,47 @@ def assess_publication(report: dict, now: datetime, max_age_hours: int = 8) -> d
             "evaluable": evaluable, "universe": total}
 
 
+
+def coverage_triage(report: dict) -> dict:
+    """Reconcile incomplete rows and VCP measurement debt without changing eligibility."""
+    from collections import Counter
+    rows = report.get("observations", [])
+    if not isinstance(rows, list):
+        raise ValueError("observations must be a list")
+    incomplete = [row for row in rows if row.get("status") != "evaluable_ohlcv"]
+    reasons = dict(sorted(Counter(str(row.get("status") or "missing_status") for row in incomplete).items()))
+    liquid = [row for row in rows if row.get("status") == "evaluable_ohlcv"
+              and row.get("technical_first_rejection") != "below_1m_usd_turnover"]
+    diagnosed = [row for row in liquid if isinstance(row.get("technical_geometry_shadow"), dict)]
+    measures = ("prior_width_pct", "base_width_pct", "w1_pct", "w2_pct", "w3_pct")
+    quantified = [row for row in diagnosed if all(
+        type(row["technical_geometry_shadow"].get(key)) in (int, float)
+        and math.isfinite(row["technical_geometry_shadow"][key]) for key in measures)]
+    pending = [row for row in liquid if not isinstance(row.get("technical_geometry_shadow"), dict)]
+    quantified_ids = {id(row) for row in quantified}
+    legacy = [row for row in diagnosed if id(row) not in quantified_ids]
+    return {
+        "measurement": "observed_snapshot_not_prediction",
+        "incomplete_count": len(incomplete),
+        "incomplete_by_status": reasons,
+        "incomplete_tickers": sorted(row.get("ticker") for row in incomplete if isinstance(row.get("ticker"), str)),
+        "liquid_evaluable": len(liquid),
+        "geometry_diagnosed": len(diagnosed),
+        "geometry_pending": len(pending),
+        "geometry_pending_tickers": sorted(row.get("ticker") for row in pending if isinstance(row.get("ticker"), str)),
+        "geometry_legacy_boolean_only": len(legacy),
+        "geometry_quantified": len(quantified),
+        "geometry_quantitative_coverage_pct": round(100 * len(quantified) / len(liquid), 2) if liquid else None,
+        "vcp_both_pass": sum(row["technical_geometry_shadow"].get("both_pass") is True for row in diagnosed),
+        "not_a_signal_or_relaxed_gate": True,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", type=Path, default=DEFAULT_PATH)
     parser.add_argument("--max-age-hours", type=int, default=8)
+    parser.add_argument("--triage", action="store_true", help="Include measured coverage and geometry gaps")
     args = parser.parse_args()
     try:
         report = json.loads(args.file.read_text(encoding="utf-8"))
@@ -170,6 +207,8 @@ def main() -> int:
                           "error_type": type(exc).__name__}))
         return 1
     verdict = assess_publication(report, datetime.now(timezone.utc), args.max_age_hours)
+    if args.triage and isinstance(report.get("observations"), list):
+        verdict["triage"] = coverage_triage(report)
     print(json.dumps(verdict, ensure_ascii=False, sort_keys=True))
     return 0 if verdict["status"] == "healthy" else 1
 
