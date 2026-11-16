@@ -67,8 +67,14 @@ def independent_geometry_audit(observations):
     observed=[row for row in eligible if isinstance(row.get("technical_geometry_shadow"),dict)]
     counts={key:sum(row["technical_geometry_shadow"].get(key) is True for row in observed)
             for key in ("base_width_pass","contractions_pass","both_pass")}
+    measures=("prior_width_pct","base_width_pct","w1_pct","w2_pct","w3_pct")
+    quantified=sum(all(type(row["technical_geometry_shadow"].get(key)) in (int,float)
+                       and math.isfinite(row["technical_geometry_shadow"][key])
+                       for key in measures) for row in observed)
     return {"scope":"evaluable_liquid_series_including_ma_rejections",
             "liquid_evaluable_rows":len(eligible),"geometry_diagnosed_rows":len(observed),
+            "continuous_geometry_measurement_rows":quantified,
+            "legacy_boolean_only_geometry_rows":len(observed)-quantified,
             **counts,"not_eligibility_or_success_probability":True}
 
 def cohort_churn_audit(current,previous,observations):
