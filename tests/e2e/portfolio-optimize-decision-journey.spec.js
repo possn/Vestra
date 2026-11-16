@@ -55,6 +55,9 @@ test('iPhone/WebKit: Portfolio Optimize follows one canonical decision journey',
   await sheet.locator('[data-vpu-tab="optimize"]').click();
 
   const visibleCards = sheet.locator('.vpu-section-card:not(.vpu-hidden)');
+  await expect(visibleCards).toHaveCount(3);
+  await expect(sheet.locator('[data-vpu-tab="optimize"] .vpu-tab-count')).toHaveCount(0);
+  await sheet.locator('[data-vpu-support]').click();
   await expect(visibleCards).toHaveCount(6);
   expect(await visibleCards.evaluateAll(nodes => nodes.map(n => n.dataset.uxKind))).toEqual([
     'swap', 'scenario', 'rebalance', 'overlap', 'map', 'plan'
@@ -73,6 +76,13 @@ test('iPhone/WebKit: Portfolio Optimize follows one canonical decision journey',
   const swap = sheet.locator('[data-ux-kind="swap"]');
   const scenario = sheet.locator('[data-ux-kind="scenario"]');
   const rebalance = sheet.locator('[data-ux-kind="rebalance"]');
+
+  // The illustrated three-step guide must actually navigate to its module.
+  await guide.locator('[data-vpu-guide="scenario"]').click();
+  await expect(scenario).not.toHaveClass(/is-collapsed/);
+  await guide.locator('[data-vpu-guide="swap"]').click();
+  await expect(swap).not.toHaveClass(/is-collapsed/);
+  await expect(scenario).toHaveClass(/is-collapsed/);
 
   await swap.click({ position: { x: 24, y: 24 } });
   await expect(swap).not.toHaveClass(/is-collapsed/);

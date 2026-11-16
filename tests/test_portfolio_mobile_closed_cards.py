@@ -17,8 +17,8 @@ class PortfolioMobileClosedCardTests(unittest.TestCase):
     def test_mobile_styles_are_not_delayed_by_the_pwa(self):
         index = (ROOT / "index.html").read_text(encoding="utf-8")
         worker = (ROOT / "sw.js").read_text(encoding="utf-8")
-        self.assertIn('vestra-portfolio-ui.css?v=3.4-mobile-reading', index)
-        self.assertIn('vestra-cache-v273', worker)
+        self.assertIn('vestra-portfolio-ui.css?v=3.5-guided', index)
+        self.assertIn('vestra-cache-v274', worker)
 
 
 if __name__ == "__main__":

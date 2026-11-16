@@ -454,3 +454,42 @@ body.modal-open #viewMarket{
     display:none!important;
   }
 }
+
+/* v3.5 — portfolio focus: one action at a time and clearly separated detail. */
+.vpu-portfolio .vpu-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
+.vpu-portfolio .vpu-tabs button{min-width:0;min-height:50px;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px 6px}
+.vpu-portfolio .vpu-tabs button strong{font-size:clamp(12px,3.6vw,15px);line-height:1.2;overflow-wrap:normal;word-break:normal}
+.vpu-portfolio .vpu-tabs button span,.vpu-portfolio .vpu-tab-count{display:none!important}
+.vpu-portfolio .vpu-optimize-guide button[disabled]{opacity:.42;cursor:not-allowed;box-shadow:none}
+.vpu-portfolio .vpu-support-toggle{width:100%;min-height:44px;margin:12px 0 2px;border:1px solid var(--line);border-radius:13px;background:var(--soft);color:var(--text);font-size:13px;font-weight:750}
+.vpu-portfolio .vpu-support-toggle[hidden]{display:none!important}
+@media(max-width:620px){
+  .vpu-portfolio .vpu-tabs-shell{padding:12px}
+  .vpu-portfolio .vpu-tabs button{min-height:48px;border-radius:12px}
+  .vpu-portfolio .vpu-section-card.is-collapsed{
+    min-height:74px!important;padding:16px 64px 16px 16px!important;
+  }
+  .vpu-portfolio .vpu-section-card.is-collapsed>.market-perspective-head,
+  .vpu-portfolio .vpu-section-card.is-collapsed>h4{
+    min-width:0!important;width:100%!important;max-width:100%!important;
+    padding:0!important;margin:0!important;line-height:1.28!important;
+    font-size:17px!important;overflow-wrap:break-word!important;
+  }
+  .vpu-portfolio .vpu-section-card.is-collapsed .market-perspective-head>div{
+    min-width:0!important;width:100%!important;max-width:100%!important;
+  }
+  .vpu-portfolio .vpu-section-card.is-collapsed .market-perspective-head h4{
+    max-width:100%!important;margin:0!important;font-size:17px!important;
+    line-height:1.28!important;overflow-wrap:break-word!important;
+  }
+  .vpu-portfolio .vpu-section-card.is-collapsed .market-risk-score,
+  .vpu-portfolio .vpu-section-card.is-collapsed .market-inflation-status,
+  .vpu-portfolio .vpu-section-card.is-collapsed .market-target-fit-score,
+  .vpu-portfolio .vpu-section-card.is-collapsed>.vpu-card-cue{
+    display:none!important;
+  }
+  .vpu-portfolio .vpu-section-card.is-collapsed>[data-collapse-toggle],
+  .vpu-portfolio .vpu-section-card.is-collapsed>.market-collapse-toggle{
+    right:14px!important;top:50%!important;transform:translateY(-50%)!important;
+  }
+}
