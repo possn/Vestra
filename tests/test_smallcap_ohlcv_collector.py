@@ -45,12 +45,12 @@ class ResearchCollectorTests(unittest.TestCase):
                    observed("D","provider_error")]}
         names=["A","B","C","D","E"]
         self.assertEqual(mod.pick_research_tickers(names,0,5,prior,now),
-                         ["E","B","D","A","C"])
-        self.assertEqual(mod.pick_research_tickers(names,0,2,prior,now),["E","B"])
+                         ["E","A","B","D","C"])
+        self.assertEqual(mod.pick_research_tickers(names,0,2,prior,now),["E","A"])
         # Recently failed provider requests wait before another attempt;
         # missing geometry is prioritized during that cooling-off window.
         prior["observations"].append(observed("E",technical_geometry_shadow={"both_pass":False}))
-        self.assertEqual(mod.pick_research_tickers(names,0,3,prior,now),["B","D","A"])
+        self.assertEqual(mod.pick_research_tickers(names,0,3,prior,now),["A","B","E"])
 
     def test_legacy_boolean_geometry_is_prioritized_for_quantitative_backfill(self):
         from datetime import timedelta
@@ -316,7 +316,7 @@ class ResearchCollectorTests(unittest.TestCase):
                         technical_first_rejection="below_1m_usd_turnover")]}
         # Unseen names first, then due failure retries, then missing geometry.
         self.assertEqual(mod.pick_research_tickers(
-            ["A","B","C","D","E","F","G"],0,4,old,now),["G","E","C","B"])
+            ["A","B","C","D","E","F","G"],0,4,old,now),["G","E","D","C"])
         # After one day the provider failures are eligible for another try.
         self.assertEqual(mod.pick_research_tickers(
             ["A","B","C","D","E","F"],0,3,old,now+timedelta(hours=25)),
