@@ -581,3 +581,6 @@ body.modal-open #viewMarket{
   .vpu-portfolio .vpu-tabs-shell{padding:12px}
   .vpu-portfolio .vpu-tabs button{min-height:44px}
 }
+
+/* Empty portfolio analyses must never appear actionable. */
+.vpu-portfolio .vpu-actions button:disabled{opacity:.46;cursor:not-allowed;box-shadow:none}
