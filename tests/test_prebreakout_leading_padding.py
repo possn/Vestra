@@ -26,6 +26,19 @@ def empty(day):
 
 
 class LeadingPaddingTests(unittest.TestCase):
+    def test_zero_volume_no_price_terminal_placeholder_is_not_a_session(self):
+        observed=rows()
+        placeholder=empty("2026-11-11")
+        placeholder["volume"]=0.0
+        cleaned,dropped=scanner.trim_trailing_provider_padding([*observed,placeholder])
+        self.assertEqual((cleaned,dropped),(observed,1))
+        self.assertTrue(scanner.evaluable_recheck(cleaned,date(2026,11,12)))
+        # A real zero-volume priced bar is not an outer-join placeholder.
+        priced={**placeholder,"close":100,"high":101,"low":99}
+        self.assertEqual(scanner.trim_trailing_provider_padding([*observed,priced])[1],0)
+        interior=[*observed[:100],placeholder,*observed[100:]]
+        self.assertEqual(scanner.trim_trailing_provider_padding(interior)[1],0)
+
     def test_full_null_batch_suffix_removed_without_imputing_prices(self):
         observed=rows()
         cleaned,dropped=scanner.trim_trailing_provider_padding(
