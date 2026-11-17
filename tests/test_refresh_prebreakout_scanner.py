@@ -12,6 +12,22 @@ mod=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 
 class FirstFailingGateAuditTests(unittest.TestCase):
+    def test_vcp_phase_shadow_is_consistent_and_never_changes_gate(self):
+        today=date(2026,11,17)
+        bars=[{"date":(today-timedelta(days=240-i)).isoformat(),
+               "close":100.0,"high":101.0+(240-i)*0.02,
+               "low":99.0-(240-i)*0.02,"volume":1000}
+              for i in range(240)]
+        audit={}
+        self.assertIsNone(mod.scan_bars("PHASE",bars,today,audit=audit))
+        canonical=audit["geometry_shadow"]["both_pass"]
+        phase=audit["geometry_phase_shadow"]
+        self.assertEqual(phase["canonical_both_pass"],canonical)
+        self.assertEqual(phase["phase_offsets_sessions"],list(range(11)))
+        self.assertGreaterEqual(phase["both_pass_count"],int(canonical))
+        self.assertLessEqual(phase["both_pass_count"],11)
+        self.assertTrue(phase["research_only_no_eligibility_or_score_effect"])
+
     def test_older_corruption_does_not_invalidate_complete_recent_window(self):
         today=date(2026,11,17)
         bars=[{"date":(today-timedelta(days=270-i)).isoformat(),

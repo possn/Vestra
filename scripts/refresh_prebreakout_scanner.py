@@ -132,6 +132,31 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     base_width_ok=old_width>0 and base_width<=.22 and base_width<old_width*.8
     vcp_ok=w1>0 and w2<=w1*.85 and w3<=w2*.85
     if audit is not None:
+        # The canonical signal remains end-anchored. This separate research
+        # measurement asks whether the same fixed-window geometry survives a
+        # change of window phase by up to ten historical sessions. A pattern
+        # that passes only one phase is fragile; extra phase passes NEVER
+        # turn a failed canonical signal into a candidate.
+        phase_passes=[]
+        for lag in range(11):
+            sample=clean if lag==0 else clean[:-lag]
+            prior_phase=width(sample[-100:-60])
+            phase_base=width(sample[-40:])
+            phase_w1=width(sample[-60:-40])
+            phase_w2=width(sample[-40:-20])
+            phase_w3=width(sample[-20:])
+            phase_base_ok=(prior_phase>0 and phase_base<=.22
+                           and phase_base<prior_phase*.8)
+            phase_vcp_ok=(phase_w1>0 and phase_w2<=phase_w1*.85
+                          and phase_w3<=phase_w2*.85)
+            phase_passes.append((phase_base_ok,phase_vcp_ok))
+        audit["geometry_phase_shadow"]={
+            "phase_offsets_sessions":list(range(11)),
+            "base_width_pass_count":sum(a for a,_ in phase_passes),
+            "contractions_pass_count":sum(b for _,b in phase_passes),
+            "both_pass_count":sum(a and b for a,b in phase_passes),
+            "canonical_both_pass":base_width_ok and vcp_ok,
+            "research_only_no_eligibility_or_score_effect":True}
         audit["geometry_shadow"]={"base_width_pass":bool(base_width_ok),
                                   "contractions_pass":bool(vcp_ok),
                                   "both_pass":bool(base_width_ok and vcp_ok),
@@ -920,6 +945,9 @@ def main():
     gate_exclusions={};ma_gate_failure_counts={};invalid_ohlcv_details={}
     geometry_shadow_counts={"examined":0,"base_width_pass":0,"contractions_pass":0,
                             "both_pass":0,"ma_rejected_both_pass":0}
+    phase_shadow_counts={"examined":0,"canonical_both_pass":0,
+                         "any_phase_both_pass":0,"alternate_phase_only_both_pass":0,
+                         "multi_phase_both_pass":0}
     missing_close_locations={};missing_close_patterns={}
     padding_rows_trimmed=0;tickers_with_padding_trimmed=0
     trailing_rows_trimmed=0;tickers_with_trailing_trimmed=0
@@ -1007,6 +1035,15 @@ def main():
                 first=trace.get('first_rejection','unresolved')
                 gate_exclusions[first]=gate_exclusions.get(first,0)+1
                 geometry=trace.get("geometry_shadow")
+                phase=trace.get("geometry_phase_shadow")
+                if isinstance(phase,dict):
+                    phase_shadow_counts["examined"]+=1
+                    canonical=phase.get("canonical_both_pass") is True
+                    both=phase.get("both_pass_count",0)
+                    phase_shadow_counts["canonical_both_pass"]+=int(canonical)
+                    phase_shadow_counts["any_phase_both_pass"]+=int(both>0)
+                    phase_shadow_counts["alternate_phase_only_both_pass"]+=int(both>0 and not canonical)
+                    phase_shadow_counts["multi_phase_both_pass"]+=int(both>=3)
                 if isinstance(geometry,dict):
                     geometry_shadow_counts["examined"]+=1
                     for key in ("base_width_pass","contractions_pass","both_pass"):
@@ -1087,6 +1124,9 @@ def main():
                  "null_suffix_rows_trimmed":trailing_rows_trimmed,
                  "interior_or_partial_rows_never_trimmed":True,
                  "not_eligibility_or_performance":True},
+             "vcp_phase_robustness_audit":{**phase_shadow_counts,
+                 "method":"fixed_20_session_windows_shifted_0_to_10_past_sessions",
+                 "research_only_not_signal_or_backtest":True},
              "standalone_gap_recovery_audit":{"method":"independent_single_ticker_ohlcv_with_exact_overlap_checks",
                  "attempted":recovery_attempted,"verified":recovery_verified,
                  "rejected":recovery_rejected,"max_per_slot":recovery_budget,
