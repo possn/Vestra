@@ -30,6 +30,28 @@ class Provider:
         return FakeFrame()
 
 class ResearchCollectorTests(unittest.TestCase):
+    def test_unseen_cohort_cannot_starve_continuous_and_phase_backfill(self):
+        now=datetime(2026,11,17,12,tzinfo=timezone.utc)
+        stamp=now.isoformat()
+        complete={"prior_width_pct":30.0,"base_width_pct":18.0,
+                  "w1_pct":12.0,"w2_pct":10.0,"w3_pct":8.0}
+        previous={"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
+                  "observations":[
+                      {"ticker":"LEG1","status":"evaluable_ohlcv","observation_checked_at":stamp,
+                       "average_dollar_volume_20_usd":2_000_000,
+                       "technical_geometry_shadow":{"both_pass":False}},
+                      {"ticker":"LEG2","status":"evaluable_ohlcv","observation_checked_at":stamp,
+                       "average_dollar_volume_20_usd":2_000_000,
+                       "technical_geometry_shadow":{"both_pass":False}},
+                      {"ticker":"PHASE","status":"evaluable_ohlcv","observation_checked_at":stamp,
+                       "average_dollar_volume_20_usd":2_000_000,
+                       "technical_geometry_shadow":complete}]}
+        names=[f"NEW{i}" for i in range(10)]+["LEG1","LEG2","PHASE"]
+        selected=mod.pick_research_tickers(names,0,6,previous,now)
+        self.assertEqual(len(selected),6)
+        self.assertEqual(len([t for t in selected if t.startswith("NEW")]),4)
+        self.assertEqual(set(selected)&{"LEG1","LEG2","PHASE"},{"LEG1","LEG2"})
+
     def test_phase_research_cannot_create_verified_signal(self):
         p={"base_width_pass_count":5,"contractions_pass_count":4,
            "both_pass_count":2,"canonical_both_pass":False}
@@ -366,10 +388,11 @@ class ResearchCollectorTests(unittest.TestCase):
         # Unseen names first, then due failure retries, then missing geometry.
         self.assertEqual(mod.pick_research_tickers(
             ["A","B","C","D","E","F","G"],0,4,old,now),["G","E","D","C"])
-        # After one day the provider failures are eligible for another try.
+        # After one day provider retries remain eligible, but one of three
+        # slots is reserved for a quantified geometry backfill.
         self.assertEqual(mod.pick_research_tickers(
             ["A","B","C","D","E","F"],0,3,old,now+timedelta(hours=25)),
-            ["E","B","A"])
+            ["E","B","D"])
 
     def test_collect_uses_previous_evidence_for_bounded_provider_budget(self):
         now=datetime(2026,7,10,tzinfo=timezone.utc)
