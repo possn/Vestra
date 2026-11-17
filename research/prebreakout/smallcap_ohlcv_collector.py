@@ -115,7 +115,11 @@ def inspect(ticker,frame,currency,checked_at):
     # A no-trade day is a gap in evidence, not a valid liquidity bar.
     # Only a new uninterrupted >=220-session segment may be screened.
     try:
-        for timestamp,row in frame.iterrows():
+        # The technical engine only consumes the latest 252 closed sessions.
+        # Invalid older provider bars cannot affect a current 52-week/VCP
+        # setup and must not erase the otherwise usable recent observation.
+        from collections import deque
+        for timestamp,row in deque(frame.iterrows(),maxlen=253):
             day=timestamp.date().isoformat()
             # A bar stamped today may reflect an unfinished trading session.
             # Exclude it conservatively instead of treating partial volume as final.
