@@ -941,7 +941,7 @@ def main():
     universe_provenance=universe_provenance_audit(stocks,previous,index_bytes)
     # Coverage refers to this slot, not the entire eligible investment universe.
     eligible=eligible_universe_size(stocks)
-    found=[];shadow_cases=[];checked=0;successful=[];failures=[]
+    found=[];shadow_cases=[];research_rows=[];checked=0;successful=[];failures=[]
     gate_exclusions={};ma_gate_failure_counts={};invalid_ohlcv_details={}
     geometry_shadow_counts={"examined":0,"base_width_pass":0,"contractions_pass":0,
                             "both_pass":0,"ma_rejected_both_pass":0}
@@ -1029,10 +1029,24 @@ def main():
                 tickers_with_trailing_trimmed+=int(trailing_trimmed>0)
                 checked+=bool(bars)
                 row_missing_ohlcv+=int(not bool(bars))
-                if evaluable_recheck(bars,now.date()):successful.append(ticker)
+                evaluable=evaluable_recheck(bars,now.date())
+                if evaluable:successful.append(ticker)
                 trace={}
                 signal=scan_bars(ticker,bars,now.date(),liquidity_floor=0,audit=trace)
                 first=trace.get('first_rejection','unresolved')
+                # Archive negative controls as well as positive signals. A
+                # rejected pattern with valid prices is still a real observed
+                # opportunity to test subsequent false negatives. No score or
+                # success outcome is assigned at capture time.
+                last=bars[-1] if evaluable else None
+                research_rows.append({"ticker":ticker,"evaluable":evaluable,
+                    "last_session":last["date"] if last else None,
+                    "adjusted_close":round(float(last["close"]),6) if last else None,
+                    "price_basis":"yahoo_auto_adjusted_daily_close" if last else None,
+                    "first_rejection":first,
+                    "geometry_shadow":trace.get("geometry_shadow"),
+                    "ma_failed_checks":trace.get("moving_average_failed_checks",[]),
+                    "no_future_outcome_at_capture":True})
                 gate_exclusions[first]=gate_exclusions.get(first,0)+1
                 geometry=trace.get("geometry_shadow")
                 phase=trace.get("geometry_phase_shadow")
@@ -1109,9 +1123,19 @@ def main():
         "rows_with_processing_error":row_failed,"rows_evaluable":len(set(successful)),
         "duration_seconds":round(time.monotonic()-scan_started,3),
         "measurement":"slot_observed_not_full_universe_or_provider_rate_limit_estimate"}
+    observed_names={row["ticker"] for row in research_rows}
+    research_rows.extend({"ticker":ticker,"evaluable":False,"last_session":None,
+        "adjusted_close":None,"price_basis":None,
+        "first_rejection":"provider_batch_unobserved","geometry_shadow":None,
+        "ma_failed_checks":[],"no_future_outcome_at_capture":True}
+        for ticker in tickers if ticker not in observed_names)
     scan_quality=slot_quality_audit(slot_telemetry,audit)
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
              "attempted":len(tickers),"with_ohlcv":checked,"evaluable_ohlcv":len(set(successful)),"eligible_universe":eligible,"universe_provenance_audit":universe_provenance,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"rotation_plan_audit":rotation_plan,"slot_selection_audit":slot_selection_audit,"scan_unique_tickers":len(set(tickers)),"download_batches_planned":len(batches),"download_batch_size":15,"provider_batch_grouping":"quoted_suffix_calendar_proxy_not_verified_exchange","scan_slot_telemetry":slot_telemetry,"scan_quality_audit":scan_quality,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
+             "research_observations":{"scope":"current_observed_slot_only","source":"yahoo_auto_adjusted_daily_ohlcv",
+                 "captured_at":now.isoformat(),"rows":sorted(research_rows,key=lambda r:r["ticker"]),
+                 "point_in_time_capture_not_historical_reconstruction":True,
+                 "no_future_labels_or_success_probabilities":True},
              "errors":failures[:8],"gate_funnel":{"scope":"current_observed_slot_only","method":"first_failing_gate_in_order_not_independent_gate_intersections",
                  "observed_rows":sum(gate_exclusions.values()),"first_rejection_counts":dict(sorted(gate_exclusions.items())),
                  "structurally_passed":gate_exclusions.get("passed_structural_gates",0),

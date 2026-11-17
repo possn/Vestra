@@ -235,6 +235,7 @@ def inspect(ticker,frame,currency,checked_at):
                "gapRisk":"not_verified","earningsRiskGate":"unknown",
                "observedAt":checked_at.isoformat()}
     return {"ticker":ticker,"status":"evaluable_ohlcv","bars":len(clean),
+            "last_adjusted_close":round(clean[-1][1],6),
             "zero_volume_sessions_before_contiguous_window":zero_volume_sessions,
             "verified_prebreakout_setup":setup,
             "technical_first_rejection":technical_first_rejection,
