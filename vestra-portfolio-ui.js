@@ -82,7 +82,7 @@
       // They have different denominators and must never look interchangeable.
       hero.querySelector('.vpu-grid>div:last-child small').textContent='Cobertura por valor';
       hero.querySelector('.vpu-grid>div:last-child span').textContent='dos ativos elegíveis';
-      hero.querySelector('.vpu-evidence').textContent=`${m.research||'—'} instrumentos com research · Cobertura calculada por valor elegível.`;
+      hero.querySelector('.vpu-evidence').textContent=`${m.research||'—'} instrumentos com research · A cobertura mede valor, não percentagem de títulos.`;
       hero.querySelector('.vpu-health-row:last-child span').textContent='Cobertura por valor';
     }
     // Older analysis shortcut buttons may still be present in cached markup.
