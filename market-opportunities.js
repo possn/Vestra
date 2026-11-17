@@ -9,6 +9,7 @@
   const expandedOpportunityTickers=new Set();
   let activeLens='all';
   let smallcapFeed=new Map();
+  let smallcapGeometryWatch=[];
   let smallcapFeedStatus='loading';
   let smallcapCoveragePct=null;
   let smallcapFeedGeneratedAt=null;
@@ -34,6 +35,7 @@
       const age=(Date.now()-Date.parse(payload.generated_at))/3600000;
       if(!Number.isFinite(age)||age< -1||age>96){
         smallcapFeed=new Map();
+        smallcapGeometryWatch=[];
         smallcapFeedStatus='outdated';
         if(activeLens==='smallcap_breakout')opportunities();
         return;
@@ -50,11 +52,23 @@
         found.set(t(row.ticker).toUpperCase(),row);
       }
       smallcapFeed=found;
+      // Partial geometry is research context, never a verified VCP setup.
+      smallcapGeometryWatch=(Array.isArray(payload.geometry_watch_observations)?payload.geometry_watch_observations:[])
+        .filter(r=>{
+          const widths=[r?.base_width_pct,r?.prior_width_pct,...(Array.isArray(r?.contraction_widths_pct)?r.contraction_widths_pct:[])];
+          const ageDays=(Date.now()-Date.parse(String(r?.last_session||'')+'T23:59:59Z'))/86400000;
+          return r?.status==='partial_geometry_observation_not_signal'&&
+            /^[A-Z0-9.^-]{1,18}$/.test(t(r.ticker))&&
+            (r.base_width_pass===true)!==(r.contractions_pass===true)&&
+            widths.length===5&&widths.every(v=>typeof v==='number'&&Number.isFinite(v)&&v>=0)&&
+            n(r.average_dollar_volume_20_usd)>=1000000&&ageDays>=-1&&ageDays<=7;
+        }).slice(0,12);
       smallcapFeedStatus='ready';
       if(activeLens==='smallcap_breakout')opportunities();
     }catch(error){
       smallcapFeedGeneratedAt=null;
       smallcapFeed=new Map();
+      smallcapGeometryWatch=[];
       smallcapFeedStatus='unavailable';
       if(activeLens==='smallcap_breakout')opportunities();
       console.warn('[Vestra] Small Caps OHLCV unavailable',error);
@@ -825,7 +839,16 @@
         :smallcapFeedStatus==='outdated'?'Small Caps indisponíveis: relatório técnico desatualizado.'
         :smallcapFeedStatus==='unavailable'?'Small Caps indisponíveis: relatório técnico não verificável.'
         :'Sem small caps em pré-breakout elegíveis na amostra observada.'+coverage+' Não representa todo o universo.';
-      list.innerHTML='<div class="market-empty">'+esc(message)+'</div>';
+      const watch=smallcapFeedStatus==='ready'?smallcapGeometryWatch:[];
+      const watchRows=watch.map(item=>{
+        const passed=item.base_width_pass?'Largura da base':'Contrações sequenciais';
+        const failed=item.base_width_pass?'Contrações sequenciais':'Largura da base';
+        const widths=item.contraction_widths_pct.map(x=>x.toFixed(1)+'%').join(' → ');
+        const ma=(item.moving_average_failed_checks||[]).length;
+        return `<div class="market-row ux453-opp" data-market-ticker="${esc(item.ticker)}" tabindex="0"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(item.ticker)}</span></div><div class="market-row__description">Largura da base ${item.base_width_pct.toFixed(1)}% · Contrações ${esc(widths)}</div><div class="ux453-thesis">Critério observado: ${esc(passed)} · Critério não cumprido: ${esc(failed)}</div><div class="ux453-opportunity-type">${ma?`${ma} verificações de médias móveis falharam · `:''}Dados ${esc(item.last_session)} · Apenas observação geométrica, sem setup validado · Abrir dossier</div></div><div class="ux453-entry"><small>OBSERVAÇÃO</small><strong>—</strong><em>Não confirmado</em></div></div>`;
+      }).join('');
+      list.innerHTML='<div class="market-empty">'+esc(message)+'</div>'+
+        (watchRows?'<div class="market-empty">Padrões incompletos para investigar — sem score, confirmação ou estimativa de valorização:</div>'+watchRows:'');
     }
     else if(activeLens==='breakout'&&!rows.length){
       const message=prebreakoutEmptyCopy();
