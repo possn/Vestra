@@ -269,6 +269,7 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96,
     last_seen={}
     last_status={}
     needs_geometry={}
+    needs_continuous={}
     for row in previous.get("observations",[]):
         if not isinstance(row,dict):continue
         ticker=str(row.get("ticker") or "").strip().upper()
@@ -290,13 +291,19 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96,
             turnover=row.get("average_dollar_volume_20_usd")
             liquid=(type(turnover) in (int,float) and math.isfinite(turnover)
                     and turnover>=1_000_000)
-            needs_geometry[ticker]=(last_status[ticker]=="evaluable_ohlcv"
+            needs_continuous[ticker]=(last_status[ticker]=="evaluable_ohlcv"
                 and row.get("technical_first_rejection")!="below_1m_usd_turnover"
                 and (liquid or turnover is None)
                 and (not isinstance(row.get("technical_geometry_shadow"),dict)
                      or not all(type(row["technical_geometry_shadow"].get(k)) in (int,float)
                          and math.isfinite(row["technical_geometry_shadow"][k])
                          for k in ("prior_width_pct","base_width_pct","w1_pct","w2_pct","w3_pct"))))
+            phase=row.get("technical_geometry_phase_shadow")
+            needs_phase=(not isinstance(phase,dict)
+                         or type(phase.get("both_pass_count")) is not int
+                         or not 0<=phase["both_pass_count"]<=11)
+            needs_geometry[ticker]=(needs_continuous[ticker] or
+                (last_status[ticker]=="evaluable_ohlcv" and liquid and needs_phase))
     # Recent failures cannot be cured by immediately requesting the same
     # ticker again every six hours. Allow a bounded retry delay so that the
     # independent VCP geometry backlog makes progress when the unseen cohort
@@ -306,10 +313,24 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96,
         0 if ticker not in last_seen else
         (1 if last_status.get(ticker)!="evaluable_ohlcv"
               and last_seen[ticker]<=retry_cutoff else
-         2 if needs_geometry.get(ticker) else
-         3 if last_status.get(ticker)!="evaluable_ohlcv" else 4),
+         2 if needs_continuous.get(ticker) else
+         3 if needs_geometry.get(ticker) else
+         4 if last_status.get(ticker)!="evaluable_ohlcv" else 5),
         last_seen.get(ticker,cutoff)))
-    return ordered[:min(budget,len(names))]
+    # Reserve one third of the bounded slot for missing continuous geometry
+    # or the new 11-phase measurement. Previously, 70+ unseen tickers could
+    # occupy consecutive slots while 100+ valid histories stayed unquantified.
+    # Keep the other two thirds available for unseen names and failed retries.
+    # A due-failure backlog can also monopolize a slot after every ticker
+    # has been attempted. Preserve two thirds for unseen names/retries while
+    # guaranteeing independent continuous/phase geometry measurement.
+    reserve=min(budget//3,sum(bool(needs_geometry.get(t)) for t in ordered))
+    geometry=[t for t in ordered if needs_geometry.get(t)][:reserve]
+    reserved=set(geometry)
+    remaining=[t for t in ordered if t not in reserved]
+    chosen=geometry+remaining[:max(0,budget-len(geometry))]
+    positions={ticker:i for i,ticker in enumerate(ordered)}
+    return sorted(chosen,key=lambda ticker:positions[ticker])
 
 
 def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
