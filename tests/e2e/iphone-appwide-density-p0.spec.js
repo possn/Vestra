@@ -180,7 +180,15 @@ test('iPhone Home: visible factual pulse of CNN, AAII and coverage has no horizo
  await page.goto('/index.html');
  const pulse=page.locator('#vestraIntelligenceHome .vi-live-pulse');
  await expect(pulse).toBeVisible();
- await expect(pulse.locator('[data-vi-pulse-cnn]')).toContainText('/100',{timeout:10000});
+ // Display a numeric CNN score only when the underlying observation is recent.
+ const cnn=await page.evaluate(async()=>{try{const r=await fetch('./data/cnn-fear-greed.json');return r.ok?await r.json():null}catch(_){return null}});
+ const cnnStamp=Date.parse(cnn?.timestamp);
+ const cnnFresh=Number.isFinite(cnn?.score)&&Number.isFinite(cnnStamp)&&cnnStamp<=Date.now()+3600000&&Date.now()-cnnStamp<72*3600000;
+ if(cnnFresh) await expect(pulse.locator('[data-vi-pulse-cnn]')).toContainText('/100',{timeout:10000});
+ else {
+   await expect(pulse.locator('[data-vi-pulse-cnn]')).toHaveText('—');
+   await expect(pulse.locator('[data-vi-pulse-cnn-age]')).toContainText('dados por confirmar');
+ }
  // AAII must never invent a fresh spread when the weekly source is absent or stale.
  const aaii=await page.evaluate(async()=>{try{const r=await fetch('./data/aaii-sentiment.json');return r.ok?await r.json():null}catch(_){return null}});
  const week=aaii?.weeks?.[0];
