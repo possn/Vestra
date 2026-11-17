@@ -79,6 +79,28 @@
   let prebreakoutFeedStatus='loading';
   let prebreakoutFeedGeneratedAt=null;
   let prebreakoutSlotEvidence=null;
+  let prebreakoutResearchWatch=[];
+  function researchWatchRows(payload){
+    const source=payload?.research_observations;
+    if(!source||!Array.isArray(source.rows)||source.point_in_time_capture_not_historical_reconstruction!==true)return [];
+    const now=Date.now();
+    return source.rows.filter(r=>{
+      const geometry=r?.geometry_shadow;
+      const day=Date.parse(String(r?.last_session||'')+'T23:59:59Z');
+      return r?.evaluable===true&&/^[A-Z0-9.^-]{1,18}$/.test(t(r.ticker))&&
+        typeof r.adjusted_close==='number'&&Number.isFinite(r.adjusted_close)&&r.adjusted_close>0&&
+        Number.isFinite(day)&&(now-day)/86400000>=-1&&(now-day)/86400000<=7&&
+        geometry?.research_only_not_eligibility===true&&
+        (geometry.base_width_pass===true||geometry.contractions_pass===true)&&
+        ['moving_average_structure','base_width','sequential_vcp_contractions',
+          'distance_to_pivot','local_liquidity_or_base_position'].includes(r.first_rejection);
+    }).sort((a,b)=>{
+      const quality=r=>Number(r.geometry_shadow.base_width_pass)+Number(r.geometry_shadow.contractions_pass);
+      return quality(b)-quality(a)||
+        (a.ma_failed_checks||[]).length-(b.ma_failed_checks||[]).length||
+        a.ticker.localeCompare(b.ticker);
+    }).slice(0,8);
+  }
   function prebreakoutProvenanceLabel(){
     if(prebreakoutFeedStatus==='loading')return 'Pré-breakout · a verificar';
     if(prebreakoutFeedStatus==='unavailable')return 'Pré-breakout · fonte indisponível';
@@ -105,6 +127,7 @@
     prebreakoutFeedStatus='loading';
     prebreakoutFeedGeneratedAt=null;
     prebreakoutSlotEvidence=null;
+    prebreakoutResearchWatch=[];
     try{
       const response=await fetch('data/prebreakout-signals.json',{cache:'no-store'});
       if(!response.ok)throw new Error(`prebreakout feed HTTP ${response.status}`);
@@ -128,6 +151,7 @@
       const ageHours=(Date.now()-generated)/3600000;
       if(!Number.isFinite(generated)||ageHours< -1||ageHours>36){
         prebreakoutFeed=new Map();
+        prebreakoutResearchWatch=[];
         prebreakoutFeedStatus='outdated';
         if(activeLens==='breakout')opportunities();
         return;
@@ -149,10 +173,12 @@
         rows.set(t(item.ticker).toUpperCase(),item);
       }
       prebreakoutFeed=rows;
+      prebreakoutResearchWatch=researchWatchRows(payload).filter(r=>!rows.has(t(r.ticker).toUpperCase()));
       prebreakoutFeedStatus='ready';
       if(activeLens==='breakout')opportunities();
     }catch(error){
       prebreakoutFeed=new Map();
+      prebreakoutResearchWatch=[];
       prebreakoutFeedStatus='unavailable';
       if(activeLens==='breakout')opportunities();
       console.warn('[Vestra] pre-breakout feed unavailable',error);
@@ -852,7 +878,18 @@
     }
     else if(activeLens==='breakout'&&!rows.length){
       const message=prebreakoutEmptyCopy();
-      list.innerHTML='<div class="market-empty">'+message+'</div>';
+      const watch=prebreakoutFeedStatus==='ready'?prebreakoutResearchWatch:[];
+      const watchRows=watch.map(item=>{
+        const g=item.geometry_shadow;
+        const passes=g.base_width_pass&&g.contractions_pass?'Base e contrações':
+          g.base_width_pass?'Largura da base':'Contrações';
+        const missing=g.base_width_pass&&g.contractions_pass?'Liquidez, posição ou confirmação':
+          g.base_width_pass?'Contrações sequenciais':'Largura da base';
+        const ma=(item.ma_failed_checks||[]).length;
+        return `<div class="market-row ux453-opp" data-market-ticker="${esc(item.ticker)}" tabindex="0"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(item.ticker)}</span></div><div class="market-row__description">Fecho ajustado ${esc(item.adjusted_close.toFixed(2))} · ${esc(item.last_session)} · Base ${esc(g.base_width_pct)}%</div><div class="ux453-thesis">Observado: ${esc(passes)} · Por confirmar: ${esc(missing)}</div><div class="ux453-opportunity-type">${ma?`${ma} verificações de médias móveis falharam · `:''}Exclusão: ${esc(item.first_rejection)} · Apenas investigação, sem sinal validado · Abrir dossier</div></div><div class="ux453-entry"><small>OBSERVAÇÃO</small><strong>—</strong><em>Não confirmado</em></div></div>`;
+      }).join('');
+      list.innerHTML='<div class="market-empty">'+esc(message)+'</div>'+
+        (watchRows?'<div class="market-empty">Padrões parciais observados no último lote · sem score ou projeção de valorização:</div>'+watchRows:'');
       renderPrebreakoutHistory(section);
     }else renderPrebreakoutHistory(section);
     return rows;
@@ -886,5 +923,5 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,low52BasisLabel,earningsRiskText,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,breakoutSetup,get activeLens(){return activeLens;},get prebreakoutFeedStatus(){return prebreakoutFeedStatus;},get smallcapFeedStatus(){return smallcapFeedStatus;},get smallcapCoveragePct(){return smallcapCoveragePct;},version:'1.20'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,low52BasisLabel,earningsRiskText,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,breakoutSetup,researchWatchRows,get activeLens(){return activeLens;},get prebreakoutFeedStatus(){return prebreakoutFeedStatus;},get smallcapFeedStatus(){return smallcapFeedStatus;},get smallcapCoveragePct(){return smallcapCoveragePct;},version:'1.21'});
 })();
