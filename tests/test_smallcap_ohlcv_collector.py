@@ -30,6 +30,19 @@ class Provider:
         return FakeFrame()
 
 class ResearchCollectorTests(unittest.TestCase):
+    def test_phase_research_cannot_create_verified_signal(self):
+        p={"base_width_pass_count":5,"contractions_pass_count":4,
+           "both_pass_count":2,"canonical_both_pass":False}
+        rows=[{"status":"evaluable_ohlcv","technical_geometry_phase_shadow":p},
+              {"status":"evaluable_ohlcv","technical_geometry_phase_shadow":{
+                  **p,"both_pass_count":4,"canonical_both_pass":True}}]
+        audit=mod.phase_robustness_audit(rows)
+        self.assertEqual(audit["measured_rows"],2)
+        self.assertEqual(audit["canonical_both_pass"],1)
+        self.assertEqual(audit["alternate_phase_only_both_pass"],1)
+        self.assertEqual(audit["multi_phase_both_pass"],1)
+        self.assertTrue(audit["not_eligibility_or_backtest"])
+
     def test_partial_geometry_watch_is_not_promoted_to_signal(self):
         now=datetime(2026,11,17,tzinfo=timezone.utc)
         measure={"prior_width_pct":30.0,"base_width_pct":19.0,
