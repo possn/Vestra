@@ -501,7 +501,8 @@ class EvaluableRecheckTests(unittest.TestCase):
         stale=[{**row,"date":(date.fromisoformat(row["date"])-timedelta(days=8)).isoformat()} for row in bars]
         self.assertFalse(mod.evaluable_recheck(stale,today))
         src=(ROOT/"scripts/refresh_prebreakout_scanner.py").read_text()
-        self.assertIn("if evaluable_recheck(bars,now.date()):successful.append(ticker)",src)
+        self.assertIn("evaluable=evaluable_recheck(bars,now.date())",src)
+        self.assertIn("if evaluable:successful.append(ticker)",src)
 
 class CrossSlotPersistenceTests(unittest.TestCase):
     def test_retains_only_verified_recent_nonrechecked_rows(self):
