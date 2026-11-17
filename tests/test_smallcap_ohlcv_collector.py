@@ -30,6 +30,22 @@ class Provider:
         return FakeFrame()
 
 class ResearchCollectorTests(unittest.TestCase):
+    def test_old_corrupt_bar_outside_technical_window_does_not_block(self):
+        from datetime import timedelta
+        now=datetime(2026,11,17,tzinfo=timezone.utc)
+        class ExtendedFrame:
+            empty=False
+            def __init__(self,bad_recent=False):self.bad_recent=bad_recent
+            def iterrows(self):
+                for i in range(300):
+                    close=None if i==(298 if self.bad_recent else 0) else 10
+                    yield now-timedelta(days=300-i),{
+                        "Open":10,"High":11,"Low":9,"Close":close,"Volume":600_000}
+        old=mod.inspect("TEST",ExtendedFrame(),"USD",now)
+        recent=mod.inspect("TEST",ExtendedFrame(True),"USD",now)
+        self.assertEqual(old["status"],"evaluable_ohlcv")
+        self.assertEqual(recent["status"],"invalid_ohlcv")
+
     def test_legacy_geometry_is_rechecked_after_coverage_without_starving_it(self):
         from datetime import timedelta
         now=datetime(2026,11,15,12,tzinfo=timezone.utc)
