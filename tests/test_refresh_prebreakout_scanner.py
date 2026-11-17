@@ -12,6 +12,23 @@ mod=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 
 class FirstFailingGateAuditTests(unittest.TestCase):
+    def test_older_corruption_does_not_invalidate_complete_recent_window(self):
+        today=date(2026,11,17)
+        bars=[{"date":(today-timedelta(days=270-i)).isoformat(),
+               "close":100.0,"high":101.0,"low":99.0,"volume":1000.0}
+              for i in range(270)]
+        baseline={}
+        mod.scan_bars("RECENT",bars,today,audit=baseline)
+        bars[0]["close"]=None
+        current={}
+        mod.scan_bars("RECENT",bars,today,audit=current)
+        self.assertEqual(current["first_rejection"],baseline["first_rejection"])
+        self.assertTrue(mod.evaluable_recheck(bars,today))
+        bars[-2]["close"]=None
+        self.assertFalse(mod.evaluable_recheck(bars,today))
+        self.assertIsNone(mod.scan_bars("RECENT",bars,today,audit=current))
+        self.assertEqual(current["first_rejection"],"invalid_ohlcv_or_date")
+
     def test_base_geometry_is_measured_even_when_ma_structure_fails(self):
         today=date(2026,11,13)
         bars=[]
