@@ -78,6 +78,27 @@ def independent_geometry_audit(observations):
             **counts,"not_eligibility_or_success_probability":True}
 
 
+def phase_robustness_audit(observations):
+    """Measure fixed-window phase sensitivity without qualifying a setup."""
+    measured=[]
+    for row in observations:
+        if row.get("status")!="evaluable_ohlcv" or row.get("technical_first_rejection")=="below_1m_usd_turnover":
+            continue
+        phase=row.get("technical_geometry_phase_shadow")
+        if not isinstance(phase,dict):continue
+        counts=[phase.get(k) for k in ("base_width_pass_count","contractions_pass_count","both_pass_count")]
+        if not all(type(v) is int and 0<=v<=11 for v in counts):continue
+        if type(phase.get("canonical_both_pass")) is not bool:continue
+        measured.append(phase)
+    return {"scope":"evaluable_liquid_series_with_11_historical_phases",
+            "measured_rows":len(measured),
+            "canonical_both_pass":sum(p["canonical_both_pass"] for p in measured),
+            "any_phase_both_pass":sum(p["both_pass_count"]>0 for p in measured),
+            "alternate_phase_only_both_pass":sum(p["both_pass_count"]>0 and not p["canonical_both_pass"] for p in measured),
+            "multi_phase_both_pass":sum(p["both_pass_count"]>=3 for p in measured),
+            "not_eligibility_or_backtest":True}
+
+
 def geometry_watch_observations(observations, as_of, limit=12):
     """Observable partial geometry, never a VCP signal or score.
 
@@ -219,6 +240,8 @@ def inspect(ticker,frame,currency,checked_at):
             "technical_first_rejection":technical_first_rejection,
             "technical_geometry_shadow":technical_audit.get("geometry_shadow")
                 if turnover>=1_000_000 else None,
+            "technical_geometry_phase_shadow":technical_audit.get("geometry_phase_shadow")
+                if turnover>=1_000_000 else None,
             "technical_failed_ma_checks":technical_audit.get("moving_average_failed_checks",[])
                 if technical_first_rejection=="moving_average_structure" else None,
             "first_session":clean[0][0],"last_session":last,
@@ -337,6 +360,7 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
             "technical_first_rejection_counts":technical_rejections,
             "technical_structure_audit":technical_structure_audit(observed),
             "independent_geometry_audit":independent_geometry_audit(observed),
+            "phase_robustness_audit":phase_robustness_audit(observed),
             "cohort_churn_audit":cohort_churn_audit({"universe_tickers":names},previous,observed),
             "not_observed":len(names)-len(observed),
             "universe_coverage_pct":round(100*evaluable/len(names),2) if names else None,
@@ -413,6 +437,7 @@ def merge_slots(current, previous, now, ttl_hours=96, *, eligible_tickers=None):
             "technical_first_rejection_counts":technical_rejections,
             "technical_structure_audit":technical_structure_audit(all_rows),
             "independent_geometry_audit":independent_geometry_audit(all_rows),
+            "phase_robustness_audit":phase_robustness_audit(all_rows),
             "cohort_churn_audit":cohort_churn_audit(current,previous,all_rows),
             "not_observed":max(0,count-len(all_rows)),
             "universe_coverage_pct":round(100*evaluable/count,2) if count else None,
