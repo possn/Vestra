@@ -52,6 +52,15 @@
     if(conv!=null)bits.push(conv>=70?'convicção forte':conv<45?'convicção frágil':'convicção moderada');
     return {title,tone,sub:bits.slice(0,3).join(' · ')||(evidenceAvailable?'Consultar indicadores e respetiva cobertura.':'Sem indicadores suficientes para uma conclusão fiável.')};
   }
+  function nextStep(m){
+    const coverage=num(m.coverage), review=num(m.review), risk=num(m.risk);
+    // Prioritise evidence quality before recommending portfolio changes.
+    if(coverage==null)return {title:'Começa pelas posições',detail:'Não há cobertura suficiente para priorizar alterações.',action:'positions'};
+    if(coverage<80)return {title:'Primeiro, confirmar a cobertura',detail:`Apenas ${m.coverage} do valor elegível tem research. Não extrapolar os indicadores para toda a carteira.`,action:'positions'};
+    if(review>0)return {title:`${review} ${review===1?'posição merece':'posições merecem'} revisão`,detail:'Consulta as prioridades antes de considerar reforços ou trocas.',action:'review'};
+    if(risk!=null&&risk<65)return {title:'Rever a diversificação',detail:'O Risk Fit da parte analisada está baixo. Investiga a exposição antes de agir.',action:'risk'};
+    return {title:'Sem urgência identificada nos indicadores',detail:'Consulta as posições e acompanha alterações; não é uma recomendação de transação.',action:'positions'};
+  }
   function tone(v,reverse=false){ const x=num(v); if(x==null)return'neutral'; if(reverse)return x>=75?'bad':x>=55?'warn':'good'; return x>=70?'good':x>=50?'warn':'bad'; }
   function healthBar(label,value,reverse=false){
     const raw=num(value), available=raw!=null;
@@ -59,19 +68,21 @@
     return `<div class="vpu-health-row"><div><span>${label}</span><b>${available?value:'—'}${available&&!String(value).includes('%')?'/100':''}</b></div><div class="vpu-track"><i class="is-${tone(value,reverse)}" style="width:${x}%"></i></div></div>`;
   }
   function ensureHero(c){
-    let hero=c.querySelector('.vpu-overview'), created=false; const m=metrics(c), st=status(m);
+    let hero=c.querySelector('.vpu-overview'), created=false; const m=metrics(c), st=status(m), next=nextStep(m);
     if(!hero){ hero=document.createElement('section'); hero.className='vpu-overview'; created=true; const dc=decisionCenter(c); if(dc)dc.insertAdjacentElement('beforebegin',hero); else c.prepend(hero); }
     const cov=num(m.coverage), covText=m.coverage||'—';
-    const signature=JSON.stringify([m.positions,m.research,m.coverage,m.conviction,m.risk,m.reinforce,m.review,m.reviewTotal,m.swaps,st.title,st.tone,st.sub]);
+    const signature=JSON.stringify([m.positions,m.research,m.coverage,m.conviction,m.risk,m.reinforce,m.review,m.reviewTotal,m.swaps,st.title,st.tone,st.sub,next.title,next.detail]);
     if(hero.dataset.signature!==signature){
       hero.dataset.signature=signature;
-      hero.innerHTML=`<div class="vpu-kicker">MINHAS POSIÇÕES</div><div class="vpu-status is-${st.tone}"><div><strong>${st.title}</strong><span>${st.sub}</span></div><button type="button" data-vpu-detail aria-label="Abrir diagnóstico e métricas da carteira">Ver diagnóstico</button></div><div class="vpu-grid"><div><small>Posições</small><strong>${m.positions||'—'}</strong><span>na carteira</span></div><div><small>Em destaque</small><strong>${m.review||0}</strong><span>${m.reviewTotal==null?'para investigar':`de ${m.reviewTotal} na fila`}</span></div><div><small>Cobertura</small><strong>${m.coverage||'—'}</strong><span>do research disponível</span></div></div><p class="vpu-evidence">${m.research||'—'} posições com research · As classificações dependem dos dados disponíveis. Risk Fit: maior é melhor, mas não representa certeza sobre posições sem cobertura.</p><div class="vpu-actions"><button type="button" class="vpu-primary-action" data-vpu-positions>Ver as minhas posições</button><button type="button" data-vpu-open-analysis>Explorar análises</button></div><details class="vpu-snapshot"><summary>Ver saúde e métricas da carteira</summary><div class="vpu-snapshot-head"><div><small>SAÚDE DA CARTEIRA</small><strong>Indicadores das posições analisáveis</strong></div></div><div class="vpu-health">${healthBar('Convicção',m.conviction)}${healthBar('Risk Fit',m.risk)}<div class="vpu-health-row"><div><span>Cobertura</span><b>${covText}</b></div><div class="vpu-track"><i class="is-${cov!=null&&cov>=70?'good':cov!=null&&cov>=40?'warn':'bad'}" style="width:${Math.max(0,Math.min(100,cov??0))}%"></i></div></div></div></details>`;
+      hero.innerHTML=`<div class="vpu-kicker">MINHAS POSIÇÕES</div><div class="vpu-next-step" role="status"><small>O ESSENCIAL</small><strong></strong><span></span></div><div class="vpu-status is-${st.tone}"><div><strong>${st.title}</strong><span>${st.sub}</span></div><button type="button" data-vpu-detail aria-label="Abrir diagnóstico e métricas da carteira">Ver diagnóstico</button></div><div class="vpu-grid"><div><small>Posições</small><strong>${m.positions||'—'}</strong><span>na carteira</span></div><div><small>Em destaque</small><strong>${m.review||0}</strong><span>${m.reviewTotal==null?'para investigar':`de ${m.reviewTotal} na fila`}</span></div><div><small>Cobertura</small><strong>${m.coverage||'—'}</strong><span>do research disponível</span></div></div><p class="vpu-evidence">${m.research||'—'} posições com research · As classificações dependem dos dados disponíveis. Risk Fit: maior é melhor, mas não representa certeza sobre posições sem cobertura.</p><div class="vpu-actions"><button type="button" class="vpu-primary-action" data-vpu-positions>Ver as minhas posições</button><button type="button" data-vpu-open-analysis>Explorar análises</button></div><details class="vpu-snapshot"><summary>Ver saúde e métricas da carteira</summary><div class="vpu-snapshot-head"><div><small>SAÚDE DA CARTEIRA</small><strong>Indicadores das posições analisáveis · Risk Fit: maior é melhor</strong></div></div><div class="vpu-health">${healthBar('Convicção',m.conviction)}${healthBar('Risk Fit',m.risk)}<div class="vpu-health-row"><div><span>Cobertura</span><b>${covText}</b></div><div class="vpu-track"><i class="is-${cov!=null&&cov>=70?'good':cov!=null&&cov>=40?'warn':'bad'}" style="width:${Math.max(0,Math.min(100,cov??0))}%"></i></div></div></div></details>`;
+      hero.querySelector('.vpu-next-step strong').textContent=next.title;
+      hero.querySelector('.vpu-next-step span').textContent=next.detail;
       // The research count is a number of distinct resolved tickers. Coverage
       // instead measures their value / all research-eligible portfolio value.
       // They have different denominators and must never look interchangeable.
       hero.querySelector('.vpu-grid>div:last-child small').textContent='Cobertura por valor';
       hero.querySelector('.vpu-grid>div:last-child span').textContent='dos ativos elegíveis';
-      hero.querySelector('.vpu-evidence').textContent=`${m.research||'—'} instrumentos distintos identificados no research · A cobertura mede valor, não percentagem de títulos. Risk Fit: maior é melhor, mas não representa certeza sobre posições sem cobertura.`;
+      hero.querySelector('.vpu-evidence').textContent=`${m.research||'—'} instrumentos com research · A cobertura mede valor, não percentagem de títulos.`;
       hero.querySelector('.vpu-health-row:last-child span').textContent='Cobertura por valor';
     }
     // Older analysis shortcut buttons may still be present in cached markup.
