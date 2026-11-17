@@ -77,6 +77,46 @@ def independent_geometry_audit(observations):
             "legacy_boolean_only_geometry_rows":len(observed)-quantified,
             **counts,"not_eligibility_or_success_probability":True}
 
+
+def geometry_watch_observations(observations, as_of, limit=12):
+    """Observable partial geometry, never a VCP signal or score.
+
+    Only fully quantified, recent, USD-liquid series enter this diagnostic
+    watch tier. Passing one geometry test does not override the failed one,
+    the moving-average structure or the unverified spread/earnings gates.
+    """
+    from datetime import date as date_type
+    today=as_of.date() if isinstance(as_of,datetime) else as_of
+    if not isinstance(today,date_type):raise ValueError("invalid observation date")
+    out=[]
+    measures=("prior_width_pct","base_width_pct","w1_pct","w2_pct","w3_pct")
+    for row in observations:
+        if row.get("status")!="evaluable_ohlcv" or row.get("verified_prebreakout_setup"):
+            continue
+        turnover=row.get("average_dollar_volume_20_usd")
+        if type(turnover) not in (int,float) or not math.isfinite(turnover) or turnover<1_000_000:
+            continue
+        geometry=row.get("technical_geometry_shadow")
+        if not isinstance(geometry,dict) or not all(type(geometry.get(k)) in (int,float)
+                                                       and math.isfinite(geometry[k]) for k in measures):
+            continue
+        base=geometry.get("base_width_pass") is True
+        contractions=geometry.get("contractions_pass") is True
+        if base==contractions:continue
+        try:session=date_type.fromisoformat(str(row["last_session"])[:10])
+        except (KeyError,TypeError,ValueError):continue
+        if not 0<=(today-session).days<=7:continue
+        out.append({"ticker":row["ticker"],"last_session":session.isoformat(),
+                    "average_dollar_volume_20_usd":turnover,
+                    "base_width_pass":base,"contractions_pass":contractions,
+                    "base_width_pct":geometry["base_width_pct"],
+                    "prior_width_pct":geometry["prior_width_pct"],
+                    "contraction_widths_pct":[geometry[k] for k in ("w1_pct","w2_pct","w3_pct")],
+                    "technical_first_rejection":row.get("technical_first_rejection"),
+                    "moving_average_failed_checks":row.get("technical_failed_ma_checks") or [],
+                    "status":"partial_geometry_observation_not_signal"})
+    return sorted(out,key=lambda r:r["ticker"])[:limit]
+
 def cohort_churn_audit(current,previous,observations):
     """Reconcile exact small-cap universe membership across canonical slots.
 
@@ -303,6 +343,7 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
             "point_in_time_caveat":"market_caps_from_current_index_not_historical_asof_snapshots",
             "not_breakout_candidates":True,"no_success_probability":True,
             "validated_prebreakout_setups":len(signals),"signals":signals,
+            "geometry_watch_observations":geometry_watch_observations(observed,checked_at),
             "observations":observed}
 
 
@@ -376,6 +417,7 @@ def merge_slots(current, previous, now, ttl_hours=96, *, eligible_tickers=None):
             "not_observed":max(0,count-len(all_rows)),
             "universe_coverage_pct":round(100*evaluable/count,2) if count else None,
             "validated_prebreakout_setups":len(signals),
+            "geometry_watch_observations":geometry_watch_observations(all_rows,now),
             "setup_verification_window_hours":18,
             "historical_setups_excluded_as_stale":historical_setups_excluded,
             "coverage_window_hours":ttl_hours,

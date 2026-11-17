@@ -30,6 +30,26 @@ class Provider:
         return FakeFrame()
 
 class ResearchCollectorTests(unittest.TestCase):
+    def test_partial_geometry_watch_is_not_promoted_to_signal(self):
+        now=datetime(2026,11,17,tzinfo=timezone.utc)
+        measure={"prior_width_pct":30.0,"base_width_pct":19.0,
+                 "w1_pct":12.0,"w2_pct":14.0,"w3_pct":11.0,
+                 "base_width_pass":True,"contractions_pass":False}
+        def row(ticker,geometry=measure,turnover=2_000_000,day="2026-11-16"):
+            return {"ticker":ticker,"status":"evaluable_ohlcv",
+                    "average_dollar_volume_20_usd":turnover,
+                    "last_session":day,"technical_geometry_shadow":geometry,
+                    "technical_first_rejection":"sequential_vcp_contractions"}
+        rows=[row("WATCH"),row("ILLQ",turnover=100_000),
+              row("STALE",day="2026-10-01"),
+              row("OLD",geometry={"base_width_pass":True,"contractions_pass":False}),
+              row("BOTH",geometry={**measure,"contractions_pass":True})]
+        watch=mod.geometry_watch_observations(rows,now)
+        self.assertEqual([r["ticker"] for r in watch],["WATCH"])
+        self.assertEqual(watch[0]["status"],"partial_geometry_observation_not_signal")
+        self.assertNotIn("score",watch[0])
+        self.assertNotIn("verified_prebreakout_setup",watch[0])
+
     def test_old_corrupt_bar_outside_technical_window_does_not_block(self):
         from datetime import timedelta
         now=datetime(2026,11,17,tzinfo=timezone.utc)
