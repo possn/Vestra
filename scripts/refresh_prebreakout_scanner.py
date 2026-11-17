@@ -58,6 +58,11 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
             audit['first_rejection'] = reason
         return None
     today=today or datetime.now(timezone.utc).date()
+    # All eligibility gates use at most 252 closed sessions (MA200, VCP60,
+    # historical pivot100 and high52). Older provider corruption must not
+    # veto otherwise complete current evidence. Invalid bars *within* the
+    # canonical window remain fatal; never drop or interpolate them.
+    bars=bars[-252:]
     clean=[]
     for bar_index, bar in enumerate(bars):
         if not isinstance(bar, dict):
@@ -554,8 +559,10 @@ def trim_leading_provider_padding(bars):
 def trim_trailing_provider_padding(bars):
     """Remove only fully null terminal dates from batch outer-join alignment.
 
-    Requires a preceding observed OHLCV bar. Missing interior/partial bars
-    remain fatal; subsequent strict age and session checks still apply.
+    Yahoo sometimes encodes an outer-join placeholder as OHLC=None and
+    Volume=0. That is not a zero-volume *trading* session because no price
+    exists. Require a preceding observed bar; interior/partial rows remain
+    fatal, and freshness is still checked against the last real session.
     """
     last=len(bars)
     while last>0:
@@ -564,8 +571,11 @@ def trim_trailing_provider_padding(bars):
             break
         try: date.fromisoformat(bar["date"][:10])
         except ValueError: break
-        if not all(key in bar and bar[key] is None
-                   for key in ("close","high","low","volume")):
+        volume=bar.get("volume")
+        if not (all(key in bar and bar[key] is None
+                    for key in ("close","high","low"))
+                and "volume" in bar
+                and (volume is None or type(volume) in (int,float) and volume==0)):
             break
         last-=1
     # Do not manufacture a valid empty history from provider-wide failure.
@@ -662,6 +672,7 @@ def verified_standalone_recovery(batch_bars, standalone_bars, today, audit=None)
 
 def evaluable_recheck(bars, today):
     """Only a complete, fresh, ordered OHLCV series can invalidate a prior setup."""
+    bars=bars[-252:]
     if len(bars)<220:
         return False
     previous=None
