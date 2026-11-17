@@ -25,7 +25,8 @@ def quality_history(dates):
 class DatedLow52IntegrityTests(unittest.TestCase):
     def setUp(self):
         today = datetime.now(timezone.utc).date()
-        self.dates = [today - timedelta(days=i) for i in range(219, -1, -1)]
+        days = [today - timedelta(days=i) for i in range(340, -1, -1)]
+        self.dates = [day for day in days if day.weekday() < 5][-220:]
 
     def test_recent_ordered_history_is_assessable(self):
         result = assess(quality_history(self.dates))
@@ -56,6 +57,20 @@ class DatedLow52IntegrityTests(unittest.TestCase):
         shift = timedelta(days=8)
         dates = [d + shift for d in dates]
         self.assertEqual(assess(quality_history(dates))["low52_status"], "insufficient")
+
+    def test_two_hundred_observations_over_short_span_are_not_annual(self):
+        today = datetime.now(timezone.utc).date()
+        dates = [today - timedelta(days=i) for i in range(219, -1, -1)]
+        self.assertEqual(assess(quality_history(dates))["low52_status"], "insufficient")
+
+    def test_old_extreme_outside_52_weeks_does_not_contaminate_low(self):
+        today = datetime.now(timezone.utc).date()
+        dates = [today - timedelta(days=i) for i in range(500, -1, -1)]
+        row = quality_history(dates)
+        row["price_history_1y"][0]["close"] = 1.0
+        result = assess(row)
+        self.assertNotEqual(result["low52_status"], "insufficient")
+        self.assertEqual(result["low52_price_low"], 100)
 
 
 if __name__ == "__main__":
