@@ -83,7 +83,22 @@ def _price_position(row: dict):
 
     if closes:
         if len(closes) >= 200:
-            low, high = min(closes), max(closes)
+            # 200 daily observations alone do not establish a 52-week window:
+            # a newly listed security may have 200 consecutive calendar days,
+            # and an overlong carried history can contain lows older than a year.
+            if dated_sessions:
+                if (dated_sessions[-1] - dated_sessions[0]).days < 300:
+                    return None
+                cutoff = dated_sessions[-1].toordinal() - 365
+                year_closes = [v for day, v in zip(dated_sessions, closes)
+                               if day.toordinal() >= cutoff]
+                if len(year_closes) < 200:
+                    return None
+            else:
+                # Legacy undated 200+ close histories remain a distinct
+                # provenance limitation; no temporal claim is inferred.
+                year_closes = closes[-252:]
+            low, high = min(year_closes), max(year_closes)
             basis = "observed_daily_closes_minimum_200_sessions"
         elif (45 <= len(closes) <= 54 and len(dated_sessions) == len(closes)
               and (dated_sessions[-1] - dated_sessions[0]).days >= 300
