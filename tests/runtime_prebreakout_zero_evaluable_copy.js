@@ -8,6 +8,7 @@ assert(begin >= 0 && end > begin);
 const now = new Date();
 const make = (attempted, evaluable, hours=1) => ({
   schema: 'vestra_prebreakout_v1',
+  early_setup_policy_version: 'initial_base_lineage_v2',
   generated_at: new Date(now.getTime()-hours*3600000).toISOString(),
   signals: [],
   scan_slot_telemetry: {rows_attempted:attempted, rows_evaluable:evaluable},
@@ -60,5 +61,9 @@ async function verify(payload) {
   assert.equal(stale.status,'outdated');
   assert.match(stale.copy,/desatualizado/);
   assert.match(stale.date,/desatualizado/);
+  const oldPolicy=await verify({...make(300,50),early_setup_policy_version:'legacy'});
+  assert.equal(oldPolicy.status,'old_policy');
+  assert.equal(oldPolicy.items,0);
+  assert.match(oldPolicy.copy,/critérios anteriores/);
   console.log('Prebreakout: distinguish zero-evaluable from zero-signals and dated provenance.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

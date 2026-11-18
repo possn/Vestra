@@ -16,6 +16,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:sys.path.insert(0,str(ROOT))
+from scripts.refresh_prebreakout_scanner import EARLY_SETUP_POLICY_VERSION
 DEFAULT_OUTPUT=ROOT/"data"/"breakout-lab-smallcap-ohlcv-research.json"
 MAX_PER_RUN=30
 MIN_BARS=220
@@ -272,6 +273,7 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96,
     needs_geometry={}
     needs_continuous={}
     needs_price={}
+    needs_policy={}
     for row in previous.get("observations",[]):
         if not isinstance(row,dict):continue
         ticker=str(row.get("ticker") or "").strip().upper()
@@ -293,6 +295,8 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96,
             turnover=row.get("average_dollar_volume_20_usd")
             liquid=(type(turnover) in (int,float) and math.isfinite(turnover)
                     and turnover>=1_000_000)
+            needs_policy[ticker]=(last_status[ticker]=="evaluable_ohlcv" and liquid and
+                row.get("early_setup_policy_version")!=EARLY_SETUP_POLICY_VERSION)
             price=row.get("last_adjusted_close")
             needs_price[ticker]=(last_status[ticker]=="evaluable_ohlcv" and liquid
                 and (type(price) not in (int,float) or not math.isfinite(price)
@@ -308,7 +312,7 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96,
             needs_phase=(not isinstance(phase,dict)
                          or type(phase.get("both_pass_count")) is not int
                          or not 0<=phase["both_pass_count"]<=11)
-            needs_geometry[ticker]=(needs_price[ticker] or needs_continuous[ticker] or
+            needs_geometry[ticker]=(needs_price[ticker] or needs_continuous[ticker] or needs_policy[ticker] or
                 (last_status[ticker]=="evaluable_ohlcv" and liquid and needs_phase))
     # Recent failures cannot be cured by immediately requesting the same
     # ticker again every six hours. Allow a bounded retry delay so that the
@@ -321,7 +325,7 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96,
               and last_seen[ticker]<=retry_cutoff else
          2 if needs_continuous.get(ticker) else
          3 if needs_price.get(ticker) else
-         4 if needs_geometry.get(ticker) else
+         4 if needs_policy.get(ticker) or needs_geometry.get(ticker) else
          5 if last_status.get(ticker)!="evaluable_ohlcv" else 6),
         last_seen.get(ticker,cutoff)))
     # Reserve one third of the bounded slot for missing adjusted close,
@@ -365,8 +369,10 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
             frame=provider.download(ticker,period="18mo",interval="1d",auto_adjust=True,
                                     threads=False,progress=False,timeout=20,multi_level_index=False)
             result=inspect(ticker,frame,currency,checked_at)
+            result["early_setup_policy_version"]=EARLY_SETUP_POLICY_VERSION
             if result.get("verified_prebreakout_setup"):
                 result["verified_prebreakout_setup"]["marketCapUSD"]=cap_by_ticker[ticker]
+                result["verified_prebreakout_setup"]["early_setup_policy_version"]=EARLY_SETUP_POLICY_VERSION
             observed.append(result)
         except Exception as exc:
             observed.append({"ticker":ticker,"status":"provider_error",
@@ -380,6 +386,7 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
         if x["status"]=="provider_error" and x.get("error_type")).items()))
     signals=[x["verified_prebreakout_setup"] for x in observed if x.get("verified_prebreakout_setup")]
     return {"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
+            "early_setup_policy_version":EARLY_SETUP_POLICY_VERSION,
             "status":"observed_research_only_not_breakout_signals",
             "generated_at":checked_at.isoformat(),"source":"yfinance",
             "universe_100m_500m_count":len(names),"universe_tickers_sha256":cohort_sha256,
@@ -444,9 +451,14 @@ def merge_slots(current, previous, now, ttl_hours=96, *, eligible_tickers=None):
     signal_cutoff=now-timedelta(hours=18)
     signals=[]
     historical_setups_excluded=0
+    previous_policy_setups_excluded=0
     for row in all_rows:
         setup=row.get("verified_prebreakout_setup")
         if row.get("status")!="evaluable_ohlcv" or not isinstance(setup,dict):
+            continue
+        if (row.get("early_setup_policy_version")!=EARLY_SETUP_POLICY_VERSION or
+            setup.get("early_setup_policy_version")!=EARLY_SETUP_POLICY_VERSION):
+            previous_policy_setups_excluded+=1
             continue
         raw_timestamp=(row.get("observation_checked_at") or
                        row.get("ohlcv_observed_at"))
@@ -476,6 +488,7 @@ def merge_slots(current, previous, now, ttl_hours=96, *, eligible_tickers=None):
             "geometry_watch_observations":geometry_watch_observations(all_rows,now),
             "setup_verification_window_hours":18,
             "historical_setups_excluded_as_stale":historical_setups_excluded,
+            "previous_policy_setups_excluded":previous_policy_setups_excluded,
             "coverage_window_hours":ttl_hours,
             "distinct_tickers_observed":len(all_rows),
             "excluded_outside_current_universe":excluded_outside_current_universe}

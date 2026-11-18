@@ -516,7 +516,9 @@ class ResearchCollectorTests(unittest.TestCase):
         old={"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
              "generated_at":(now-timedelta(hours=6)).isoformat(),
              "observations":[{"ticker":"A","status":"evaluable_ohlcv",
-                              "verified_prebreakout_setup":{"ticker":"A","score":70}},
+                              "early_setup_policy_version":mod.EARLY_SETUP_POLICY_VERSION,
+                              "verified_prebreakout_setup":{"ticker":"A","score":70,
+                              "early_setup_policy_version":mod.EARLY_SETUP_POLICY_VERSION}},
                              {"ticker":"B","status":"no_ohlcv"}]}
         current={"schema":old["schema"],"generated_at":now.isoformat(),
                  "universe_100m_500m_count":5,
@@ -530,6 +532,22 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertEqual(merged["not_observed"],2)
         self.assertEqual(next(x for x in merged["observations"] if x["ticker"]=="C")["observation_checked_at"],now.isoformat())
 
+    def test_recent_prior_policy_setup_is_not_republished_as_initial_breakout(self):
+        now=datetime(2026,11,18,10,tzinfo=timezone.utc)
+        schema="vestra_breakout_lab_smallcap_ohlcv_research_v1"
+        previous={"schema":schema,"generated_at":now.isoformat(),"observations":[
+            {"ticker":"LEGACY","status":"evaluable_ohlcv",
+             "average_dollar_volume_20_usd":2_000_000,
+             "verified_prebreakout_setup":{"ticker":"LEGACY","score":91}}]}
+        current={"schema":schema,"generated_at":now.isoformat(),
+                 "universe_100m_500m_count":2,
+                 "observations":[{"ticker":"NEW","status":"no_ohlcv"}]}
+        merged=mod.merge_slots(current,previous,now,eligible_tickers={"LEGACY","NEW"})
+        self.assertEqual(merged["signals"],[])
+        self.assertEqual(merged["previous_policy_setups_excluded"],1)
+        self.assertIn("LEGACY",mod.pick_research_tickers(
+            ["LEGACY","NEW"],0,2,previous,now))
+
     def test_rolling_coverage_cannot_repromote_stale_setups(self):
         from datetime import timedelta
         now=datetime(2026,11,9,12,tzinfo=timezone.utc)
@@ -537,11 +555,15 @@ class ResearchCollectorTests(unittest.TestCase):
         prior={"schema":schema,"generated_at":(now-timedelta(hours=24)).isoformat(),
                "observations":[
                  {"ticker":"OLD","status":"evaluable_ohlcv",
+                  "early_setup_policy_version":mod.EARLY_SETUP_POLICY_VERSION,
                   "observation_checked_at":(now-timedelta(hours=24)).isoformat(),
-                  "verified_prebreakout_setup":{"ticker":"OLD","score":99}},
+                  "verified_prebreakout_setup":{"ticker":"OLD","score":99,
+                  "early_setup_policy_version":mod.EARLY_SETUP_POLICY_VERSION}},
                  {"ticker":"FRESH","status":"evaluable_ohlcv",
+                  "early_setup_policy_version":mod.EARLY_SETUP_POLICY_VERSION,
                   "observation_checked_at":(now-timedelta(hours=6)).isoformat(),
-                  "verified_prebreakout_setup":{"ticker":"FRESH","score":70}}]}
+                  "verified_prebreakout_setup":{"ticker":"FRESH","score":70,
+                  "early_setup_policy_version":mod.EARLY_SETUP_POLICY_VERSION}}]}
         current={"schema":schema,"generated_at":now.isoformat(),
                  "universe_100m_500m_count":3,
                  "observations":[{"ticker":"NEW","status":"evaluable_ohlcv",
@@ -561,7 +583,9 @@ class ResearchCollectorTests(unittest.TestCase):
         older=(now-timedelta(hours=6)).isoformat()
         previous={"schema":schema,"generated_at":older,
                   "observations":[{"ticker":"OLD","status":"evaluable_ohlcv",
-                                   "verified_prebreakout_setup":{"ticker":"OLD","score":80}}]}
+                                   "early_setup_policy_version":mod.EARLY_SETUP_POLICY_VERSION,
+                                   "verified_prebreakout_setup":{"ticker":"OLD","score":80,
+                                   "early_setup_policy_version":mod.EARLY_SETUP_POLICY_VERSION}}]}
         current={"schema":schema,"generated_at":now.isoformat(),
                  "universe_100m_500m_count":2,
                  "observations":[{"ticker":"NEW","status":"no_ohlcv"}]}
@@ -638,7 +662,9 @@ class ResearchCollectorTests(unittest.TestCase):
                   "observations":[{"ticker":"OLD","status":"evaluable_ohlcv",
                                    "verified_prebreakout_setup":{"ticker":"OLD"}},
                                   {"ticker":"A","status":"evaluable_ohlcv",
-                                   "verified_prebreakout_setup":{"ticker":"A"}}]}
+                                   "early_setup_policy_version":mod.EARLY_SETUP_POLICY_VERSION,
+                                   "verified_prebreakout_setup":{"ticker":"A",
+                                   "early_setup_policy_version":mod.EARLY_SETUP_POLICY_VERSION}}]}
         current={"schema":schema,"generated_at":now.isoformat(),
                  "universe_100m_500m_count":2,
                  "observations":[{"ticker":"B","status":"evaluable_ohlcv",

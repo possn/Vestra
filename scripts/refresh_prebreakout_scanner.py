@@ -783,9 +783,14 @@ def verified_usd_liquidity(local_turnover, currency, fx, today):
         return None
     return local_turnover*factor*local/usd
 
+EARLY_SETUP_POLICY_VERSION = "initial_base_lineage_v2"
+
+
 def recent_verified_signals(previous:dict, scanned_tickers:list[str], now:datetime)->list[dict]:
     """Carry forward only per-ticker recently verified candidates, never stale/rechecked rows."""
-    if previous.get("schema")!="vestra_prebreakout_v1" or previous.get("quality_model")!="vcp_before_pivot_v3":
+    if (previous.get("schema")!="vestra_prebreakout_v1" or
+        previous.get("quality_model")!="vcp_before_pivot_v3" or
+        previous.get("early_setup_policy_version")!=EARLY_SETUP_POLICY_VERSION):
         return []
     try:
         generated=datetime.fromisoformat(previous["generated_at"].replace("Z","+00:00"))
@@ -805,7 +810,8 @@ def recent_verified_signals(previous:dict, scanned_tickers:list[str], now:dateti
                 continue
             q=row["quantitativeDiagnostics"]
             amount=q["averageDollarVolume20"]
-            if (row.get("source")!="yahoo:daily_ohlcv" or
+            if (row.get("early_setup_policy_version")!=EARLY_SETUP_POLICY_VERSION or
+                row.get("source")!="yahoo:daily_ohlcv" or
                 signal_day!=now.date() and (now.date()-signal_day).days not in (1,2,3) or
                 not isinstance(amount,(int,float)) or not math.isfinite(amount) or amount<5_000_000 or
                 not q.get("liquidityCurrencySource") or not q.get("liquidityFxReferenceDate") or
@@ -1177,7 +1183,12 @@ def main():
         "ma_failed_checks":[],"no_future_outcome_at_capture":True}
         for ticker in tickers if ticker not in observed_names)
     scan_quality=slot_quality_audit(slot_telemetry,audit)
+    # A scanner version is part of evidence provenance. Older signals must not
+    # be carried into a new model merely because their timestamps are fresh.
+    for signal in published:
+        signal["early_setup_policy_version"] = EARLY_SETUP_POLICY_VERSION
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
+             "early_setup_policy_version":EARLY_SETUP_POLICY_VERSION,
              "attempted":len(tickers),"with_ohlcv":checked,"evaluable_ohlcv":len(set(successful)),"eligible_universe":eligible,"universe_provenance_audit":universe_provenance,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"rotation_plan_audit":rotation_plan,"slot_selection_audit":slot_selection_audit,"scan_unique_tickers":len(set(tickers)),"download_batches_planned":len(batches),"download_batch_size":15,"provider_batch_grouping":"quoted_suffix_calendar_proxy_not_verified_exchange","scan_slot_telemetry":slot_telemetry,"scan_quality_audit":scan_quality,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "research_observations":{"scope":"current_observed_slot_only","source":"yahoo_auto_adjusted_daily_ohlcv",
                  "captured_at":now.isoformat(),"rows":sorted(research_rows,key=lambda r:r["ticker"]),

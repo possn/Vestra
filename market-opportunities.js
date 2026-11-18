@@ -77,6 +77,7 @@
   let prebreakoutFeed=new Map();
   let prebreakoutFeedAuthoritative=false;
   let prebreakoutFeedStatus='loading';
+  const EARLY_SETUP_POLICY_VERSION='initial_base_lineage_v2';
   let prebreakoutFeedGeneratedAt=null;
   let prebreakoutSlotEvidence=null;
   let prebreakoutResearchWatch=[];
@@ -130,6 +131,7 @@
   function prebreakoutEmptyCopy(){
     if(prebreakoutFeedStatus==='loading')return 'A verificar os sinais publicados de pré-breakout…';
     if(prebreakoutFeedStatus==='outdated')return 'Pré-breakout indisponível: o último relatório publicado está desatualizado.';
+    if(prebreakoutFeedStatus==='old_policy')return 'Pré-breakout a atualizar: o último relatório foi calculado com critérios anteriores. Os sinais aguardam nova verificação.';
     if(prebreakoutFeedStatus==='unavailable')return 'Pré-breakout indisponível: não foi possível validar o relatório publicado.';
     const sample=prebreakoutSlotEvidence;
     if(sample&&sample.attempted>0&&sample.evaluable===0)
@@ -150,6 +152,17 @@
       if(!response.ok)throw new Error(`prebreakout feed HTTP ${response.status}`);
       const payload=await response.json();
       if(payload?.schema!=='vestra_prebreakout_v1'||!Array.isArray(payload.signals))throw new Error('prebreakout feed invalid schema');
+      // A report from before the lineage filter may look fresh but still
+      // classify an already-broken-out share as a new pre-breakout.
+      if(payload.early_setup_policy_version!==EARLY_SETUP_POLICY_VERSION){
+        prebreakoutFeed=new Map();
+        prebreakoutResearchWatch=[];
+        prebreakoutContinuationWatch=[];
+        prebreakoutFeedGeneratedAt=payload.generated_at;
+        prebreakoutFeedStatus='old_policy';
+        if(activeLens==='breakout')opportunities();
+        return;
+      }
       // Fail closed on impossible producer coverage, including already-published
       // snapshots from the old cross-universe denominator bug.
       const observedCoverage=payload?.coverage_audit_24h?.coverage_pct;
@@ -180,6 +193,7 @@
         prebreakoutSlotEvidence={attempted,evaluable};
       const rows=new Map();
       for(const item of payload.signals){
+        if(item.early_setup_policy_version!==EARLY_SETUP_POLICY_VERSION)continue;
         if(item?.source!=='yahoo:daily_ohlcv'||!item.ticker||!item.date||!['compressão','pré-breakout'].includes(item.stage))continue;
         const age=(Date.now()-Date.parse(item.date+'T23:59:59Z'))/86400000;
         if(!(age>=-1&&age<=7))continue;
