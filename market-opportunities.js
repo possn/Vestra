@@ -80,6 +80,20 @@
   let prebreakoutFeedGeneratedAt=null;
   let prebreakoutSlotEvidence=null;
   let prebreakoutResearchWatch=[];
+  let prebreakoutContinuationWatch=[];
+  function continuationWatchRows(payload){
+    const source=payload?.research_observations;
+    if(!source||!Array.isArray(source.rows)||source.point_in_time_capture_not_historical_reconstruction!==true)return [];
+    return source.rows.filter(r=>{
+      const age=(Date.now()-Date.parse(String(r?.last_session||'')+'T23:59:59Z'))/86400000;
+      return r?.evaluable===true&&r.first_rejection==='prior_impulse_continuation'&&
+        r.trend_phase?.classification==='continuation_after_prior_impulse'&&
+        typeof r.trend_phase.prebase_impulse_pct==='number'&&
+        Number.isFinite(r.trend_phase.prebase_impulse_pct)&&r.trend_phase.prebase_impulse_pct>=25&&
+        typeof r.adjusted_close==='number'&&Number.isFinite(r.adjusted_close)&&r.adjusted_close>0&&
+        /^[A-Z0-9.^-]{1,18}$/.test(t(r.ticker))&&age>=-1&&age<=7;
+    }).sort((a,b)=>b.trend_phase.prebase_impulse_pct-a.trend_phase.prebase_impulse_pct).slice(0,8);
+  }
   function researchWatchRows(payload){
     const source=payload?.research_observations;
     if(!source||!Array.isArray(source.rows)||source.point_in_time_capture_not_historical_reconstruction!==true)return [];
@@ -128,6 +142,7 @@
     prebreakoutFeedGeneratedAt=null;
     prebreakoutSlotEvidence=null;
     prebreakoutResearchWatch=[];
+    prebreakoutContinuationWatch=[];
     try{
       const response=await fetch('data/prebreakout-signals.json',{cache:'no-store'});
       if(!response.ok)throw new Error(`prebreakout feed HTTP ${response.status}`);
@@ -152,6 +167,7 @@
       if(!Number.isFinite(generated)||ageHours< -1||ageHours>36){
         prebreakoutFeed=new Map();
         prebreakoutResearchWatch=[];
+        prebreakoutContinuationWatch=[];
         prebreakoutFeedStatus='outdated';
         if(activeLens==='breakout')opportunities();
         return;
@@ -174,11 +190,13 @@
       }
       prebreakoutFeed=rows;
       prebreakoutResearchWatch=researchWatchRows(payload).filter(r=>!rows.has(t(r.ticker).toUpperCase()));
+      prebreakoutContinuationWatch=continuationWatchRows(payload).filter(r=>!rows.has(t(r.ticker).toUpperCase()));
       prebreakoutFeedStatus='ready';
       if(activeLens==='breakout')opportunities();
     }catch(error){
       prebreakoutFeed=new Map();
       prebreakoutResearchWatch=[];
+      prebreakoutContinuationWatch=[];
       prebreakoutFeedStatus='unavailable';
       if(activeLens==='breakout')opportunities();
       console.warn('[Vestra] pre-breakout feed unavailable',error);
@@ -888,8 +906,11 @@
         const ma=(item.ma_failed_checks||[]).length;
         return `<div class="market-row ux453-opp" data-market-ticker="${esc(item.ticker)}" tabindex="0"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(item.ticker)}</span></div><div class="market-row__description">Fecho ajustado ${esc(item.adjusted_close.toFixed(2))} · ${esc(item.last_session)} · Base ${esc(g.base_width_pct)}%</div><div class="ux453-thesis">Observado: ${esc(passes)} · Por confirmar: ${esc(missing)}</div><div class="ux453-opportunity-type">${ma?`${ma} verificações de médias móveis falharam · `:''}Exclusão: ${esc(item.first_rejection)} · Apenas investigação, sem sinal validado · Abrir dossier</div></div><div class="ux453-entry"><small>OBSERVAÇÃO</small><strong>—</strong><em>Não confirmado</em></div></div>`;
       }).join('');
+      const continuation=prebreakoutFeedStatus==='ready'?prebreakoutContinuationWatch:[];
+      const continuationRows=continuation.map(item=>`<div class="market-row ux453-opp" data-market-ticker="${esc(item.ticker)}" tabindex="0"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(item.ticker)}</span></div><div class="market-row__description">Fecho ajustado ${esc(item.adjusted_close.toFixed(2))} · ${esc(item.last_session)}</div><div class="ux453-thesis">Subida anterior observada: ${esc(item.trend_phase.prebase_impulse_pct.toFixed(1))}% · Consolidação após impulso, não pré-breakout inicial</div><div class="ux453-opportunity-type">Movimento já desenvolvido · Sem score de entrada antecipada · Abrir dossier</div></div><div class="ux453-entry"><small>CONTINUAÇÃO</small><strong>—</strong><em>Não confirmado</em></div></div>`).join('');
       list.innerHTML='<div class="market-empty">'+esc(message)+'</div>'+
-        (watchRows?'<div class="market-empty">Padrões parciais observados no último lote · sem score ou projeção de valorização:</div>'+watchRows:'');
+        (watchRows?'<div class="market-empty">Padrões parciais observados no último lote · sem score ou projeção de valorização:</div>'+watchRows:'')+
+        (continuationRows?'<div class="market-empty">Consolidações após subida expressiva · não são pré-breakouts iniciais:</div>'+continuationRows:'');
       renderPrebreakoutHistory(section);
     }else renderPrebreakoutHistory(section);
     return rows;
@@ -923,5 +944,5 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,low52BasisLabel,earningsRiskText,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,breakoutSetup,researchWatchRows,get activeLens(){return activeLens;},get prebreakoutFeedStatus(){return prebreakoutFeedStatus;},get smallcapFeedStatus(){return smallcapFeedStatus;},get smallcapCoveragePct(){return smallcapCoveragePct;},version:'1.21'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,low52BasisLabel,earningsRiskText,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,breakoutSetup,researchWatchRows,continuationWatchRows,get activeLens(){return activeLens;},get prebreakoutFeedStatus(){return prebreakoutFeedStatus;},get smallcapFeedStatus(){return smallcapFeedStatus;},get smallcapCoveragePct(){return smallcapCoveragePct;},version:'1.22'});
 })();

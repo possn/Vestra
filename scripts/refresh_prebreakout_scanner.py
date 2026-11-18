@@ -246,6 +246,20 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     base_position=(current-base_low)/(base_high-base_low) if base_high>base_low else 0
     if strict_quality and (dollar_volume20 is None or dollar_volume20<liquidity_floor or base_position<.65):
         return reject('local_liquidity_or_base_position')
+    # A tight 40-session pause after a major earlier rally is a continuation
+    # base, not an early breakout opportunity. Use only closes strictly before
+    # the current base, with a robust 15th-percentile reference (not a wick).
+    prior_closes=sorted(b['close'] for b in clean[-160:-40])
+    prior_reference=prior_closes[int((len(prior_closes)-1)*.15)]
+    prior_impulse_pct=(clean[-40]['close']/prior_reference-1)*100
+    phase='continuation_after_prior_impulse' if prior_impulse_pct>=25 else 'initial_base_not_extended'
+    if audit is not None:
+        audit['trend_phase']={'classification':phase,
+            'prebase_impulse_pct':round(prior_impulse_pct,2),
+            'lookback_sessions':120,'reference':'prior_15th_percentile_adjusted_close',
+            'no_future_sessions':True}
+    if strict_quality and phase=='continuation_after_prior_impulse':
+        return reject('prior_impulse_continuation')
     # The last 10 sessions should not repeatedly close in the weak lower
     # half of the base. Use closed bars only, no forward/market data.
     midpoint=(base_high+base_low)/2
@@ -1069,6 +1083,7 @@ def main():
                     "adjusted_close":round(float(last["close"]),6) if last else None,
                     "price_basis":"yahoo_auto_adjusted_daily_close" if last else None,
                     "first_rejection":first,
+                    "trend_phase":trace.get("trend_phase"),
                     "geometry_shadow":trace.get("geometry_shadow"),
                     "ma_failed_checks":trace.get("moving_average_failed_checks",[]),
                     "no_future_outcome_at_capture":True})
