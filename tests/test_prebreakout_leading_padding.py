@@ -26,6 +26,30 @@ def empty(day):
 
 
 class LeadingPaddingTests(unittest.TestCase):
+    def test_independent_complete_history_can_resolve_terminal_unpriced_volume(self):
+        observed=rows()
+        ambiguous=empty("2026-11-11")
+        ambiguous["volume"]=2000  # Cannot be silently trimmed as zero volume.
+        self.assertEqual(scanner.trim_trailing_provider_padding([*observed,ambiguous])[1],0)
+        trace={}
+        recovered=scanner.verified_standalone_recovery(
+            [*observed,ambiguous],observed,date(2026,11,12),audit=trace)
+        self.assertEqual(recovered,observed)
+        self.assertTrue(trace["verified"])
+        self.assertEqual(trace["verified_terminal_unpriced_rows"],1)
+        # An independent priced session on the ambiguous date is conflicting
+        # evidence; neither bar is silently removed or synthesized.
+        priced={**ambiguous,"close":102,"high":103,"low":101}
+        self.assertIsNone(scanner.verified_standalone_recovery(
+            [*observed,ambiguous],[*observed,priced],date(2026,11,12)))
+
+    def test_independent_recovery_never_discards_interior_unpriced_volume(self):
+        observed=rows()
+        missing={**empty(observed[80]["date"]),"volume":2500}
+        batch=[*observed[:80],missing,*observed[81:]]
+        self.assertIsNone(scanner.verified_standalone_recovery(
+            batch,observed,date(2026,11,12)))
+
     def test_zero_volume_no_price_terminal_placeholder_is_not_a_session(self):
         observed=rows()
         placeholder=empty("2026-11-11")
