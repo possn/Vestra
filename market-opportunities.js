@@ -847,7 +847,7 @@
     section.querySelector('.vestra-smallcaps-entry')?.remove();
   }
   function lensMeta(lens){
-    if(lens==='smallcap_breakout')return ['Small Caps · Pré-breakout','Setups técnicos observados em empresas de 100–500 M USD. Cobertura parcial e riscos a confirmar.'];
+    if(lens==='smallcap_breakout')return ['Small Caps · Pré-breakout','Setups técnicos observados em empresas de 100 M–2 mil M USD. Cobertura parcial e riscos a confirmar.'];
     if(lens==='breakout')return ['Compressão · Pré-breakout','Compressão é apenas vigilância, não sinal iminente. Pré-breakout exige proximidade da resistência e volume a secar; breakout confirmado exige fecho e volume fortes.'];
     if(lens==='low52')return ['Mínimos 52 semanas','Empresas até 5% acima do mínimo observado. A proximidade do mínimo não significa qualidade: verifica o risco indicado em cada empresa.'];
     if(lens==='emerging')return ['A começar','Setups ainda numa fase inicial: timing a melhorar, sem recuperação já madura.'];

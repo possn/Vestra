@@ -39,7 +39,7 @@ jobs:
           lines=[
               "### Independent smallcap publication check",
               f"- Published generated_at: `{j.get('generated_at', 'missing')}`",
-              f"- Current universe: {j.get('universe_100m_500m_count', 'missing')}",
+              f"- Current universe 100m-2b USD: {j.get('universe_100m_2b_count', 'missing')}",
               f"- Evaluable rolling OHLCV: {j.get('evaluable_ohlcv', 'missing')}",
               "- Checked the actual main-branch artifact; no provider values inferred.",
               "- A red check means the snapshot is stale or inconsistent, not that no opportunities exist."
