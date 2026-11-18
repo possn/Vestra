@@ -12,6 +12,27 @@ mod=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 
 class FirstFailingGateAuditTests(unittest.TestCase):
+    def test_technical_features_are_observed_before_ma_failure_without_zero_imputation(self):
+        today=date(2026,11,18)
+        bars=[]
+        for i in range(240):
+            close=100+(i%8)*.2
+            bars.append({"date":(today-timedelta(days=239-i)).isoformat(),
+                         "close":close,"high":close+1,"low":close-1,"volume":1000})
+        trace={}
+        self.assertIsNone(mod.scan_bars("FEATURES",bars,today,audit=trace))
+        self.assertEqual(trace["first_rejection"],"moving_average_structure")
+        feature=trace["technical_evidence_shadow"]
+        self.assertEqual(feature["status"],"measured")
+        self.assertIsInstance(feature["atr14_to_atr60"],float)
+        self.assertEqual(feature["volume9_to_prior40"],1.0)
+        self.assertIsNone(feature["relative_strength_to_index"])
+        self.assertTrue(feature["not_signal_or_backtest_or_calibrated_probability"])
+        bars[-1]["volume"]=None
+        missing={}
+        mod.scan_bars("FEATURES",bars,today,audit=missing)
+        self.assertIsNone(missing["technical_evidence_shadow"]["volume9_to_prior40"])
+
     def test_swing_vcp_uses_confirmed_variable_length_pullbacks_without_signal_promotion(self):
         anchors=[(0,100),(10,110),(20,94),(40,108),(50,96),
                  (75,106),(100,99),(119,104)]

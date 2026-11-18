@@ -922,7 +922,10 @@
         const failed=item.base_width_pass?'Contrações sequenciais':'Largura da base';
         const widths=item.contraction_widths_pct.map(x=>x.toFixed(1)+'%').join(' → ');
         const ma=(item.moving_average_failed_checks||[]).length;
-        return `<div class="market-row ux453-opp" data-market-ticker="${esc(item.ticker)}" tabindex="0"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(item.ticker)}</span></div><div class="market-row__description">Largura da base ${item.base_width_pct.toFixed(1)}% · Contrações ${esc(widths)}</div><div class="ux453-thesis">Critério observado: ${esc(passed)} · Critério não cumprido: ${esc(failed)}</div><div class="ux453-opportunity-type">${ma?`${ma} verificações de médias móveis falharam · `:''}Dados ${esc(item.last_session)} · Apenas observação geométrica, sem setup validado · Abrir dossier</div></div><div class="ux453-entry"><small>OBSERVAÇÃO</small><strong>—</strong><em>Não confirmado</em></div></div>`;
+        const e=item.technical_evidence;
+        const atr=typeof e?.atr14_to_atr60==='number'&&Number.isFinite(e.atr14_to_atr60)?` · ATR 14/60: ${e.atr14_to_atr60.toFixed(2)}×`:'';
+        const vol=typeof e?.volume9_to_prior40==='number'&&Number.isFinite(e.volume9_to_prior40)?` · Volume relativo: ${e.volume9_to_prior40.toFixed(2)}×`:'';
+        return `<div class="market-row ux453-opp" data-market-ticker="${esc(item.ticker)}" tabindex="0"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(item.ticker)}</span></div><div class="market-row__description">Largura da base ${item.base_width_pct.toFixed(1)}% · Contrações ${esc(widths)}${atr}${vol}</div><div class="ux453-thesis">Critério observado: ${esc(passed)} · Critério não cumprido: ${esc(failed)}</div><div class="ux453-opportunity-type">${ma?`${ma} verificações de médias móveis falharam · `:''}Dados ${esc(item.last_session)} · Apenas observação geométrica, sem setup validado · Abrir dossier</div></div><div class="ux453-entry"><small>OBSERVAÇÃO</small><strong>—</strong><em>Não confirmado</em></div></div>`;
       }).join('');
       const swingRows=(smallcapFeedStatus==='ready'?smallcapSwingWatch:[])
         .filter(item=>!watch.some(existing=>existing.ticker===item.ticker))
