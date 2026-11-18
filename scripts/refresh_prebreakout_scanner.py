@@ -117,6 +117,49 @@ def swing_contraction_shadow(bars: list[dict], *, lookback: int=120, radius: int
             "not_a_signal_no_volume_liquidity_lineage_or_forward_validation":True}
 
 
+def technical_evidence_shadow(bars: list[dict])->dict:
+    """Point-in-time technical features even for a rejected price pattern.
+
+    These quantities are descriptive, never a standalone score, eligibility
+    override or historical prediction. Missing volumes remain missing.
+    """
+    if len(bars)<80:
+        return {"status":"insufficient_history","research_only":True}
+    sample=bars[-80:]
+    closes=[b["close"] for b in sample]
+    true_ranges=[max(sample[i]["high"]-sample[i]["low"],
+                     abs(sample[i]["high"]-closes[i-1]),
+                     abs(sample[i]["low"]-closes[i-1]))
+                 for i in range(1,len(sample))]
+    atr14=sum(true_ranges[-14:])/14
+    atr60=sum(true_ranges[-60:])/60
+    returns=[math.log(closes[i]/closes[i-1]) for i in range(1,len(closes))]
+    def deviation(part):
+        mean=sum(part)/len(part)
+        return math.sqrt(sum((v-mean)**2 for v in part)/len(part))
+    vol10=deviation(returns[-10:]);vol40=deviation(returns[-40:])
+    volumes=[b.get("volume") for b in sample]
+    volume_complete=all(type(v) in (int,float) and math.isfinite(v) and v>0 for v in volumes[-50:])
+    volume_ratio=(sum(volumes[-10:-1])/9)/(sum(volumes[-50:-10])/40) if volume_complete else None
+    closes20=closes[-21:]
+    direction=abs(closes20[-1]-closes20[0])
+    path=sum(abs(b-a) for a,b in zip(closes20,closes20[1:]))
+    efficiency=direction/path if path>0 else None
+    high20=max(b["high"] for b in sample[-20:]);low20=min(b["low"] for b in sample[-20:])
+    return {"status":"measured","research_only":True,
+            "atr14_pct":round(100*atr14/closes[-1],3),
+            "atr14_to_atr60":round(atr14/atr60,3) if atr60>0 else None,
+            "realized_vol10_to_vol40":round(vol10/vol40,3) if vol40>0 else None,
+            "volume9_to_prior40":round(volume_ratio,3) if volume_ratio is not None else None,
+            "return20_pct":round(100*(closes[-1]/closes[-21]-1),3),
+            "return60_pct":round(100*(closes[-1]/closes[-61]-1),3),
+            "efficiency20":round(efficiency,3) if efficiency is not None else None,
+            "close_position20":round((closes[-1]-low20)/(high20-low20),3) if high20>low20 else None,
+            "relative_strength_to_index":None,
+            "missing_relative_strength_is_not_neutral_or_zero":True,
+            "not_signal_or_backtest_or_calibrated_probability":True}
+
+
 def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_quality: bool=True, liquidity_floor: float=5_000_000, audit: dict|None=None):
     """Identify a contracting base, not a prediction of future returns."""
     def reject(reason: str):
@@ -199,6 +242,7 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     vcp_ok=w1>0 and w2<=w1*.85 and w3<=w2*.85
     if audit is not None:
         audit["swing_geometry_shadow"]=swing_contraction_shadow(clean)
+        audit["technical_evidence_shadow"]=technical_evidence_shadow(clean)
         # The canonical signal remains end-anchored. This separate research
         # measurement asks whether the same fixed-window geometry survives a
         # change of window phase by up to ten historical sessions. A pattern
@@ -1168,6 +1212,7 @@ def main():
                     "trend_phase":trace.get("trend_phase"),
                     "geometry_shadow":trace.get("geometry_shadow"),
                     "swing_geometry_shadow":trace.get("swing_geometry_shadow"),
+                    "technical_evidence_shadow":trace.get("technical_evidence_shadow"),
                     "ma_failed_checks":trace.get("moving_average_failed_checks",[]),
                     "no_future_outcome_at_capture":True})
                 gate_exclusions[first]=gate_exclusions.get(first,0)+1
@@ -1261,6 +1306,22 @@ def main():
         "ma_failed_checks":[],"no_future_outcome_at_capture":True}
         for ticker in tickers if ticker not in observed_names)
     scan_quality=slot_quality_audit(slot_telemetry,audit)
+    observed_features=[r["technical_evidence_shadow"] for r in research_rows
+        if r.get("evaluable") is True and isinstance(r.get("technical_evidence_shadow"),dict)
+        and r["technical_evidence_shadow"].get("status")=="measured"]
+    feature_fields=("atr14_pct","atr14_to_atr60","realized_vol10_to_vol40",
+                    "volume9_to_prior40","return20_pct","return60_pct",
+                    "efficiency20","close_position20")
+    feature_audit={"scope":"current_slot_evaluable_ohlcv_including_rejected_patterns",
+        "measured_rows":len(observed_features),
+        "available_by_metric":{key:sum(type(f.get(key)) in (int,float)
+            and math.isfinite(f[key]) for f in observed_features) for key in feature_fields},
+        "atr_contraction_below_0_8":sum(type(f.get("atr14_to_atr60")) in (int,float)
+            and f["atr14_to_atr60"]<.8 for f in observed_features),
+        "volume_dry_below_0_8":sum(type(f.get("volume9_to_prior40")) in (int,float)
+            and f["volume9_to_prior40"]<.8 for f in observed_features),
+        "index_relative_strength_unobserved":True,
+        "not_an_eligibility_gate_or_predictive_validation":True}
     # A scanner version is part of evidence provenance. Older signals must not
     # be carried into a new model merely because their timestamps are fresh.
     for signal in published:
@@ -1290,6 +1351,7 @@ def main():
              "vcp_swing_geometry_audit":{**swing_shadow_counts,
                  "method":"confirmed_radius3_local_extrema_last120_closed_bars",
                  "research_only_no_promotion_or_backtest":True},
+             "technical_feature_audit":feature_audit,
              "standalone_gap_recovery_audit":{"method":"independent_single_ticker_ohlcv_with_exact_overlap_checks",
                  "attempted":recovery_attempted,"verified":recovery_verified,
                  "rejected":recovery_rejected,"max_per_slot":recovery_budget,

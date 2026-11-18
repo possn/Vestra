@@ -122,6 +122,29 @@ def swing_geometry_audit(observations):
             "research_only_no_signal_promotion_or_performance_claim":True}
 
 
+def technical_evidence_audit(observations):
+    """Feature completeness, not a fitted predictor or feature-weight score."""
+    eligible=[row for row in observations if row.get("status")=="evaluable_ohlcv"
+              and row.get("technical_first_rejection")!="below_1m_usd_turnover"]
+    measured=[row["technical_evidence_shadow"] for row in eligible
+              if isinstance(row.get("technical_evidence_shadow"),dict)
+              and row["technical_evidence_shadow"].get("status")=="measured"]
+    metrics=("atr14_pct","atr14_to_atr60","realized_vol10_to_vol40",
+             "volume9_to_prior40","return20_pct","return60_pct",
+             "efficiency20","close_position20")
+    available={key:sum(type(r.get(key)) in (int,float) and math.isfinite(r[key])
+                       for r in measured) for key in metrics}
+    return {"scope":"liquid_evaluable_series_independent_of_first_rejection",
+            "eligible_rows":len(eligible),"measured_rows":len(measured),
+            "available_by_metric":available,
+            "atr_contraction_below_0_8":sum(type(r.get("atr14_to_atr60")) in (int,float)
+                and r["atr14_to_atr60"]<.8 for r in measured),
+            "volume_dry_below_0_8":sum(type(r.get("volume9_to_prior40")) in (int,float)
+                and r["volume9_to_prior40"]<.8 for r in measured),
+            "relative_strength_observed_rows":0,
+            "not_independent_predictive_validation_or_signal":True}
+
+
 def swing_watch_observations(observations, limit=8):
     """Inspectable price structures, explicitly below signal eligibility."""
     watch=[]
@@ -139,6 +162,7 @@ def swing_watch_observations(observations, limit=8):
             "base_width_pct":g["base_width_pct"],
             "distance_to_resistance_pct":g["distance_to_resistance_pct"],
             "first_rejection":row.get("technical_first_rejection"),
+            "technical_evidence":row.get("technical_evidence_shadow"),
             "status":"swing_geometry_research_not_signal",
             "missing_volume_ma_lineage_and_independent_forward_validation":True})
     return sorted(watch,key=lambda x:(x["distance_to_resistance_pct"],x["ticker"]))[:limit]
@@ -179,6 +203,7 @@ def geometry_watch_observations(observations, as_of, limit=12):
                     "prior_width_pct":geometry["prior_width_pct"],
                     "contraction_widths_pct":[geometry[k] for k in ("w1_pct","w2_pct","w3_pct")],
                     "technical_first_rejection":row.get("technical_first_rejection"),
+                    "technical_evidence":row.get("technical_evidence_shadow"),
                     "moving_average_failed_checks":row.get("technical_failed_ma_checks") or [],
                     "status":"partial_geometry_observation_not_signal"})
     return sorted(out,key=lambda r:r["ticker"])[:limit]
@@ -289,6 +314,8 @@ def inspect(ticker,frame,currency,checked_at):
             "technical_geometry_phase_shadow":technical_audit.get("geometry_phase_shadow")
                 if turnover>=1_000_000 else None,
             "technical_swing_geometry_shadow":technical_audit.get("swing_geometry_shadow")
+                if turnover>=1_000_000 else None,
+            "technical_evidence_shadow":technical_audit.get("technical_evidence_shadow")
                 if turnover>=1_000_000 else None,
             "technical_failed_ma_checks":technical_audit.get("moving_average_failed_checks",[])
                 if technical_first_rejection=="moving_average_structure" else None,
@@ -446,6 +473,7 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
             "independent_geometry_audit":independent_geometry_audit(observed),
             "phase_robustness_audit":phase_robustness_audit(observed),
             "swing_geometry_audit":swing_geometry_audit(observed),
+            "technical_evidence_audit":technical_evidence_audit(observed),
             "cohort_churn_audit":cohort_churn_audit({"universe_tickers":names},previous,observed),
             "not_observed":len(names)-len(observed),
             "universe_coverage_pct":round(100*evaluable/len(names),2) if names else None,
@@ -530,6 +558,7 @@ def merge_slots(current, previous, now, ttl_hours=96, *, eligible_tickers=None):
             "independent_geometry_audit":independent_geometry_audit(all_rows),
             "phase_robustness_audit":phase_robustness_audit(all_rows),
             "swing_geometry_audit":swing_geometry_audit(all_rows),
+            "technical_evidence_audit":technical_evidence_audit(all_rows),
             "cohort_churn_audit":cohort_churn_audit(current,previous,all_rows),
             "not_observed":max(0,count-len(all_rows)),
             "universe_coverage_pct":round(100*evaluable/count,2) if count else None,

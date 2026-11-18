@@ -30,6 +30,24 @@ class Provider:
         return FakeFrame()
 
 class ResearchCollectorTests(unittest.TestCase):
+    def test_feature_availability_is_measured_not_interpreted_as_probability(self):
+        rows=[{"status":"evaluable_ohlcv",
+               "technical_first_rejection":"moving_average_structure",
+               "technical_evidence_shadow":{"status":"measured",
+                   "atr14_to_atr60":.72,"volume9_to_prior40":None,
+                   "return20_pct":4.2}},
+              {"status":"evaluable_ohlcv",
+               "technical_first_rejection":"below_1m_usd_turnover",
+               "technical_evidence_shadow":{"status":"measured",
+                   "atr14_to_atr60":.5,"volume9_to_prior40":.6}}]
+        report=mod.technical_evidence_audit(rows)
+        self.assertEqual(report["eligible_rows"],1)
+        self.assertEqual(report["measured_rows"],1)
+        self.assertEqual(report["available_by_metric"]["volume9_to_prior40"],0)
+        self.assertEqual(report["atr_contraction_below_0_8"],1)
+        self.assertEqual(report["volume_dry_below_0_8"],0)
+        self.assertTrue(report["not_independent_predictive_validation_or_signal"])
+
     def test_swing_geometry_is_diagnostic_and_does_not_promote_a_rejected_setup(self):
         rows=[{"ticker":"OBS","status":"evaluable_ohlcv",
                "technical_first_rejection":"moving_average_structure",
