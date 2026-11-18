@@ -394,6 +394,26 @@ class ResearchCollectorTests(unittest.TestCase):
             ["A","B","C","D","E","F"],0,3,old,now+timedelta(hours=25)),
             ["E","B","D"])
 
+    def test_missing_adjusted_price_gets_reserved_refresh_without_starving_unseen(self):
+        now=datetime(2026,11,18,12,tzinfo=timezone.utc)
+        ready={"prior_width_pct":20.0,"base_width_pct":10.0,
+               "w1_pct":15.0,"w2_pct":12.0,"w3_pct":10.0}
+        phase={"both_pass_count":0}
+        def observed(ticker,price):
+            return {"ticker":ticker,"status":"evaluable_ohlcv",
+                    "observation_checked_at":now.isoformat(),
+                    "average_dollar_volume_20_usd":2_000_000,
+                    "technical_geometry_shadow":ready,
+                    "technical_geometry_phase_shadow":phase,
+                    "last_adjusted_close":price}
+        old={"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
+             "generated_at":now.isoformat(),"observations":[
+                 observed("A",12.5),observed("B",None),observed("C",None),
+                 observed("D",15.0),observed("E",20.0)]}
+        chosen=mod.pick_research_tickers(["A","B","C","D","E","F"],0,3,old,now)
+        self.assertIn("F",chosen)  # Unseen cohort remains served.
+        self.assertTrue(bool(set(chosen)&{"B","C"}))  # Price backfill reserved.
+
     def test_collect_uses_previous_evidence_for_bounded_provider_budget(self):
         now=datetime(2026,7,10,tzinfo=timezone.utc)
         rows=[{"ticker":x,"market_cap":150e6,"quote_type":"EQUITY"}
