@@ -7,6 +7,7 @@ const document = {readyState: 'loading', addEventListener() {}};
 const window = {};
 vm.runInNewContext(source, {document, window, console, Date});
 const getRows = window.VestraMarketOpportunities.researchWatchRows;
+const continuations = window.VestraMarketOpportunities.continuationWatchRows;
 const observed = {
   ticker: 'TEST', evaluable: true, last_session: new Date().toISOString().slice(0, 10),
   adjusted_close: 12.5, first_rejection: 'sequential_vcp_contractions',
@@ -25,4 +26,11 @@ assert.equal(getRows(feed([{...observed, geometry_shadow: {
 assert.equal(getRows(feed([{...observed, first_rejection: 'passed_structural_gates'}])).length, 0);
 assert.equal(getRows({research_observations: {rows: [observed]}}).length, 0);
 assert.equal(getRows(feed([{...observed, last_session: '2020-01-01'}])).length, 0);
+const extended={...observed, first_rejection:'prior_impulse_continuation',
+  trend_phase:{classification:'continuation_after_prior_impulse',
+    prebase_impulse_pct:34.5}};
+assert.equal(getRows(feed([extended])).length,0);
+assert.equal(continuations(feed([extended])).length,1);
+assert.equal(continuations(feed([{...extended,trend_phase:{
+  ...extended.trend_phase,prebase_impulse_pct:10}}])).length,0);
 console.log('PIT pre-breakout watch: verified current partial geometry only');
