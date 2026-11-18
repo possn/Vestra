@@ -642,6 +642,23 @@ class PrebreakoutDataTests(unittest.TestCase):
         if result is not None:
             self.assertIsNone(result["quantitativeDiagnostics"]["averageDollarVolume20"])
 
+    def test_prior_major_rally_is_continuation_not_initial_prebreakout(self):
+        original=self.bars()
+        self.assertIsNotNone(mod.scan_bars("EARLY",original))
+        # Preserve the exact latest base and contraction. Introduce a major
+        # older rally strictly before it, with no future-bar information.
+        extended=[dict(bar) for bar in original]
+        for bar in extended[:160]:
+            for field in ("close","high","low"):
+                bar[field]*=.70
+        trace={}
+        result=mod.scan_bars("EXTENDED",extended,audit=trace)
+        self.assertIsNone(result)
+        self.assertEqual(trace["first_rejection"],"prior_impulse_continuation")
+        self.assertGreaterEqual(trace["trend_phase"]["prebase_impulse_pct"],25)
+        self.assertEqual(trace["trend_phase"]["classification"],
+                         "continuation_after_prior_impulse")
+
     def test_quality_gate_requires_liquidity_and_upper_base(self):
         good=self.bars()
         accepted=mod.scan_bars("TEST",good)
