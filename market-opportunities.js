@@ -87,9 +87,11 @@
     return source.rows.filter(r=>{
       const age=(Date.now()-Date.parse(String(r?.last_session||'')+'T23:59:59Z'))/86400000;
       return r?.evaluable===true&&r.first_rejection==='prior_impulse_continuation'&&
-        r.trend_phase?.classification==='continuation_after_prior_impulse'&&
+        ['continuation_after_prior_impulse','continuation_after_confirmed_breakout'].includes(r.trend_phase?.classification)&&
         typeof r.trend_phase.prebase_impulse_pct==='number'&&
-        Number.isFinite(r.trend_phase.prebase_impulse_pct)&&r.trend_phase.prebase_impulse_pct>=25&&
+        Number.isFinite(r.trend_phase.prebase_impulse_pct)&&
+        (r.trend_phase.prebase_impulse_pct>=25||
+          /^\d{4}-\d{2}-\d{2}$/.test(t(r.trend_phase.previous_confirmed_breakout_date)))&&
         typeof r.adjusted_close==='number'&&Number.isFinite(r.adjusted_close)&&r.adjusted_close>0&&
         /^[A-Z0-9.^-]{1,18}$/.test(t(r.ticker))&&age>=-1&&age<=7;
     }).sort((a,b)=>b.trend_phase.prebase_impulse_pct-a.trend_phase.prebase_impulse_pct).slice(0,8);
