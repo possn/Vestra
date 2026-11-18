@@ -271,6 +271,7 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96,
     last_status={}
     needs_geometry={}
     needs_continuous={}
+    needs_price={}
     for row in previous.get("observations",[]):
         if not isinstance(row,dict):continue
         ticker=str(row.get("ticker") or "").strip().upper()
@@ -292,6 +293,10 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96,
             turnover=row.get("average_dollar_volume_20_usd")
             liquid=(type(turnover) in (int,float) and math.isfinite(turnover)
                     and turnover>=1_000_000)
+            price=row.get("last_adjusted_close")
+            needs_price[ticker]=(last_status[ticker]=="evaluable_ohlcv" and liquid
+                and (type(price) not in (int,float) or not math.isfinite(price)
+                     or price<=0))
             needs_continuous[ticker]=(last_status[ticker]=="evaluable_ohlcv"
                 and row.get("technical_first_rejection")!="below_1m_usd_turnover"
                 and (liquid or turnover is None)
@@ -303,7 +308,7 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96,
             needs_phase=(not isinstance(phase,dict)
                          or type(phase.get("both_pass_count")) is not int
                          or not 0<=phase["both_pass_count"]<=11)
-            needs_geometry[ticker]=(needs_continuous[ticker] or
+            needs_geometry[ticker]=(needs_price[ticker] or needs_continuous[ticker] or
                 (last_status[ticker]=="evaluable_ohlcv" and liquid and needs_phase))
     # Recent failures cannot be cured by immediately requesting the same
     # ticker again every six hours. Allow a bounded retry delay so that the
@@ -315,11 +320,15 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96,
         (1 if last_status.get(ticker)!="evaluable_ohlcv"
               and last_seen[ticker]<=retry_cutoff else
          2 if needs_continuous.get(ticker) else
-         3 if needs_geometry.get(ticker) else
-         4 if last_status.get(ticker)!="evaluable_ohlcv" else 5),
+         3 if needs_price.get(ticker) else
+         4 if needs_geometry.get(ticker) else
+         5 if last_status.get(ticker)!="evaluable_ohlcv" else 6),
         last_seen.get(ticker,cutoff)))
-    # Reserve one third of the bounded slot for missing continuous geometry
-    # or the new 11-phase measurement. Previously, 70+ unseen tickers could
+    # Reserve one third of the bounded slot for missing adjusted close,
+    # continuous geometry or the 11-phase measurement. A legacy, evaluable
+    # observation without a dated price cannot enter a prospective outcome
+    # cohort; it must be refreshed without displacing the unseen-universe lane.
+    # Previously, 70+ unseen tickers could
     # occupy consecutive slots while 100+ valid histories stayed unquantified.
     # Keep the other two thirds available for unseen names and failed retries.
     # A due-failure backlog can also monopolize a slot after every ticker
