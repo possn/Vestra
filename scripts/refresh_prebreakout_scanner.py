@@ -252,13 +252,20 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     prior_closes=sorted(b['close'] for b in clean[-160:-40])
     prior_reference=prior_closes[int((len(prior_closes)-1)*.15)]
     prior_impulse_pct=(clean[-40]['close']/prior_reference-1)*100
-    phase='continuation_after_prior_impulse' if prior_impulse_pct>=25 else 'initial_base_not_extended'
+    # Price-only run-up and separately verified historical volume breakouts are
+    # complementary lineage evidence. A breakout anywhere in the 180 sessions
+    # preceding the current base means this is NOT the initial opportunity.
+    prior_confirmed=historical_breakout_dates(clean,len(clean)-180,len(clean)-40)
+    phase=('continuation_after_prior_impulse' if prior_impulse_pct>=25 else
+           'continuation_after_confirmed_breakout' if prior_confirmed else
+           'initial_base_not_extended')
     if audit is not None:
         audit['trend_phase']={'classification':phase,
             'prebase_impulse_pct':round(prior_impulse_pct,2),
             'lookback_sessions':120,'reference':'prior_15th_percentile_adjusted_close',
+            'previous_confirmed_breakout_date':prior_confirmed[-1] if prior_confirmed else None,
             'no_future_sessions':True}
-    if strict_quality and phase=='continuation_after_prior_impulse':
+    if strict_quality and phase!='initial_base_not_extended':
         return reject('prior_impulse_continuation')
     # The last 10 sessions should not repeatedly close in the weak lower
     # half of the base. Use closed bars only, no forward/market data.
