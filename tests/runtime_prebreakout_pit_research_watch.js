@@ -32,5 +32,8 @@ const extended={...observed, first_rejection:'prior_impulse_continuation',
 assert.equal(getRows(feed([extended])).length,0);
 assert.equal(continuations(feed([extended])).length,1);
 assert.equal(continuations(feed([{...extended,trend_phase:{
+  classification:'continuation_after_confirmed_breakout',
+  prebase_impulse_pct:8,previous_confirmed_breakout_date:'2026-11-01'}}])).length,1);
+assert.equal(continuations(feed([{...extended,trend_phase:{
   ...extended.trend_phase,prebase_impulse_pct:10}}])).length,0);
 console.log('PIT pre-breakout watch: verified current partial geometry only');
