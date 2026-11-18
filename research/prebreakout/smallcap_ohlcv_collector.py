@@ -100,6 +100,50 @@ def phase_robustness_audit(observations):
             "not_eligibility_or_backtest":True}
 
 
+def swing_geometry_audit(observations):
+    """Compare variable-length price-swing geometry with fixed 20-session bins.
+
+    Only observed, liquid, evaluable historical bars count. The alternative
+    geometry never promotes securities into the verified signals list.
+    """
+    measured=[]
+    for row in observations:
+        if row.get("status")!="evaluable_ohlcv" or row.get("technical_first_rejection")=="below_1m_usd_turnover":
+            continue
+        swing=row.get("technical_swing_geometry_shadow")
+        if isinstance(swing,dict) and swing.get("status")=="measured":
+            measured.append(swing)
+    return {"scope":"liquid_evaluable_series_with_confirmed_local_extrema",
+            "measured_rows":len(measured),
+            "three_pullbacks":sum(x.get("legs_found",0)>=3 for x in measured),
+            "sequential_contraction_pass":sum(x.get("sequential_contraction_pass") is True for x in measured),
+            "base_width_pass":sum(x.get("base_width_pass") is True for x in measured),
+            "all_geometry_pass":sum(x.get("all_geometry_pass") is True for x in measured),
+            "research_only_no_signal_promotion_or_performance_claim":True}
+
+
+def swing_watch_observations(observations, limit=8):
+    """Inspectable price structures, explicitly below signal eligibility."""
+    watch=[]
+    for row in observations:
+        if row.get("status")!="evaluable_ohlcv" or row.get("verified_prebreakout_setup"):
+            continue
+        g=row.get("technical_swing_geometry_shadow")
+        volume=row.get("average_dollar_volume_20_usd")
+        if (not isinstance(g,dict) or g.get("all_geometry_pass") is not True or
+            type(volume) not in (int,float) or not math.isfinite(volume) or volume<1_000_000 or
+            not isinstance(row.get("last_session"),str)):
+            continue
+        watch.append({"ticker":row["ticker"],"last_session":row["last_session"],
+            "leg_depths_pct":g["leg_depths_pct"],
+            "base_width_pct":g["base_width_pct"],
+            "distance_to_resistance_pct":g["distance_to_resistance_pct"],
+            "first_rejection":row.get("technical_first_rejection"),
+            "status":"swing_geometry_research_not_signal",
+            "missing_volume_ma_lineage_and_independent_forward_validation":True})
+    return sorted(watch,key=lambda x:(x["distance_to_resistance_pct"],x["ticker"]))[:limit]
+
+
 def geometry_watch_observations(observations, as_of, limit=12):
     """Observable partial geometry, never a VCP signal or score.
 
@@ -243,6 +287,8 @@ def inspect(ticker,frame,currency,checked_at):
             "technical_geometry_shadow":technical_audit.get("geometry_shadow")
                 if turnover>=1_000_000 else None,
             "technical_geometry_phase_shadow":technical_audit.get("geometry_phase_shadow")
+                if turnover>=1_000_000 else None,
+            "technical_swing_geometry_shadow":technical_audit.get("swing_geometry_shadow")
                 if turnover>=1_000_000 else None,
             "technical_failed_ma_checks":technical_audit.get("moving_average_failed_checks",[])
                 if technical_first_rejection=="moving_average_structure" else None,
@@ -399,6 +445,7 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
             "technical_structure_audit":technical_structure_audit(observed),
             "independent_geometry_audit":independent_geometry_audit(observed),
             "phase_robustness_audit":phase_robustness_audit(observed),
+            "swing_geometry_audit":swing_geometry_audit(observed),
             "cohort_churn_audit":cohort_churn_audit({"universe_tickers":names},previous,observed),
             "not_observed":len(names)-len(observed),
             "universe_coverage_pct":round(100*evaluable/len(names),2) if names else None,
@@ -406,6 +453,7 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
             "not_breakout_candidates":True,"no_success_probability":True,
             "validated_prebreakout_setups":len(signals),"signals":signals,
             "geometry_watch_observations":geometry_watch_observations(observed,checked_at),
+            "swing_watch_observations":swing_watch_observations(observed),
             "observations":observed}
 
 
@@ -481,11 +529,13 @@ def merge_slots(current, previous, now, ttl_hours=96, *, eligible_tickers=None):
             "technical_structure_audit":technical_structure_audit(all_rows),
             "independent_geometry_audit":independent_geometry_audit(all_rows),
             "phase_robustness_audit":phase_robustness_audit(all_rows),
+            "swing_geometry_audit":swing_geometry_audit(all_rows),
             "cohort_churn_audit":cohort_churn_audit(current,previous,all_rows),
             "not_observed":max(0,count-len(all_rows)),
             "universe_coverage_pct":round(100*evaluable/count,2) if count else None,
             "validated_prebreakout_setups":len(signals),
             "geometry_watch_observations":geometry_watch_observations(all_rows,now),
+            "swing_watch_observations":swing_watch_observations(all_rows),
             "setup_verification_window_hours":18,
             "historical_setups_excluded_as_stale":historical_setups_excluded,
             "previous_policy_setups_excluded":previous_policy_setups_excluded,
