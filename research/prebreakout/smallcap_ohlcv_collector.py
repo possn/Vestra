@@ -18,7 +18,7 @@ ROOT=Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:sys.path.insert(0,str(ROOT))
 from scripts.refresh_prebreakout_scanner import EARLY_SETUP_POLICY_VERSION
 DEFAULT_OUTPUT=ROOT/"data"/"breakout-lab-smallcap-ohlcv-research.json"
-MAX_PER_RUN=30
+MAX_PER_RUN=40
 MIN_BARS=220
 
 def cohort(rows):
@@ -422,7 +422,7 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96,
 
 def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
     if type(slot)!=int or slot<0 or type(budget)!=int or not 1<=budget<=MAX_PER_RUN:
-        raise ValueError("slot must be >=0 and budget between 1 and 30")
+        raise ValueError(f"slot must be >=0 and budget between 1 and {MAX_PER_RUN}")
     checked_at=checked_at or datetime.now(timezone.utc)
     if checked_at.tzinfo is None:raise ValueError("checked_at must be timezone-aware")
     names=cohort(rows)

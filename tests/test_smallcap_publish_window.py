@@ -51,10 +51,10 @@ class SmallcapPublishWindowTests(unittest.TestCase):
         match=re.search(r"default: '(\d+)'",workflow)
         self.assertIsNotNone(match)
         budget=int(match.group(1))
-        # Four weekday runs per day; 371 current eligible names require
-        # at least 24 attempts per cycle over four full days.
-        self.assertGreaterEqual(budget*16,371)
-        self.assertLessEqual(budget,30)
+        # Six runs/day, four days. This is theoretical capacity only.
+        self.assertGreaterEqual(budget*24,480)
+        self.assertLessEqual(budget,40)
+        self.assertIn("n.toordinal()*6+n.hour//4",workflow)
         self.assertIn("github.event.inputs.budget || '"+str(budget)+"'",workflow)
         # This is only a theoretical capacity bound, not real OHLCV coverage.
 
