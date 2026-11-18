@@ -517,10 +517,31 @@ def _us_cap_range_screener(min_cap: float, max_cap: float, limit: int, sort_desc
         return tickers
 
 
-def us_small_micro_cap(limit: int = 500) -> list[str]:
-    """Small/micro-cap US equities ($50M-$2B)."""
-    tickers = _us_cap_range_screener(50_000_000, 2_000_000_000, limit)
-    log.info("US small/micro-cap screener returned %d tickers", len(tickers))
+def us_small_micro_cap(limit: int = 2500) -> list[str]:
+    """Discover the US $50M-$2B cohort across independent cap bands.
+
+    One ascending Yahoo query truncated at 500 symbols systematically omits
+    the upper part of the range. Screening is *discovery*, not validation:
+    downstream fundamentals must still confirm issuer type and market cap
+    before the OHLCV research collector can count an eligible security.
+    """
+    if type(limit) is not int or limit < 0:
+        raise ValueError("limit must be a nonnegative integer")
+    bands = ((50_000_000, 150_000_000),
+             (150_000_000, 400_000_000),
+             (400_000_000, 900_000_000),
+             (900_000_000, 2_000_000_000))
+    found = set()
+    for low, high in bands:
+        # Avoid a single global top-N market-cap ordering. Each cap band gets
+        # an independent, bounded allowance, with deterministic de-duplication.
+        allowance = min(750, max(0, limit - len(found)))
+        if not allowance:
+            break
+        found.update(_us_cap_range_screener(low, high, allowance))
+    tickers = sorted(found)[:limit]
+    log.info("US small/micro-cap candidate symbols: %d (unverified; %d cap bands)",
+             len(tickers), len(bands))
     return tickers
 
 
