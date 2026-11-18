@@ -1,372 +1,456 @@
-2026-11-18 15:42:21,367 INFO universe: US small/micro-cap screener returned 500 tickers
-2026-11-18 15:42:21,495 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/List_of_S%26P_500_companies -> HTTP 200, 572903 bytes
-2026-11-18 15:42:21,591 INFO universe: https://en.wikipedia.org/wiki/List_of_S%26P_500_companies: pd.read_html found 2 table(s) total (hint pattern was 'Symbol')
-2026-11-18 15:42:21,591 INFO universe: https://en.wikipedia.org/wiki/List_of_S%26P_500_companies: table[0] columns=['Symbol', 'Security', 'GICS Sector', 'GICS Sub-Industry', 'Headquarters Location', 'Date added', 'CIK', 'Founded'] -> matched column 'Symbol', 503 symbols, e.g. ['MMM', 'AOS', 'ABT', 'ABBV', 'ACN']
-2026-11-18 15:42:22,105 INFO universe: US mid/large-cap screener returned 500 tickers
-2026-11-18 15:42:23,211 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/FTSE_100_Index -> HTTP 200, 921522 bytes
-2026-11-18 15:42:23,240 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: pd.read_html found 24 table(s) total (hint pattern was 'Ticker')
-2026-11-18 15:42:23,240 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[0] columns=['0', '1'] -> no match
-2026-11-18 15:42:23,240 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[1] columns=['ICB Supersector', 'Marketcap (£ billion)[28]'] -> no match
-2026-11-18 15:42:23,240 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[2] columns=['0', '1'] -> no match
-2026-11-18 15:42:23,240 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[3] columns=['0', '1'] -> no match
-2026-11-18 15:42:23,240 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[4] columns=['0', '1', '2'] -> no match
-2026-11-18 15:42:23,240 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[5] columns=["('Year', 'Year')", "('Closing level', 'Closing level')", "('Change in index', '(points)')", "('Change in index', '(%)')"] -> no match
-2026-11-18 15:42:23,241 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[6] columns=['Company', 'Ticker', 'ISIN[34]', 'FTSE industry classification benchmark sector[35]'] -> matched column 'Ticker', 100 symbols, e.g. ['III', 'ABDN', 'ADM', 'AAF', 'ALW']
-2026-11-18 15:42:24,333 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/DAX -> HTTP 200, 324823 bytes
-2026-11-18 15:42:24,349 INFO universe: https://en.wikipedia.org/wiki/DAX: pd.read_html found 19 table(s) total (hint pattern was 'Ticker')
-2026-11-18 15:42:24,349 INFO universe: https://en.wikipedia.org/wiki/DAX: table[0] columns=['0', '1'] -> no match
-2026-11-18 15:42:24,349 INFO universe: https://en.wikipedia.org/wiki/DAX: table[1] columns=['DAX Combined Index (DAXA)', 'Unnamed: 1'] -> no match
-2026-11-18 15:42:24,349 INFO universe: https://en.wikipedia.org/wiki/DAX: table[2] columns=['Category', 'All-time highs[9][10]', 'All-time highs[9][10].1'] -> no match
-2026-11-18 15:42:24,349 INFO universe: https://en.wikipedia.org/wiki/DAX: table[3] columns=['Year', 'Closing level', 'Change in Index in Points', 'Change in Index in\xa0%'] -> no match
-2026-11-18 15:42:24,349 INFO universe: https://en.wikipedia.org/wiki/DAX: table[4] columns=['Ticker', 'Logo', 'Company', 'Prime Standard Sector', 'Index weighting (%)1', 'Employees', 'Founded'] -> matched column 'Ticker', 40 symbols, e.g. ['ADS.DE', 'AIR.PA', 'ALV.DE', 'BAS.DE', 'BAYN.DE']
-2026-11-18 15:42:24,828 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/CAC_40 -> HTTP 200, 236240 bytes
-2026-11-18 15:42:24,841 INFO universe: https://en.wikipedia.org/wiki/CAC_40: pd.read_html found 20 table(s) total (hint pattern was 'Ticker')
-2026-11-18 15:42:24,841 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[0] columns=['0', '1'] -> no match
-2026-11-18 15:42:24,841 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[1] columns=['CAC 40 (PIL)', 'Unnamed: 1'] -> no match
-2026-11-18 15:42:24,841 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[2] columns=['Type', 'Date', 'Value'] -> no match
-2026-11-18 15:42:24,841 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[3] columns=['Year', 'Closing level', 'Change in Index in Points', 'Change in Index in\xa0%'] -> no match
-2026-11-18 15:42:24,841 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[4] columns=['Company', 'Sector', 'GICS Sub-Industry', 'Ticker'] -> matched column 'Ticker', 40 symbols, e.g. ['AC.PA', 'AI.PA', 'AIR.PA', 'MT.AS', 'CS.PA']
-2026-11-18 15:42:25,320 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/AEX_index -> HTTP 200, 230619 bytes
-2026-11-18 15:42:25,333 INFO universe: https://en.wikipedia.org/wiki/AEX_index: pd.read_html found 22 table(s) total (hint pattern was 'Ticker')
-2026-11-18 15:42:25,333 INFO universe: https://en.wikipedia.org/wiki/AEX_index: table[0] columns=['0', '1'] -> no match
-2026-11-18 15:42:25,333 INFO universe: https://en.wikipedia.org/wiki/AEX_index: table[1] columns=['Year', 'Closing level', 'Change in index in points', 'Change in index in\xa0%'] -> no match
-2026-11-18 15:42:25,333 INFO universe: https://en.wikipedia.org/wiki/AEX_index: table[2] columns=['AEX Index (FTI)', 'Unnamed: 1'] -> no match
-2026-11-18 15:42:25,333 INFO universe: https://en.wikipedia.org/wiki/AEX_index: table[3] columns=['Ticker', 'Company', 'ICB Sector', 'Index weighting (%)'] -> matched column 'Ticker', 25 symbols, e.g. ['ABN.AS', 'ADYEN.AS', 'AGN.AS', 'AD.AS', 'AKZA.AS']
-2026-11-18 15:42:25,821 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/IBEX_35 -> HTTP 200, 250273 bytes
-2026-11-18 15:42:25,833 INFO universe: https://en.wikipedia.org/wiki/IBEX_35: pd.read_html found 17 table(s) total (hint pattern was 'Ticker')
-2026-11-18 15:42:25,834 INFO universe: https://en.wikipedia.org/wiki/IBEX_35: table[0] columns=['0', '1'] -> no match
-2026-11-18 15:42:25,834 INFO universe: https://en.wikipedia.org/wiki/IBEX_35: table[1] columns=['IBEX Mini (BIBX)', 'Unnamed: 1'] -> no match
-2026-11-18 15:42:25,834 INFO universe: https://en.wikipedia.org/wiki/IBEX_35: table[2] columns=['Ticker', 'Company', 'Sector'] -> matched column 'Ticker', 35 symbols, e.g. ['ACS.MC', 'ACX.MC', 'AMS.MC', 'ANA.MC', 'ANE.MC']
-2026-11-18 15:42:26,311 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/FTSE_MIB -> HTTP 200, 244872 bytes
-2026-11-18 15:42:26,322 INFO universe: https://en.wikipedia.org/wiki/FTSE_MIB: pd.read_html found 15 table(s) total (hint pattern was 'Ticker')
-2026-11-18 15:42:26,322 INFO universe: https://en.wikipedia.org/wiki/FTSE_MIB: table[0] columns=['0', '1'] -> no match
-2026-11-18 15:42:26,322 INFO universe: https://en.wikipedia.org/wiki/FTSE_MIB: table[1] columns=['Year', 'Closing level', 'Change in index in points', 'Change in index in\xa0%'] -> no match
-2026-11-18 15:42:26,322 INFO universe: https://en.wikipedia.org/wiki/FTSE_MIB: table[2] columns=['Ticker', 'Company', 'ISIN', 'ICB Sector'] -> matched column 'Ticker', 40 symbols, e.g. ['A2A.MI', 'AMP.MI', 'AVIO.MI', 'AZM.MI', 'BMED.MI']
-2026-11-18 15:42:26,806 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/Swiss_Market_Index -> HTTP 200, 266600 bytes
-2026-11-18 15:42:26,819 INFO universe: https://en.wikipedia.org/wiki/Swiss_Market_Index: pd.read_html found 17 table(s) total (hint pattern was 'Ticker')
-2026-11-18 15:42:26,819 INFO universe: https://en.wikipedia.org/wiki/Swiss_Market_Index: table[0] columns=['0', '1'] -> no match
-2026-11-18 15:42:26,819 INFO universe: https://en.wikipedia.org/wiki/Swiss_Market_Index: table[1] columns=['0', '1'] -> no match
-2026-11-18 15:42:26,819 INFO universe: https://en.wikipedia.org/wiki/Swiss_Market_Index: table[2] columns=['Rank', 'Name', 'Sector', 'Ticker', 'Canton', 'Weighting in\xa0%'] -> matched column 'Ticker', 20 symbols, e.g. ['NOVN', 'ROP', 'NESN', 'ABBN', 'UBSG']
-2026-11-18 15:42:27,221 INFO universe: Extra portfolio coverage: 582 ticker(s) loaded
-2026-11-18 15:42:27,221 INFO universe: US: 1163 tickers
-2026-11-18 15:42:27,221 INFO universe: UK: 100 tickers
-2026-11-18 15:42:27,221 INFO universe: EU: 198 tickers
-2026-11-18 15:42:27,221 INFO universe: ETF: 257 tickers
-2026-11-18 15:42:27,221 INFO universe: DISCOVERY: 61 tickers
-2026-11-18 15:42:27,221 INFO universe: EXTRA: 582 tickers
-2026-11-18 15:42:27,225 INFO run: Total universe: 2063 tickers (124 learned always-refresh, portfolio fundamentals 140/458, non-priority fundamentals 180/1481)
-2026-11-18 15:42:27,225 INFO run: PIPELINE_STAGE start fundamentals
-2026-11-18 15:42:27,225 INFO fundamentals: Fetching 124 tickers with 1 workers
-2026-11-18 15:43:47,774 INFO fundamentals: fetched 50/124
-2026-11-18 15:45:13,294 INFO fundamentals: fetched 100/124
-2026-11-18 15:45:53,588 INFO fundamentals: fetched 124/124
-2026-11-18 15:45:53,589 INFO fundamentals: Fetching 140 tickers with 2 workers
-2026-11-18 15:46:20,691 INFO fundamentals: fetched 50/140
-2026-11-18 15:46:46,571 ERROR yfinance: $APT-USD: No data found, symbol may be delisted
-2026-11-18 15:46:46,741 ERROR yfinance: $APT-USD: No data found, symbol may be delisted
-2026-11-18 15:46:47,451 ERROR yfinance: $APT-USD: possibly delisted; no timezone found
-2026-11-18 15:46:56,691 INFO fundamentals: fetched 100/140
-2026-11-18 15:47:07,471 INFO fundamentals: BITF: current retrieval via official successor KEEL
-2026-11-18 15:47:13,906 ERROR yfinance: $BRA: possibly delisted; no price data found  (period=5d)
-2026-11-18 15:47:13,963 ERROR yfinance: $BRA: possibly delisted; no price data found  (period=5d)
-2026-11-18 15:47:14,630 ERROR yfinance: $BRA: possibly delisted; no price data found  (1d 1927-12-13 -> 2026-11-18)
-2026-11-18 15:47:27,542 INFO fundamentals: fetched 140/140
-2026-11-18 15:47:27,543 INFO fundamentals: Fetching 180 tickers with 2 workers
-2026-11-18 15:48:10,114 INFO fundamentals: fetched 50/180
-2026-11-18 15:48:52,076 INFO fundamentals: fetched 100/180
-2026-11-18 15:49:33,034 INFO fundamentals: fetched 150/180
-2026-11-18 15:49:57,743 INFO fundamentals: fetched 180/180
-2026-11-18 15:49:57,744 INFO run: PIPELINE_STAGE done fundamentals elapsed=450.5s
-2026-11-18 15:49:57,744 INFO run: PIPELINE_STAGE start pre_score_enrichment
-2026-11-18 15:49:57,744 INFO sec_enrich: SEC enrichment disabled: set SEC_USER_AGENT to enable official EDGAR fallback
-2026-11-18 15:49:57,744 INFO sec_enrich: SEC enrichment runtime diagnostics {"input_rows":444,"newly_enriched_rows":0,"probe_blocked":true,"total_enriched_rows":0,"transport":{}}
-2026-11-18 15:49:57,746 INFO sec_archives_enrich: SEC Archives candidate selector: eligible=147 selected=147 priority=52 scanner=95 budget=500
-2026-11-18 15:50:07,301 INFO sec_archives_enrich: SEC Archives filing-backed budget: requested=95 raw_cap=92
-2026-11-18 15:50:12,838 INFO sec_archives_enrich: SEC Archives XBRL enriched 92 rows (attempted=92 cache=83 network=9 filing_missing=6 parse_failed=0 requests=22)
-2026-11-18 15:50:13,259 INFO esef_enrich: Prior verified ESEF identity cache: 3 exact ticker hit(s)
-2026-11-18 15:50:43,857 INFO esef_enrich: ESEF v4.20 enriched 3 rows (0 via LSE identity fallback)
-2026-11-18 15:50:43,857 INFO esef_enrich: ESEF funnel {"attempted":25,"eligible":25,"enriched":3,"filing_found":3,"filing_missing":3,"isin_missing":16,"isin_resolved":9,"lei_missing":3,"lei_resolved":6,"prior_isin_reused":3,"prior_lei_reused":3,"report_failed":0,"report_parsed":3,"same_period_observations":3}
-2026-11-18 15:50:43,858 INFO esef_enrich: LSE identity diagnostics: {'direct_requests': 3, 'direct_failures': 3, 'pages_ok': 5, 'workbooks_discovered': 0, 'workbooks_parsed': 0, 'pairs_seen': 0, 'exact_mappings': 0, 'ambiguous_tidms': 0}
-2026-11-18 15:51:01,082 INFO gap_retrieval: Targeted gap retrieval: selected priority=21 scanner=10, attempted 31, enriched 21
-2026-11-18 15:51:46,329 INFO quarterly_gap: Quarterly gap retrieval: attempted 80, enriched 48
-2026-11-18 15:51:46,335 INFO derived_fundamentals: Derived fundamentals: 6 values across 6 rows
-2026-11-18 15:51:46,358 INFO capital_risk: Capital-risk incremental refresh: selected=110/346 (priority budget=80, nonpriority budget=30); carried=236
-2026-11-18 15:51:55,237 INFO capital_risk: Capital-risk Archives discovery loaded 9/9 quarterly indexes; 13259 CIKs with relevant filings
-2026-11-18 15:53:19,203 INFO capital_risk: Capital-structure risk refreshed 110 issuers; 79 flagged; 79 unchanged reused; 31 rescanned; 236 carried without discovery; discovery api=0 archives=109 missing=1
-2026-11-18 15:53:19,285 INFO run: PIPELINE_STAGE done pre_score_enrichment elapsed=201.5s
-2026-11-18 15:53:19,285 INFO run: PIPELINE_STAGE start score
-2026-11-18 15:53:20,353 INFO run: PIPELINE_STAGE done score elapsed=1.1s
-2026-11-18 15:53:20,353 INFO run: Learned ticker promotion complete: 2B76.DE, A, AA, AAF.L, AAP, AAPL, AB, AD, AEHR, AG, AGNC, AMZN, AS, B, BA, BAB, BANC, BH, BHE, BL, BORR, BW, C, CAR, CARR, CG, CGNX, COHU, COR, COST, CR, CRDO, CRE, CRED, CRM, D, DG, E, EC, ECVT, EIG, EO, EOG, EZJ, EZJ.L, F, FC, FCX, FOX, FPS, G, GF, GFS, GL, GLW, GO, GOOG, GRAB, H, HE, HEI, HHPD.IL, HON, HP, IBM, IDT, IDTL.L, INFY, INV, INVZ, IT, KO, KOS, L, LAES, LAR, M, MC, MCD, META, MO, MOS, MSFT, MWA, NI, NVD, NVDA, ORAC, P, PFI, PN, PNR, POET, R, REG, RM, RMBS, RR, RRX, RS, RSG, S, SA, SN, SNA, SNAP, SPIE.PA, SR, T, TE, TY, TYL, U, UN, UNH, V, VIS, VIST, VS, VST, WMS, XOM, Z, ZBRA
-2026-11-18 15:53:20,367 INFO run: INSIDER_REFRESH_SCOPE observed_requested=120 universe=377 not_requested=257 rotation=day_ordinal_budget_stride_unknown_not_zero
-2026-11-18 15:53:20,367 INFO run: PIPELINE_STAGE start post_score_intelligence
-2026-11-18 15:53:20,367 INFO run: PIPELINE_TASK start analyst
-2026-11-18 15:53:20,368 INFO run: PIPELINE_TASK start insiders
-2026-11-18 15:53:20,368 INFO run: PIPELINE_TASK start congress
-2026-11-18 15:53:20,382 INFO congress: congress: mapped 389 canonical disclosures from U.S. House Clerk + Senate eFD onto 33 Vestra tickers
-2026-11-18 15:53:20,382 INFO run: PIPELINE_TASK done congress elapsed=0.0s
-2026-11-18 15:53:20,876 INFO analyst: Analyst intelligence: refreshing 180/404 equities (5 priority due, 95 priority rotation, 80 nonpriority rotation), workers=8; previous usable snapshots=882
-2026-11-18 15:53:21,454 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: BRA"}}}
-2026-11-18 15:53:22,018 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: BRA"}}}
-2026-11-18 15:53:22,447 ERROR yfinance: BRA: No earnings dates found, symbol may be delisted
-2026-11-18 15:53:23,041 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: BRA"}}}
-2026-11-18 15:53:23,577 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: BRA"}}}
-2026-11-18 15:53:24,987 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: GF"}}}
-2026-11-18 15:53:25,645 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: GF"}}}
-2026-11-18 15:53:26,268 ERROR yfinance: GF: No earnings dates found, symbol may be delisted
-2026-11-18 15:53:27,090 INFO insiders: Insider Archives discovery active: 5 quarterly indexes; 58403 CIKs with recent Form 4 filings
-2026-11-18 15:53:27,091 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: GF"}}}
-2026-11-18 15:53:27,419 INFO insiders: SEC ticker->CIK map loaded with 10400 entries
-2026-11-18 15:53:27,421 INFO insiders: ACXP 0001104659-26-046846 detail unavailable: validated_empty_cache
-2026-11-18 15:53:27,421 INFO insiders: ACXP 0001104659-26-046844 detail unavailable: validated_empty_cache
-2026-11-18 15:53:27,422 INFO insiders: ACXP 0001104659-26-046842 detail unavailable: validated_empty_cache
-2026-11-18 15:53:27,422 INFO insiders: ACXP 0001104659-26-046840 detail unavailable: validated_empty_cache
-2026-11-18 15:53:27,422 INFO insiders: ACXP 0001104659-26-046837 detail unavailable: validated_empty_cache
-2026-11-18 15:53:27,422 INFO insiders: ACXP 0001104659-26-046836 detail unavailable: validated_empty_cache
-2026-11-18 15:53:27,422 INFO insiders: ACXP 0001104659-26-046835 detail unavailable: validated_empty_cache
-2026-11-18 15:53:27,422 INFO insiders: ACXP 0001104659-26-046833 detail unavailable: validated_empty_cache
-2026-11-18 15:53:27,650 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: HHPD.IL"}}}
-2026-11-18 15:53:28,063 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: HHPD.IL"}}}
-2026-11-18 15:53:28,846 ERROR yfinance: HHPD.IL: No earnings dates found, symbol may be delisted
-2026-11-18 15:53:29,231 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: HHPD.IL"}}}
-2026-11-18 15:53:29,607 INFO insiders: AD 0002028349-26-000009 detail unavailable: validated_empty_cache
-2026-11-18 15:53:29,772 INFO insiders: ADAC 0001104659-26-011552 detail unavailable: valid ownership XML contained 0 non-derivative transactions (https://www.sec.gov/Archives/edgar/data/2083002/0001104659-26-011552.txt)
-2026-11-18 15:53:29,772 INFO insiders: ADAM 0001273685-26-000062 detail unavailable: validated_empty_cache
-2026-11-18 15:53:29,772 INFO insiders: ADAM 0001273685-26-000061 detail unavailable: validated_empty_cache
-2026-11-18 15:53:29,772 INFO insiders: ADAM 0001273685-26-000060 detail unavailable: validated_empty_cache
-2026-11-18 15:53:29,772 INFO insiders: ADAM 0001273685-26-000059 detail unavailable: validated_empty_cache
-2026-11-18 15:53:29,772 INFO insiders: ADAM 0001273685-26-000058 detail unavailable: validated_empty_cache
-2026-11-18 15:53:49,836 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: BITF"}}}
-2026-11-18 15:53:50,183 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: BITF"}}}
-2026-11-18 15:53:51,055 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: BITF"}}}
-2026-11-18 15:53:51,323 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: BITF"}}}
-2026-11-18 15:54:07,483 INFO insiders: insider intelligence 50/120
-2026-11-18 15:54:16,883 ERROR yfinance: MRPMF: No earnings dates found, symbol may be delisted
-2026-11-18 15:54:16,978 INFO analyst: Analyst intelligence progress: 100/180
-2026-11-18 15:54:19,705 ERROR yfinance: FGHQF: No earnings dates found, symbol may be delisted
-2026-11-18 15:54:20,552 ERROR yfinance: CTLDF: No earnings dates found, symbol may be delisted
-2026-11-18 15:54:23,393 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: GUT"}}}
-2026-11-18 15:54:23,677 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: GUT"}}}
-2026-11-18 15:54:24,362 ERROR yfinance: GUT: No earnings dates found, symbol may be delisted
-2026-11-18 15:54:24,616 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: GUT"}}}
-2026-11-18 15:54:28,749 ERROR yfinance: ASG: No earnings dates found, symbol may be delisted
-2026-11-18 15:54:30,898 ERROR yfinance: MMU: No earnings dates found, symbol may be delisted
-2026-11-18 15:54:37,777 ERROR yfinance: KTF: No earnings dates found, symbol may be delisted
-2026-11-18 15:54:41,726 ERROR yfinance: ACP: No earnings dates found, symbol may be delisted
-2026-11-18 15:54:42,997 ERROR yfinance: OPTX: No earnings dates found, symbol may be delisted
-2026-11-18 15:54:44,775 ERROR yfinance: HLP: No earnings dates found, symbol may be delisted
-2026-11-18 15:54:46,206 INFO insiders: insider intelligence 100/120
-2026-11-18 15:54:54,690 ERROR yfinance: NDMO: No earnings dates found, symbol may be delisted
-2026-11-18 15:54:57,056 INFO analyst: Analyst intelligence progress: 180/180
-2026-11-18 15:54:57,057 INFO analyst: Analyst intelligence: carried 125 recent validated snapshots without Yahoo refresh
-2026-11-18 15:54:57,061 INFO run: PIPELINE_TASK done analyst elapsed=96.7s
-2026-11-18 15:55:02,897 INFO insiders: insider intelligence 120/120
-2026-11-18 15:55:03,006 INFO insiders: Insider filing cache: 4437 immutable accession(s)
-2026-11-18 15:55:03,006 INFO insiders: Insider transport summary: elapsed=95.9s submissions=0 failures=0 archives=678 failures=1 cache_hits=294 cache_misses=846 other=1 failures=0
-2026-11-18 15:55:03,039 INFO insiders: Insider validated-empty cache: 5613 immutable accession(s); hits=168 new=12
-2026-11-18 15:55:03,126 INFO run: PIPELINE_TASK done insiders elapsed=102.8s
-2026-11-18 15:55:03,128 INFO run: PIPELINE_STAGE done post_score_intelligence elapsed=102.8s
-2026-11-18 15:55:03,128 INFO run: PIPELINE_STAGE start price_history
-2026-11-18 15:55:05,257 ERROR yfinance: $APT-USD: No data found, symbol may be delisted
-2026-11-18 15:55:05,768 INFO insider_prices: price histories batch phase 60/2062
-2026-11-18 15:55:06,033 INFO insider_prices: price histories batch phase 120/2062
-2026-11-18 15:55:06,058 INFO insider_prices: price histories batch phase 180/2062
-2026-11-18 15:55:06,203 ERROR yfinance: 
+2026-11-18 23:34:03,844 INFO universe: US cap-band 50M–150M: provider returned 199, new unique 199, cumulative 199; discovery only
+2026-11-18 23:34:04,022 INFO universe: US cap-band 150M–400M: provider returned 239, new unique 239, cumulative 438; discovery only
+2026-11-18 23:34:04,298 INFO universe: US cap-band 400M–900M: provider returned 278, new unique 278, cumulative 716; discovery only
+2026-11-18 23:34:04,575 INFO universe: US cap-band 900M–2000M: provider returned 300, new unique 300, cumulative 1016; discovery only
+2026-11-18 23:34:04,575 INFO universe: US small/micro-cap candidate symbols: 1016 (unverified; 4 cap bands)
+2026-11-18 23:34:04,607 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/List_of_S%26P_500_companies -> HTTP 200, 572904 bytes
+2026-11-18 23:34:04,706 INFO universe: https://en.wikipedia.org/wiki/List_of_S%26P_500_companies: pd.read_html found 2 table(s) total (hint pattern was 'Symbol')
+2026-11-18 23:34:04,707 INFO universe: https://en.wikipedia.org/wiki/List_of_S%26P_500_companies: table[0] columns=['Symbol', 'Security', 'GICS Sector', 'GICS Sub-Industry', 'Headquarters Location', 'Date added', 'CIK', 'Founded'] -> matched column 'Symbol', 503 symbols, e.g. ['MMM', 'AOS', 'ABT', 'ABBV', 'ACN']
+2026-11-18 23:34:05,145 INFO universe: US mid/large-cap screener returned 500 tickers
+2026-11-18 23:34:06,168 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/FTSE_100_Index -> HTTP 200, 921515 bytes
+2026-11-18 23:34:06,220 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: pd.read_html found 24 table(s) total (hint pattern was 'Ticker')
+2026-11-18 23:34:06,220 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[0] columns=['0', '1'] -> no match
+2026-11-18 23:34:06,220 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[1] columns=['ICB Supersector', 'Marketcap (£ billion)[28]'] -> no match
+2026-11-18 23:34:06,220 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[2] columns=['0', '1'] -> no match
+2026-11-18 23:34:06,220 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[3] columns=['0', '1'] -> no match
+2026-11-18 23:34:06,220 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[4] columns=['0', '1', '2'] -> no match
+2026-11-18 23:34:06,220 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[5] columns=["('Year', 'Year')", "('Closing level', 'Closing level')", "('Change in index', '(points)')", "('Change in index', '(%)')"] -> no match
+2026-11-18 23:34:06,221 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[6] columns=['Company', 'Ticker', 'ISIN[34]', 'FTSE industry classification benchmark sector[35]'] -> matched column 'Ticker', 100 symbols, e.g. ['III', 'ABDN', 'ADM', 'AAF', 'ALW']
+2026-11-18 23:34:07,241 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/DAX -> HTTP 200, 324826 bytes
+2026-11-18 23:34:07,270 INFO universe: https://en.wikipedia.org/wiki/DAX: pd.read_html found 19 table(s) total (hint pattern was 'Ticker')
+2026-11-18 23:34:07,270 INFO universe: https://en.wikipedia.org/wiki/DAX: table[0] columns=['0', '1'] -> no match
+2026-11-18 23:34:07,270 INFO universe: https://en.wikipedia.org/wiki/DAX: table[1] columns=['DAX Combined Index (DAXA)', 'Unnamed: 1'] -> no match
+2026-11-18 23:34:07,270 INFO universe: https://en.wikipedia.org/wiki/DAX: table[2] columns=['Category', 'All-time highs[9][10]', 'All-time highs[9][10].1'] -> no match
+2026-11-18 23:34:07,270 INFO universe: https://en.wikipedia.org/wiki/DAX: table[3] columns=['Year', 'Closing level', 'Change in Index in Points', 'Change in Index in\xa0%'] -> no match
+2026-11-18 23:34:07,270 INFO universe: https://en.wikipedia.org/wiki/DAX: table[4] columns=['Ticker', 'Logo', 'Company', 'Prime Standard Sector', 'Index weighting (%)1', 'Employees', 'Founded'] -> matched column 'Ticker', 40 symbols, e.g. ['ADS.DE', 'AIR.PA', 'ALV.DE', 'BAS.DE', 'BAYN.DE']
+2026-11-18 23:34:07,690 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/CAC_40 -> HTTP 200, 236256 bytes
+2026-11-18 23:34:07,714 INFO universe: https://en.wikipedia.org/wiki/CAC_40: pd.read_html found 20 table(s) total (hint pattern was 'Ticker')
+2026-11-18 23:34:07,715 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[0] columns=['0', '1'] -> no match
+2026-11-18 23:34:07,715 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[1] columns=['CAC 40 (PIL)', 'Unnamed: 1'] -> no match
+2026-11-18 23:34:07,715 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[2] columns=['Type', 'Date', 'Value'] -> no match
+2026-11-18 23:34:07,715 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[3] columns=['Year', 'Closing level', 'Change in Index in Points', 'Change in Index in\xa0%'] -> no match
+2026-11-18 23:34:07,715 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[4] columns=['Company', 'Sector', 'GICS Sub-Industry', 'Ticker'] -> matched column 'Ticker', 40 symbols, e.g. ['AC.PA', 'AI.PA', 'AIR.PA', 'MT.AS', 'CS.PA']
+2026-11-18 23:34:08,135 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/AEX_index -> HTTP 200, 230615 bytes
+2026-11-18 23:34:08,160 INFO universe: https://en.wikipedia.org/wiki/AEX_index: pd.read_html found 22 table(s) total (hint pattern was 'Ticker')
+2026-11-18 23:34:08,160 INFO universe: https://en.wikipedia.org/wiki/AEX_index: table[0] columns=['0', '1'] -> no match
+2026-11-18 23:34:08,160 INFO universe: https://en.wikipedia.org/wiki/AEX_index: table[1] columns=['Year', 'Closing level', 'Change in index in points', 'Change in index in\xa0%'] -> no match
+2026-11-18 23:34:08,161 INFO universe: https://en.wikipedia.org/wiki/AEX_index: table[2] columns=['AEX Index (FTI)', 'Unnamed: 1'] -> no match
+2026-11-18 23:34:08,161 INFO universe: https://en.wikipedia.org/wiki/AEX_index: table[3] columns=['Ticker', 'Company', 'ICB Sector', 'Index weighting (%)'] -> matched column 'Ticker', 25 symbols, e.g. ['ABN.AS', 'ADYEN.AS', 'AGN.AS', 'AD.AS', 'AKZA.AS']
+2026-11-18 23:34:08,583 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/IBEX_35 -> HTTP 200, 250266 bytes
+2026-11-18 23:34:08,604 INFO universe: https://en.wikipedia.org/wiki/IBEX_35: pd.read_html found 17 table(s) total (hint pattern was 'Ticker')
+2026-11-18 23:34:08,604 INFO universe: https://en.wikipedia.org/wiki/IBEX_35: table[0] columns=['0', '1'] -> no match
+2026-11-18 23:34:08,605 INFO universe: https://en.wikipedia.org/wiki/IBEX_35: table[1] columns=['IBEX Mini (BIBX)', 'Unnamed: 1'] -> no match
+2026-11-18 23:34:08,605 INFO universe: https://en.wikipedia.org/wiki/IBEX_35: table[2] columns=['Ticker', 'Company', 'Sector'] -> matched column 'Ticker', 35 symbols, e.g. ['ACS.MC', 'ACX.MC', 'AMS.MC', 'ANA.MC', 'ANE.MC']
+2026-11-18 23:34:09,025 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/FTSE_MIB -> HTTP 200, 244828 bytes
+2026-11-18 23:34:09,046 INFO universe: https://en.wikipedia.org/wiki/FTSE_MIB: pd.read_html found 15 table(s) total (hint pattern was 'Ticker')
+2026-11-18 23:34:09,046 INFO universe: https://en.wikipedia.org/wiki/FTSE_MIB: table[0] columns=['0', '1'] -> no match
+2026-11-18 23:34:09,046 INFO universe: https://en.wikipedia.org/wiki/FTSE_MIB: table[1] columns=['Year', 'Closing level', 'Change in index in points', 'Change in index in\xa0%'] -> no match
+2026-11-18 23:34:09,046 INFO universe: https://en.wikipedia.org/wiki/FTSE_MIB: table[2] columns=['Ticker', 'Company', 'ISIN', 'ICB Sector'] -> matched column 'Ticker', 40 symbols, e.g. ['A2A.MI', 'AMP.MI', 'AVIO.MI', 'AZM.MI', 'BMED.MI']
+2026-11-18 23:34:09,466 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/Swiss_Market_Index -> HTTP 200, 266601 bytes
+2026-11-18 23:34:09,490 INFO universe: https://en.wikipedia.org/wiki/Swiss_Market_Index: pd.read_html found 17 table(s) total (hint pattern was 'Ticker')
+2026-11-18 23:34:09,491 INFO universe: https://en.wikipedia.org/wiki/Swiss_Market_Index: table[0] columns=['0', '1'] -> no match
+2026-11-18 23:34:09,491 INFO universe: https://en.wikipedia.org/wiki/Swiss_Market_Index: table[1] columns=['0', '1'] -> no match
+2026-11-18 23:34:09,491 INFO universe: https://en.wikipedia.org/wiki/Swiss_Market_Index: table[2] columns=['Rank', 'Name', 'Sector', 'Ticker', 'Canton', 'Weighting in\xa0%'] -> matched column 'Ticker', 20 symbols, e.g. ['NOVN', 'ROP', 'NESN', 'ABBN', 'UBSG']
+2026-11-18 23:34:09,893 INFO universe: Extra portfolio coverage: 582 ticker(s) loaded
+2026-11-18 23:34:09,893 INFO universe: US: 1677 tickers
+2026-11-18 23:34:09,893 INFO universe: UK: 100 tickers
+2026-11-18 23:34:09,893 INFO universe: EU: 198 tickers
+2026-11-18 23:34:09,893 INFO universe: ETF: 257 tickers
+2026-11-18 23:34:09,893 INFO universe: DISCOVERY: 61 tickers
+2026-11-18 23:34:09,893 INFO universe: EXTRA: 582 tickers
+2026-11-18 23:34:09,899 INFO run: Total universe: 2536 tickers (124 learned always-refresh, portfolio fundamentals 140/458, non-priority fundamentals 180/1954)
+2026-11-18 23:34:09,899 INFO run: PIPELINE_STAGE start fundamentals
+2026-11-18 23:34:09,899 INFO fundamentals: Fetching 124 tickers with 1 workers
+2026-11-18 23:35:09,910 INFO fundamentals: fetched 50/124
+2026-11-18 23:36:14,620 INFO fundamentals: fetched 100/124
+2026-11-18 23:36:43,199 INFO fundamentals: fetched 124/124
+2026-11-18 23:36:43,200 INFO fundamentals: Fetching 140 tickers with 2 workers
+2026-11-18 23:36:52,183 INFO fundamentals: IINN: current retrieval via official successor QTEX
+2026-11-18 23:37:08,430 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: KOM1.DE"}}}
+2026-11-18 23:37:08,594 INFO fundamentals: fetched 50/140
+2026-11-18 23:37:08,903 ERROR yfinance: $KOM1.DE: No data found, symbol may be delisted
+2026-11-18 23:37:09,054 ERROR yfinance: $KOM1.DE: No data found, symbol may be delisted
+2026-11-18 23:37:09,676 ERROR yfinance: $KOM1.DE: possibly delisted; no timezone found
+2026-11-18 23:37:11,531 ERROR yfinance: $LA: possibly delisted; no price data found  (period=5d)
+2026-11-18 23:37:11,585 ERROR yfinance: $LA: possibly delisted; no price data found  (period=5d)
+2026-11-18 23:37:12,249 ERROR yfinance: $LA: possibly delisted; no price data found  (1d 1927-12-13 -> 2026-11-18)
+2026-11-18 23:37:42,218 INFO fundamentals: fetched 100/140
+2026-11-18 23:37:49,239 ERROR yfinance: $OD7F.DE: No data found, symbol may be delisted
+2026-11-18 23:37:49,406 ERROR yfinance: $OD7F.DE: No data found, symbol may be delisted
+2026-11-18 23:37:50,199 ERROR yfinance: $OD7F.DE: possibly delisted; no timezone found
+2026-11-18 23:38:03,686 ERROR yfinance: $POL-USD: No data found, symbol may be delisted
+2026-11-18 23:38:03,901 ERROR yfinance: $POL-USD: No data found, symbol may be delisted
+2026-11-18 23:38:04,554 ERROR yfinance: $POL-USD: possibly delisted; no timezone found
+2026-11-18 23:38:07,962 INFO fundamentals: fetched 140/140
+2026-11-18 23:38:07,963 INFO fundamentals: Fetching 180 tickers with 2 workers
+2026-11-18 23:38:39,046 INFO fundamentals: fetched 50/180
+2026-11-18 23:39:09,606 INFO fundamentals: fetched 100/180
+2026-11-18 23:39:38,928 WARNING fundamentals: Yahoo rate-limit detected — pausing fetch workers for 10s (strike 1)
+2026-11-18 23:39:38,928 WARNING fundamentals: GERN: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-11-18 23:39:48,979 WARNING fundamentals: Yahoo rate-limit detected — pausing fetch workers for 20s (strike 2)
+2026-11-18 23:39:48,979 WARNING fundamentals: GHRS: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-11-18 23:39:48,981 WARNING fundamentals: GFR: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-11-18 23:39:48,981 INFO fundamentals: fetched 150/180
+2026-11-18 23:40:09,023 WARNING fundamentals: Yahoo rate-limit detected — pausing fetch workers for 40s (strike 3)
+2026-11-18 23:40:09,024 WARNING fundamentals: GLUE: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-11-18 23:40:09,039 WARNING fundamentals: GLGDF: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-11-18 23:41:06,410 INFO fundamentals: fetched 180/180
+2026-11-18 23:41:06,410 WARNING fundamentals: 5/180 tickers still failed after all retries — likely a sustained Yahoo rate-limit or genuinely delisted/invalid tickers
+2026-11-18 23:41:06,411 INFO fundamentals: Yahoo retry hygiene: 2 price-only row(s) flagged after recent throttle for one recovery attempt
+2026-11-18 23:41:06,412 WARNING fundamentals: 5/180 tickers still failed (0 hard identity, 5 transient)
+2026-11-18 23:41:06,412 INFO run: PIPELINE_STAGE done fundamentals elapsed=416.5s
+2026-11-18 23:41:06,412 INFO run: PIPELINE_STAGE start pre_score_enrichment
+2026-11-18 23:41:06,412 INFO sec_enrich: SEC enrichment disabled: set SEC_USER_AGENT to enable official EDGAR fallback
+2026-11-18 23:41:06,413 INFO sec_enrich: SEC enrichment runtime diagnostics {"input_rows":444,"newly_enriched_rows":0,"probe_blocked":true,"total_enriched_rows":0,"transport":{}}
+2026-11-18 23:41:06,415 INFO sec_archives_enrich: SEC Archives candidate selector: eligible=146 selected=146 priority=58 scanner=88 budget=500
+2026-11-18 23:41:09,688 INFO sec_archives_enrich: SEC Archives filing-backed budget: requested=88 raw_cap=82
+2026-11-18 23:41:26,180 INFO sec_archives_enrich: SEC Archives XBRL enriched 99 rows (attempted=99 cache=69 network=30 filing_missing=12 parse_failed=0 requests=64)
+2026-11-18 23:41:26,810 INFO esef_enrich: Prior verified ESEF identity cache: 3 exact ticker hit(s)
+2026-11-18 23:41:38,634 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: KOM1.DE"}}}
+2026-11-18 23:41:47,151 INFO esef_enrich: ESEF v4.20 enriched 3 rows (0 via LSE identity fallback)
+2026-11-18 23:41:47,151 INFO esef_enrich: ESEF funnel {"attempted":27,"eligible":27,"enriched":3,"filing_found":3,"filing_missing":2,"isin_missing":22,"isin_resolved":5,"lei_missing":0,"lei_resolved":5,"prior_isin_reused":3,"prior_lei_reused":3,"report_failed":0,"report_parsed":3,"same_period_observations":3}
+2026-11-18 23:41:47,151 INFO esef_enrich: LSE identity diagnostics: {'direct_requests': 7, 'direct_failures': 7, 'pages_ok': 5, 'workbooks_discovered': 0, 'workbooks_parsed': 0, 'pairs_seen': 0, 'exact_mappings': 0, 'ambiguous_tidms': 0}
+2026-11-18 23:42:11,874 INFO gap_retrieval: Targeted gap retrieval: selected priority=28 scanner=18, attempted 46, enriched 29
+2026-11-18 23:42:56,375 INFO quarterly_gap: Quarterly gap retrieval: attempted 80, enriched 44
+2026-11-18 23:42:56,382 INFO derived_fundamentals: Derived fundamentals: 7 values across 7 rows
+2026-11-18 23:42:56,414 INFO capital_risk: Capital-risk incremental refresh: selected=110/283 (priority budget=80, nonpriority budget=30); carried=173
+2026-11-18 23:43:47,088 INFO capital_risk: Capital-risk Archives discovery loaded 9/9 quarterly indexes; 13259 CIKs with relevant filings
+2026-11-18 23:45:18,105 INFO capital_risk: Capital-structure risk refreshed 110 issuers; 74 flagged; 80 unchanged reused; 30 rescanned; 173 carried without discovery; discovery api=0 archives=109 missing=1
+2026-11-18 23:45:18,182 INFO run: PIPELINE_STAGE done pre_score_enrichment elapsed=251.8s
+2026-11-18 23:45:18,182 INFO run: PIPELINE_STAGE start score
+2026-11-18 23:45:19,862 INFO run: PIPELINE_STAGE done score elapsed=1.7s
+2026-11-18 23:45:19,862 INFO run: Learned ticker promotion complete: 2B76.DE, A, AA, AAF.L, AAP, AAPL, AB, AD, AEHR, AG, AGNC, AMZN, AS, B, BA, BAB, BANC, BH, BHE, BL, BORR, BW, C, CAR, CARR, CG, CGNX, COHU, COR, COST, CR, CRDO, CRE, CRED, CRM, D, DG, E, EC, ECVT, EIG, EO, EOG, EZJ, EZJ.L, F, FC, FCX, FOX, FPS, G, GF, GFS, GL, GLW, GO, GOOG, GRAB, H, HE, HEI, HHPD.IL, HON, HP, IBM, IDT, IDTL.L, INFY, INV, INVZ, IT, KO, KOS, L, LAES, LAR, M, MC, MCD, META, MO, MOS, MSFT, MWA, NI, NVD, NVDA, ORAC, P, PFI, PN, PNR, POET, R, REG, RM, RMBS, RR, RRX, RS, RSG, S, SA, SN, SNA, SNAP, SPIE.PA, SR, T, TE, TY, TYL, U, UN, UNH, V, VIS, VIST, VS, VST, WMS, XOM, Z, ZBRA
+2026-11-18 23:45:19,883 INFO run: INSIDER_REFRESH_SCOPE observed_requested=120 universe=376 not_requested=256 rotation=day_ordinal_budget_stride_unknown_not_zero
+2026-11-18 23:45:19,883 INFO run: PIPELINE_STAGE start post_score_intelligence
+2026-11-18 23:45:19,884 INFO run: PIPELINE_TASK start analyst
+2026-11-18 23:45:19,884 INFO run: PIPELINE_TASK start insiders
+2026-11-18 23:45:19,884 INFO run: PIPELINE_TASK start congress
+2026-11-18 23:45:19,909 INFO congress: congress: mapped 389 canonical disclosures from U.S. House Clerk + Senate eFD onto 40 Vestra tickers
+2026-11-18 23:45:19,909 INFO run: PIPELINE_TASK done congress elapsed=0.0s
+2026-11-18 23:45:20,638 INFO analyst: Analyst intelligence: refreshing 180/405 equities (14 priority due, 86 priority rotation, 80 nonpriority rotation), workers=8; previous usable snapshots=841
+2026-11-18 23:45:21,002 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: HHPD.IL"}}}
+2026-11-18 23:45:21,466 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: HHPD.IL"}}}
+2026-11-18 23:45:22,173 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: LA"}}}
+2026-11-18 23:45:22,646 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: LA"}}}
+2026-11-18 23:45:22,726 ERROR yfinance: HHPD.IL: No earnings dates found, symbol may be delisted
+2026-11-18 23:45:22,863 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: HHPD.IL"}}}
+2026-11-18 23:45:23,470 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: NGAS.L"}}}
+2026-11-18 23:45:24,019 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: NGAS.L"}}}
+2026-11-18 23:45:24,139 ERROR yfinance: LA: No earnings dates found, symbol may be delisted
+2026-11-18 23:45:24,376 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: LA"}}}
+2026-11-18 23:45:24,480 ERROR yfinance: NGAS.L: No earnings dates found, symbol may be delisted
+2026-11-18 23:45:24,578 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: LA"}}}
+2026-11-18 23:45:24,584 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: NGAS.L"}}}
+2026-11-18 23:45:25,015 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: NICK.L"}}}
+2026-11-18 23:45:25,027 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: NGAS.L"}}}
+2026-11-18 23:45:25,452 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: NICK.L"}}}
+2026-11-18 23:45:25,479 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: OD7F.DE"}}}
+2026-11-18 23:45:25,911 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: OD7F.DE"}}}
+2026-11-18 23:45:26,275 ERROR yfinance: NICK.L: No earnings dates found, symbol may be delisted
+2026-11-18 23:45:26,355 ERROR yfinance: OD7F.DE: No earnings dates found, symbol may be delisted
+2026-11-18 23:45:26,453 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: OD7F.DE"}}}
+2026-11-18 23:45:26,477 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: NICK.L"}}}
+2026-11-18 23:45:26,619 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: NICK.L"}}}
+2026-11-18 23:45:26,627 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: OD7F.DE"}}}
+2026-11-18 23:45:29,415 INFO insiders: Insider Archives discovery active: 5 quarterly indexes; 58403 CIKs with recent Form 4 filings
+2026-11-18 23:45:29,861 INFO insiders: SEC ticker->CIK map loaded with 10400 entries
+2026-11-18 23:45:29,863 INFO insiders: FCEL 0000897069-26-001881 detail unavailable: validated_empty_cache
+2026-11-18 23:45:29,863 INFO insiders: FCEL 0000897069-26-001857 detail unavailable: validated_empty_cache
+2026-11-18 23:45:29,863 INFO insiders: FCEL 0000897069-26-001855 detail unavailable: validated_empty_cache
+2026-11-18 23:45:29,863 INFO insiders: FCEL 0000897069-26-001853 detail unavailable: validated_empty_cache
+2026-11-18 23:45:29,863 INFO insiders: FCEL 0000897069-26-001518 detail unavailable: validated_empty_cache
+2026-11-18 23:45:29,863 INFO insiders: FCEL 0000897069-26-001516 detail unavailable: validated_empty_cache
+2026-11-18 23:45:29,863 INFO insiders: FCEL 0000897069-26-001514 detail unavailable: validated_empty_cache
+2026-11-18 23:45:29,863 INFO insiders: FCEL 0000897069-26-001393 detail unavailable: validated_empty_cache
+2026-11-18 23:45:30,117 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: ISLN.L"}}}
+2026-11-18 23:45:30,333 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: ISLN.L"}}}
+2026-11-18 23:45:30,852 ERROR yfinance: ISLN.L: No earnings dates found, symbol may be delisted
+2026-11-18 23:45:30,992 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: ISLN.L"}}}
+2026-11-18 23:45:31,162 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: ISLN.L"}}}
+2026-11-18 23:45:31,632 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IB1T.DE"}}}
+2026-11-18 23:45:31,713 ERROR yfinance: PRYMY: No earnings dates found, symbol may be delisted
+2026-11-18 23:45:31,829 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IB1T.DE"}}}
+2026-11-18 23:45:32,396 ERROR yfinance: IB1T.DE: No earnings dates found, symbol may be delisted
+2026-11-18 23:45:32,616 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IB1T.DE"}}}
+2026-11-18 23:45:32,760 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IB1T.DE"}}}
+2026-11-18 23:45:33,647 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPLT.L"}}}
+2026-11-18 23:45:33,860 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPLT.L"}}}
+2026-11-18 23:45:34,043 INFO insiders: FE 0001031296-26-000137 detail unavailable: validated_empty_cache
+2026-11-18 23:45:34,295 ERROR yfinance: IPLT.L: No earnings dates found, symbol may be delisted
+2026-11-18 23:45:34,421 INFO insiders: FE 0001031296-26-000133 detail unavailable: validated_empty_cache
+2026-11-18 23:45:34,422 INFO insiders: FE 0001031296-26-000131 detail unavailable: validated_empty_cache
+2026-11-18 23:45:34,422 INFO insiders: FE 0001031296-26-000129 detail unavailable: validated_empty_cache
+2026-11-18 23:45:34,422 INFO insiders: FE 0001031296-26-000127 detail unavailable: validated_empty_cache
+2026-11-18 23:45:34,422 INFO insiders: FE 0001031296-26-000125 detail unavailable: validated_empty_cache
+2026-11-18 23:45:34,422 INFO insiders: FE 0001031296-26-000115 detail unavailable: validated_empty_cache
+2026-11-18 23:45:34,470 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPLT.L"}}}
+2026-11-18 23:45:34,618 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPLT.L"}}}
+2026-11-18 23:45:35,451 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPDM.L"}}}
+2026-11-18 23:45:35,636 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPDM.L"}}}
+2026-11-18 23:45:36,088 ERROR yfinance: IPDM.L: No earnings dates found, symbol may be delisted
+2026-11-18 23:45:36,297 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPDM.L"}}}
+2026-11-18 23:45:36,555 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPDM.L"}}}
+2026-11-18 23:45:40,060 ERROR yfinance: PRZO: No earnings dates found, symbol may be delisted
+2026-11-18 23:45:41,681 ERROR yfinance: LND: No earnings dates found, symbol may be delisted
+2026-11-18 23:45:45,961 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IINN"}}}
+2026-11-18 23:45:46,134 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IINN"}}}
+2026-11-18 23:45:46,572 ERROR yfinance: IINN: No earnings dates found, symbol may be delisted
+2026-11-18 23:45:46,752 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IINN"}}}
+2026-11-18 23:45:46,996 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IINN"}}}
+2026-11-18 23:45:47,569 ERROR yfinance: MLGO: No earnings dates found, symbol may be delisted
+2026-11-18 23:45:53,717 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: GF"}}}
+2026-11-18 23:45:53,861 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: GF"}}}
+2026-11-18 23:45:54,217 ERROR yfinance: GF: No earnings dates found, symbol may be delisted
+2026-11-18 23:45:54,365 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: GF"}}}
+2026-11-18 23:46:01,881 ERROR yfinance: HOLO: No earnings dates found, symbol may be delisted
+2026-11-18 23:46:07,603 INFO analyst: Analyst intelligence progress: 100/180
+2026-11-18 23:46:15,979 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: GAB"}}}
+2026-11-18 23:46:16,047 INFO insiders: insider intelligence 50/120
+2026-11-18 23:46:16,125 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: GAB"}}}
+2026-11-18 23:46:16,532 ERROR yfinance: GAB: No earnings dates found, symbol may be delisted
+2026-11-18 23:46:16,708 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: GAB"}}}
+2026-11-18 23:46:19,988 ERROR yfinance: ECAT: No earnings dates found, symbol may be delisted
+2026-11-18 23:46:20,984 ERROR yfinance: FSCO: No earnings dates found, symbol may be delisted
+2026-11-18 23:46:26,544 ERROR yfinance: AGLT: No earnings dates found, symbol may be delisted
+2026-11-18 23:46:27,330 ERROR yfinance: CLM: No earnings dates found, symbol may be delisted
+2026-11-18 23:46:34,294 ERROR yfinance: BTX: No earnings dates found, symbol may be delisted
+2026-11-18 23:46:35,395 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: CRF"}}}
+2026-11-18 23:46:35,575 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: CRF"}}}
+2026-11-18 23:46:35,916 ERROR yfinance: CRF: No earnings dates found, symbol may be delisted
+2026-11-18 23:46:36,013 ERROR yfinance: BCX: No earnings dates found, symbol may be delisted
+2026-11-18 23:46:36,110 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: CRF"}}}
+2026-11-18 23:46:37,050 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: GOF"}}}
+2026-11-18 23:46:37,192 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: GOF"}}}
+2026-11-18 23:46:37,594 ERROR yfinance: GOF: No earnings dates found, symbol may be delisted
+2026-11-18 23:46:37,741 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: GOF"}}}
+2026-11-18 23:46:40,220 INFO analyst: Analyst intelligence progress: 180/180
+2026-11-18 23:46:40,223 INFO analyst: Analyst intelligence: carried 132 recent validated snapshots without Yahoo refresh
+2026-11-18 23:46:40,227 INFO run: PIPELINE_TASK done analyst elapsed=80.3s
+2026-11-18 23:46:55,956 INFO insiders: insider intelligence 100/120
+2026-11-18 23:47:08,804 INFO insiders: insider intelligence 120/120
+2026-11-18 23:47:08,943 INFO insiders: Insider filing cache: 4557 immutable accession(s)
+2026-11-18 23:47:08,944 INFO insiders: Insider transport summary: elapsed=99.5s submissions=0 failures=0 archives=720 failures=0 cache_hits=318 cache_misses=874 other=1 failures=0
+2026-11-18 23:47:08,981 INFO insiders: Insider validated-empty cache: 5640 immutable accession(s); hits=154 new=27
+2026-11-18 23:47:09,061 INFO run: PIPELINE_TASK done insiders elapsed=109.2s
+2026-11-18 23:47:09,062 INFO run: PIPELINE_STAGE done post_score_intelligence elapsed=109.2s
+2026-11-18 23:47:09,063 INFO run: PIPELINE_STAGE start price_history
+2026-11-18 23:47:10,834 ERROR yfinance: $APT-USD: No data found, symbol may be delisted
+2026-11-18 23:47:13,292 INFO insider_prices: price histories batch phase 60/2534
+2026-11-18 23:47:13,439 INFO insider_prices: price histories batch phase 120/2534
+2026-11-18 23:47:13,635 INFO insider_prices: price histories batch phase 180/2534
+2026-11-18 23:47:13,885 ERROR yfinance: 
 1 Failed download:
-2026-11-18 15:55:06,203 ERROR yfinance: ['APT-USD']: No data found, symbol may be delisted
-2026-11-18 15:55:06,233 INFO insider_prices: price histories batch phase 240/2062
-2026-11-18 15:55:06,241 ERROR yfinance: $BRA: possibly delisted; no price data found  (period=1y)
-2026-11-18 15:55:07,491 ERROR yfinance: $BT.A.L: No data found, symbol may be delisted
-2026-11-18 15:55:08,772 INFO insider_prices: price histories batch phase 300/2062
-2026-11-18 15:55:08,838 ERROR yfinance: 
-1 Failed download:
-2026-11-18 15:55:08,838 ERROR yfinance: ['BKH']: YFException("The following 'Dividends' events are out-of-range, did not expect with interval 1wk: DatetimeIndex(['2026-05-15 00:00:00-04:00'],\n              dtype='datetime64[s, America/New_York]', freq=None)")
-2026-11-18 15:55:08,867 INFO insider_prices: price histories batch phase 360/2062
-2026-11-18 15:55:09,342 ERROR yfinance: 
+2026-11-18 23:47:13,885 ERROR yfinance: ['APT-USD']: No data found, symbol may be delisted
+2026-11-18 23:47:14,002 INFO insider_prices: price histories batch phase 240/2534
+2026-11-18 23:47:14,687 ERROR yfinance: $BRA: possibly delisted; no price data found  (period=1y)
+2026-11-18 23:47:15,996 ERROR yfinance: $BT.A.L: No data found, symbol may be delisted
+2026-11-18 23:47:17,849 INFO insider_prices: price histories batch phase 300/2534
+2026-11-18 23:47:17,925 ERROR yfinance: 
 2 Failed downloads:
-2026-11-18 15:55:09,342 ERROR yfinance: ['BRA']: possibly delisted; no price data found  (period=1y)
-2026-11-18 15:55:09,342 ERROR yfinance: ['BT.A.L']: No data found, symbol may be delisted
-2026-11-18 15:55:09,370 INFO insider_prices: price histories batch phase 420/2062
-2026-11-18 15:55:09,688 INFO insider_prices: price histories batch phase 480/2062
-2026-11-18 15:55:12,152 ERROR yfinance: $DN3.DE: No data found, symbol may be delisted
-2026-11-18 15:55:12,812 INFO insider_prices: price histories batch phase 540/2062
-2026-11-18 15:55:13,384 ERROR yfinance: 
+2026-11-18 23:47:17,925 ERROR yfinance: ['BRA']: possibly delisted; no price data found  (period=1y)
+2026-11-18 23:47:17,925 ERROR yfinance: ['BT.A.L']: No data found, symbol may be delisted
+2026-11-18 23:47:18,003 INFO insider_prices: price histories batch phase 360/2534
+2026-11-18 23:47:18,090 ERROR yfinance: 
 1 Failed download:
-2026-11-18 15:55:13,388 ERROR yfinance: ['DN3.DE']: No data found, symbol may be delisted
-2026-11-18 15:55:13,442 INFO insider_prices: price histories batch phase 600/2062
-2026-11-18 15:55:13,749 INFO insider_prices: price histories batch phase 660/2062
-2026-11-18 15:55:14,008 INFO insider_prices: price histories batch phase 720/2062
-2026-11-18 15:55:16,694 INFO insider_prices: price histories batch phase 780/2062
-2026-11-18 15:55:17,461 ERROR yfinance: $IUSN.L: No data found, symbol may be delisted
-2026-11-18 15:55:17,765 INFO insider_prices: price histories batch phase 840/2062
-2026-11-18 15:55:17,997 INFO insider_prices: price histories batch phase 900/2062
-2026-11-18 15:55:18,235 INFO insider_prices: price histories batch phase 960/2062
-2026-11-18 15:55:18,648 ERROR yfinance: $KOM1.DE: No data found, symbol may be delisted
-2026-11-18 15:55:20,035 ERROR yfinance: $LA: possibly delisted; no price data found  (period=1y)
-2026-11-18 15:55:20,493 ERROR yfinance: $IRBO: No data found, symbol may be delisted
-2026-11-18 15:55:21,276 ERROR yfinance: 
+2026-11-18 23:47:18,090 ERROR yfinance: ['BKH']: YFException("The following 'Dividends' events are out-of-range, did not expect with interval 1wk: DatetimeIndex(['2026-05-15 00:00:00-04:00'],\n              dtype='datetime64[s, America/New_York]', freq=None)")
+2026-11-18 23:47:18,150 INFO insider_prices: price histories batch phase 420/2534
+2026-11-18 23:47:18,308 INFO insider_prices: price histories batch phase 480/2534
+2026-11-18 23:47:22,359 INFO insider_prices: price histories batch phase 540/2534
+2026-11-18 23:47:22,381 ERROR yfinance: $DN3.DE: No data found, symbol may be delisted
+2026-11-18 23:47:22,560 ERROR yfinance: 
+1 Failed download:
+2026-11-18 23:47:22,561 ERROR yfinance: ['DN3.DE']: No data found, symbol may be delisted
+2026-11-18 23:47:22,644 INFO insider_prices: price histories batch phase 600/2534
+2026-11-18 23:47:22,790 INFO insider_prices: price histories batch phase 660/2534
+2026-11-18 23:47:23,799 INFO insider_prices: price histories batch phase 720/2534
+2026-11-18 23:47:26,644 INFO insider_prices: price histories batch phase 780/2534
+2026-11-18 23:47:26,770 INFO insider_prices: price histories batch phase 840/2534
+2026-11-18 23:47:26,826 INFO insider_prices: price histories batch phase 900/2534
+2026-11-18 23:47:27,864 INFO insider_prices: price histories batch phase 960/2534
+2026-11-18 23:47:30,895 INFO insider_prices: price histories batch phase 1020/2534
+2026-11-18 23:47:31,270 INFO insider_prices: price histories batch phase 1080/2534
+2026-11-18 23:47:31,565 INFO insider_prices: price histories batch phase 1140/2534
+2026-11-18 23:47:31,936 ERROR yfinance: $IRBO: No data found, symbol may be delisted
+2026-11-18 23:47:33,075 ERROR yfinance: $IUSN.L: No data found, symbol may be delisted
+2026-11-18 23:47:33,116 ERROR yfinance: 
 2 Failed downloads:
-2026-11-18 15:55:21,276 ERROR yfinance: ['IUSN.L', 'IRBO']: No data found, symbol may be delisted
-2026-11-18 15:55:21,306 INFO insider_prices: price histories batch phase 1020/2062
-2026-11-18 15:55:22,298 INFO insider_prices: price histories batch phase 1080/2062
-2026-11-18 15:55:22,357 ERROR yfinance: 
+2026-11-18 23:47:33,116 ERROR yfinance: ['IRBO', 'IUSN.L']: No data found, symbol may be delisted
+2026-11-18 23:47:33,185 INFO insider_prices: price histories batch phase 1200/2534
+2026-11-18 23:47:33,395 ERROR yfinance: $KOM1.DE: No data found, symbol may be delisted
+2026-11-18 23:47:34,010 ERROR yfinance: $LA: possibly delisted; no price data found  (period=1y)
+2026-11-18 23:47:35,400 INFO insider_prices: price histories batch phase 1260/2534
+2026-11-18 23:47:35,803 ERROR yfinance: 
 3 Failed downloads:
-2026-11-18 15:55:22,357 ERROR yfinance: ['KOM1.DE']: No data found, symbol may be delisted
-2026-11-18 15:55:22,357 ERROR yfinance: ['LA']: possibly delisted; no price data found  (period=1y)
-2026-11-18 15:55:22,357 ERROR yfinance: ['KTF']: YFException("The following 'Dividends' events are out-of-range, did not expect with interval 1wk: DatetimeIndex(['2025-12-19 00:00:00-05:00', '2026-10-21 00:00:00-04:00'],\n              dtype='datetime64[s, America/New_York]', freq=None)")
-2026-11-18 15:55:22,387 INFO insider_prices: price histories batch phase 1140/2062
-2026-11-18 15:55:22,425 INFO insider_prices: price histories batch phase 1200/2062
-2026-11-18 15:55:24,374 ERROR yfinance: $OD7F.DE: No data found, symbol may be delisted
-2026-11-18 15:55:24,881 ERROR yfinance: $POL-USD: No data found, symbol may be delisted
-2026-11-18 15:55:25,411 INFO insider_prices: price histories batch phase 1260/2062
-2026-11-18 15:55:26,453 ERROR yfinance: 
+2026-11-18 23:47:35,803 ERROR yfinance: ['KOM1.DE']: No data found, symbol may be delisted
+2026-11-18 23:47:35,803 ERROR yfinance: ['LA']: possibly delisted; no price data found  (period=1y)
+2026-11-18 23:47:35,803 ERROR yfinance: ['KTF']: YFException("The following 'Dividends' events are out-of-range, did not expect with interval 1wk: DatetimeIndex(['2025-12-19 00:00:00-05:00', '2026-10-21 00:00:00-04:00'],\n              dtype='datetime64[s, America/New_York]', freq=None)")
+2026-11-18 23:47:35,870 INFO insider_prices: price histories batch phase 1320/2534
+2026-11-18 23:47:36,332 INFO insider_prices: price histories batch phase 1380/2534
+2026-11-18 23:47:37,334 INFO insider_prices: price histories batch phase 1440/2534
+2026-11-18 23:47:38,253 ERROR yfinance: $OD7F.DE: No data found, symbol may be delisted
+2026-11-18 23:47:39,960 INFO insider_prices: price histories batch phase 1500/2534
+2026-11-18 23:47:40,267 INFO insider_prices: price histories batch phase 1560/2534
+2026-11-18 23:47:40,892 ERROR yfinance: 
 1 Failed download:
-2026-11-18 15:55:26,453 ERROR yfinance: ['OD7F.DE']: No data found, symbol may be delisted
-2026-11-18 15:55:26,491 INFO insider_prices: price histories batch phase 1320/2062
-2026-11-18 15:55:26,666 ERROR yfinance: 
+2026-11-18 23:47:40,913 ERROR yfinance: ['OD7F.DE']: No data found, symbol may be delisted
+2026-11-18 23:47:40,990 INFO insider_prices: price histories batch phase 1620/2534
+2026-11-18 23:47:42,257 INFO insider_prices: price histories batch phase 1680/2534
+2026-11-18 23:47:43,312 ERROR yfinance: $POL-USD: No data found, symbol may be delisted
+2026-11-18 23:47:44,209 ERROR yfinance: 
+1 Failed download:
+2026-11-18 23:47:44,210 ERROR yfinance: ['POL-USD']: No data found, symbol may be delisted
+2026-11-18 23:47:44,225 ERROR yfinance: 
+1 Failed download:
+2026-11-18 23:47:44,225 ERROR yfinance: ['PTLE']: YFException("The following 'Stock Splits' events are out-of-range, did not expect with interval 1wk: DatetimeIndex(['2026-02-27 00:00:00-05:00'],\n              dtype='datetime64[s, America/New_York]', freq=None)")
+2026-11-18 23:47:44,268 INFO insider_prices: price histories batch phase 1740/2534
+2026-11-18 23:47:44,423 INFO insider_prices: price histories batch phase 1800/2534
+2026-11-18 23:47:44,885 ERROR yfinance: $SJW: No data found, symbol may be delisted
+2026-11-18 23:47:45,120 INFO insider_prices: price histories batch phase 1860/2534
+2026-11-18 23:47:46,890 INFO insider_prices: price histories batch phase 1920/2534
+2026-11-18 23:47:46,928 ERROR yfinance: $SPLG: possibly delisted; no price data found  (period=1y)
+2026-11-18 23:47:48,670 ERROR yfinance: 
+1 Failed download:
+2026-11-18 23:47:48,670 ERROR yfinance: ['SJW']: No data found, symbol may be delisted
+2026-11-18 23:47:48,737 INFO insider_prices: price histories batch phase 1980/2534
+2026-11-18 23:47:49,075 INFO insider_prices: price histories batch phase 2040/2534
+2026-11-18 23:47:49,378 ERROR yfinance: 
+1 Failed download:
+2026-11-18 23:47:49,378 ERROR yfinance: ['SPLG']: possibly delisted; no price data found  (period=1y)
+2026-11-18 23:47:49,446 INFO insider_prices: price histories batch phase 2100/2534
+2026-11-18 23:47:50,587 ERROR yfinance: $STX-USD: No data found, symbol may be delisted
+2026-11-18 23:47:50,587 ERROR yfinance: $TAO-USD: No data found, symbol may be delisted
+2026-11-18 23:47:51,525 ERROR yfinance: $SUI-USD: No data found, symbol may be delisted
+2026-11-18 23:47:51,755 ERROR yfinance: 
+3 Failed downloads:
+2026-11-18 23:47:51,755 ERROR yfinance: ['STX-USD', 'TAO-USD', 'SUI-USD']: No data found, symbol may be delisted
+2026-11-18 23:47:51,807 INFO insider_prices: price histories batch phase 2160/2534
+2026-11-18 23:47:51,887 ERROR yfinance: $U9UA.DE: No data found, symbol may be delisted
+2026-11-18 23:47:53,212 INFO insider_prices: price histories batch phase 2220/2534
+2026-11-18 23:47:53,824 ERROR yfinance: 
+1 Failed download:
+2026-11-18 23:47:53,825 ERROR yfinance: ['U9UA.DE']: No data found, symbol may be delisted
+2026-11-18 23:47:53,884 INFO insider_prices: price histories batch phase 2280/2534
+2026-11-18 23:47:54,048 INFO insider_prices: price histories batch phase 2340/2534
+2026-11-18 23:47:55,187 INFO insider_prices: price histories batch phase 2354/2534
+2026-11-18 23:47:55,990 INFO insider_prices: price histories batch phase 2414/2534
+2026-11-18 23:47:57,095 INFO insider_prices: price histories batch phase 2474/2534
+2026-11-18 23:47:57,509 INFO insider_prices: price histories batch phase 2534/2534
+2026-11-18 23:47:57,511 INFO insider_prices: price histories direct fallback for 25 missing tickers
+2026-11-18 23:47:58,682 INFO insider_prices: price histories fallback 25/25
+2026-11-18 23:48:00,447 INFO insider_prices: daily returns batch phase 60/2534
+2026-11-18 23:48:00,503 INFO insider_prices: daily returns batch phase 120/2534
+2026-11-18 23:48:01,210 ERROR yfinance: $APT-USD: No data found, symbol may be delisted
+2026-11-18 23:48:02,086 ERROR yfinance: 
+1 Failed download:
+2026-11-18 23:48:02,086 ERROR yfinance: ['APT-USD']: No data found, symbol may be delisted
+2026-11-18 23:48:02,153 INFO insider_prices: daily returns batch phase 180/2534
+2026-11-18 23:48:02,216 INFO insider_prices: daily returns batch phase 240/2534
+2026-11-18 23:48:03,819 INFO insider_prices: daily returns batch phase 300/2534
+2026-11-18 23:48:03,864 INFO insider_prices: daily returns batch phase 360/2534
+2026-11-18 23:48:04,237 ERROR yfinance: $BRA: possibly delisted; no price data found  (period=6mo)
+2026-11-18 23:48:05,004 ERROR yfinance: $BT.A.L: No data found, symbol may be delisted
+2026-11-18 23:48:05,519 ERROR yfinance: 
 2 Failed downloads:
-2026-11-18 15:55:26,666 ERROR yfinance: ['POL-USD']: No data found, symbol may be delisted
-2026-11-18 15:55:26,666 ERROR yfinance: ['PTLE']: YFException("The following 'Stock Splits' events are out-of-range, did not expect with interval 1wk: DatetimeIndex(['2026-02-27 00:00:00-05:00'],\n              dtype='datetime64[s, America/New_York]', freq=None)")
-2026-11-18 15:55:26,719 INFO insider_prices: price histories batch phase 1380/2062
-2026-11-18 15:55:26,778 INFO insider_prices: price histories batch phase 1440/2062
-2026-11-18 15:55:27,865 ERROR yfinance: $SPLG: possibly delisted; no price data found  (period=1y)
-2026-11-18 15:55:28,659 ERROR yfinance: $SJW: No data found, symbol may be delisted
-2026-11-18 15:55:29,144 INFO insider_prices: price histories batch phase 1500/2062
-2026-11-18 15:55:29,788 ERROR yfinance: $SUI-USD: No data found, symbol may be delisted
-2026-11-18 15:55:30,059 INFO insider_prices: price histories batch phase 1560/2062
-2026-11-18 15:55:30,308 INFO insider_prices: price histories batch phase 1620/2062
-2026-11-18 15:55:30,351 ERROR yfinance: 
+2026-11-18 23:48:05,519 ERROR yfinance: ['BRA']: possibly delisted; no price data found  (period=6mo)
+2026-11-18 23:48:05,519 ERROR yfinance: ['BT.A.L']: No data found, symbol may be delisted
+2026-11-18 23:48:05,587 INFO insider_prices: daily returns batch phase 420/2534
+2026-11-18 23:48:05,654 INFO insider_prices: daily returns batch phase 480/2534
+2026-11-18 23:48:07,144 INFO insider_prices: daily returns batch phase 540/2534
+2026-11-18 23:48:07,228 INFO insider_prices: daily returns batch phase 600/2534
+2026-11-18 23:48:08,979 INFO insider_prices: daily returns batch phase 660/2534
+2026-11-18 23:48:08,983 ERROR yfinance: $DN3.DE: No data found, symbol may be delisted
+2026-11-18 23:48:08,989 ERROR yfinance: 
+1 Failed download:
+2026-11-18 23:48:08,989 ERROR yfinance: ['DN3.DE']: No data found, symbol may be delisted
+2026-11-18 23:48:09,051 INFO insider_prices: daily returns batch phase 720/2534
+2026-11-18 23:48:10,559 INFO insider_prices: daily returns batch phase 780/2534
+2026-11-18 23:48:10,639 INFO insider_prices: daily returns batch phase 840/2534
+2026-11-18 23:48:12,162 INFO insider_prices: daily returns batch phase 900/2534
+2026-11-18 23:48:12,237 INFO insider_prices: daily returns batch phase 960/2534
+2026-11-18 23:48:13,924 INFO insider_prices: daily returns batch phase 1020/2534
+2026-11-18 23:48:13,973 INFO insider_prices: daily returns batch phase 1080/2534
+2026-11-18 23:48:15,444 ERROR yfinance: $IRBO: No data found, symbol may be delisted
+2026-11-18 23:48:15,773 INFO insider_prices: daily returns batch phase 1140/2534
+2026-11-18 23:48:15,925 ERROR yfinance: $IUSN.L: No data found, symbol may be delisted
+2026-11-18 23:48:15,927 ERROR yfinance: 
 2 Failed downloads:
-2026-11-18 15:55:30,352 ERROR yfinance: ['SPLG']: possibly delisted; no price data found  (period=1y)
-2026-11-18 15:55:30,352 ERROR yfinance: ['SJW']: No data found, symbol may be delisted
-2026-11-18 15:55:30,383 INFO insider_prices: price histories batch phase 1680/2062
-2026-11-18 15:55:31,044 ERROR yfinance: $STX-USD: No data found, symbol may be delisted
-2026-11-18 15:55:31,100 ERROR yfinance: $U9UA.DE: No data found, symbol may be delisted
-2026-11-18 15:55:33,017 ERROR yfinance: $TAO-USD: No data found, symbol may be delisted
-2026-11-18 15:55:33,097 ERROR yfinance: 
+2026-11-18 23:48:15,927 ERROR yfinance: ['IRBO', 'IUSN.L']: No data found, symbol may be delisted
+2026-11-18 23:48:16,043 INFO insider_prices: daily returns batch phase 1200/2534
+2026-11-18 23:48:17,602 ERROR yfinance: $KOM1.DE: No data found, symbol may be delisted
+2026-11-18 23:48:17,643 INFO insider_prices: daily returns batch phase 1260/2534
+2026-11-18 23:48:17,693 ERROR yfinance: $LA: possibly delisted; no price data found  (period=6mo)
+2026-11-18 23:48:18,886 ERROR yfinance: 
 2 Failed downloads:
-2026-11-18 15:55:33,097 ERROR yfinance: ['SUI-USD', 'STX-USD']: No data found, symbol may be delisted
-2026-11-18 15:55:33,117 INFO insider_prices: price histories batch phase 1740/2062
-2026-11-18 15:55:33,851 ERROR yfinance: 
+2026-11-18 23:48:18,886 ERROR yfinance: ['KOM1.DE']: No data found, symbol may be delisted
+2026-11-18 23:48:18,886 ERROR yfinance: ['LA']: possibly delisted; no price data found  (period=6mo)
+2026-11-18 23:48:18,984 INFO insider_prices: daily returns batch phase 1320/2534
+2026-11-18 23:48:19,170 INFO insider_prices: daily returns batch phase 1380/2534
+2026-11-18 23:48:20,634 INFO insider_prices: daily returns batch phase 1440/2534
+2026-11-18 23:48:20,884 INFO insider_prices: daily returns batch phase 1500/2534
+2026-11-18 23:48:21,893 ERROR yfinance: $OD7F.DE: No data found, symbol may be delisted
+2026-11-18 23:48:22,511 INFO insider_prices: daily returns batch phase 1560/2534
+2026-11-18 23:48:22,687 ERROR yfinance: 
 1 Failed download:
-2026-11-18 15:55:33,854 INFO insider_prices: price histories batch phase 1800/2062
-2026-11-18 15:55:33,854 ERROR yfinance: ['TAO-USD']: No data found, symbol may be delisted
-2026-11-18 15:55:33,899 INFO insider_prices: price histories batch phase 1860/2062
-2026-11-18 15:55:34,261 ERROR yfinance: 
+2026-11-18 23:48:22,687 ERROR yfinance: ['OD7F.DE']: No data found, symbol may be delisted
+2026-11-18 23:48:22,787 INFO insider_prices: daily returns batch phase 1620/2534
+2026-11-18 23:48:24,176 INFO insider_prices: daily returns batch phase 1680/2534
+2026-11-18 23:48:24,217 ERROR yfinance: $POL-USD: No data found, symbol may be delisted
+2026-11-18 23:48:24,468 ERROR yfinance: 
 1 Failed download:
-2026-11-18 15:55:34,261 ERROR yfinance: ['U9UA.DE']: No data found, symbol may be delisted
-2026-11-18 15:55:34,292 INFO insider_prices: price histories batch phase 1920/2062
-2026-11-18 15:55:34,817 INFO insider_prices: price histories batch phase 1942/2062
-2026-11-18 15:55:35,982 INFO insider_prices: price histories batch phase 2002/2062
-2026-11-18 15:55:36,892 INFO insider_prices: price histories batch phase 2062/2062
-2026-11-18 15:55:36,893 INFO insider_prices: price histories direct fallback for 25 missing tickers
-2026-11-18 15:55:37,131 INFO insider_prices: price histories fallback 25/25
-2026-11-18 15:55:38,690 INFO insider_prices: daily returns batch phase 60/2062
-2026-11-18 15:55:38,778 INFO insider_prices: daily returns batch phase 120/2062
-2026-11-18 15:55:40,002 ERROR yfinance: $APT-USD: No data found, symbol may be delisted
-2026-11-18 15:55:40,376 INFO insider_prices: daily returns batch phase 180/2062
-2026-11-18 15:55:40,389 ERROR yfinance: 
+2026-11-18 23:48:24,469 ERROR yfinance: ['POL-USD']: No data found, symbol may be delisted
+2026-11-18 23:48:24,554 INFO insider_prices: daily returns batch phase 1740/2534
+2026-11-18 23:48:25,970 INFO insider_prices: daily returns batch phase 1800/2534
+2026-11-18 23:48:26,206 INFO insider_prices: daily returns batch phase 1860/2534
+2026-11-18 23:48:27,795 INFO insider_prices: daily returns batch phase 1920/2534
+2026-11-18 23:48:28,204 ERROR yfinance: $SJW: No data found, symbol may be delisted
+2026-11-18 23:48:28,483 INFO insider_prices: daily returns batch phase 1980/2534
+2026-11-18 23:48:29,205 ERROR yfinance: $SPLG: possibly delisted; no price data found  (period=6mo)
+2026-11-18 23:48:30,057 ERROR yfinance: 
 1 Failed download:
-2026-11-18 15:55:40,389 ERROR yfinance: ['APT-USD']: No data found, symbol may be delisted
-2026-11-18 15:55:40,417 INFO insider_prices: daily returns batch phase 240/2062
-2026-11-18 15:55:40,557 ERROR yfinance: $BRA: possibly delisted; no price data found  (period=6mo)
-2026-11-18 15:55:41,437 ERROR yfinance: $BT.A.L: No data found, symbol may be delisted
-2026-11-18 15:55:42,241 INFO insider_prices: daily returns batch phase 300/2062
-2026-11-18 15:55:42,309 ERROR yfinance: 
-2 Failed downloads:
-2026-11-18 15:55:42,309 ERROR yfinance: ['BRA']: possibly delisted; no price data found  (period=6mo)
-2026-11-18 15:55:42,309 ERROR yfinance: ['BT.A.L']: No data found, symbol may be delisted
-2026-11-18 15:55:42,336 INFO insider_prices: daily returns batch phase 360/2062
-2026-11-18 15:55:43,942 INFO insider_prices: daily returns batch phase 420/2062
-2026-11-18 15:55:43,984 INFO insider_prices: daily returns batch phase 480/2062
-2026-11-18 15:55:45,309 ERROR yfinance: $DN3.DE: No data found, symbol may be delisted
-2026-11-18 15:55:45,609 INFO insider_prices: daily returns batch phase 540/2062
-2026-11-18 15:55:45,734 ERROR yfinance: 
+2026-11-18 23:48:30,058 ERROR yfinance: ['SPLG']: possibly delisted; no price data found  (period=6mo)
+2026-11-18 23:48:30,095 ERROR yfinance: 
 1 Failed download:
-2026-11-18 15:55:45,735 ERROR yfinance: ['DN3.DE']: No data found, symbol may be delisted
-2026-11-18 15:55:45,762 INFO insider_prices: daily returns batch phase 600/2062
-2026-11-18 15:55:47,201 INFO insider_prices: daily returns batch phase 660/2062
-2026-11-18 15:55:47,344 INFO insider_prices: daily returns batch phase 720/2062
-2026-11-18 15:55:48,827 INFO insider_prices: daily returns batch phase 780/2062
-2026-11-18 15:55:49,176 INFO insider_prices: daily returns batch phase 840/2062
-2026-11-18 15:55:50,517 INFO insider_prices: daily returns batch phase 900/2062
-2026-11-18 15:55:51,065 ERROR yfinance: $IUSN.L: No data found, symbol may be delisted
-2026-11-18 15:55:51,182 INFO insider_prices: daily returns batch phase 960/2062
-2026-11-18 15:55:51,545 ERROR yfinance: $KOM1.DE: No data found, symbol may be delisted
-2026-11-18 15:55:51,922 ERROR yfinance: $LA: possibly delisted; no price data found  (period=6mo)
-2026-11-18 15:55:52,275 ERROR yfinance: $IRBO: No data found, symbol may be delisted
-2026-11-18 15:55:52,533 ERROR yfinance: 
-2 Failed downloads:
-2026-11-18 15:55:52,533 ERROR yfinance: ['IUSN.L', 'IRBO']: No data found, symbol may be delisted
-2026-11-18 15:55:52,571 INFO insider_prices: daily returns batch phase 1020/2062
-2026-11-18 15:55:52,885 ERROR yfinance: 
-2 Failed downloads:
-2026-11-18 15:55:52,886 ERROR yfinance: ['KOM1.DE']: No data found, symbol may be delisted
-2026-11-18 15:55:52,886 ERROR yfinance: ['LA']: possibly delisted; no price data found  (period=6mo)
-2026-11-18 15:55:52,913 INFO insider_prices: daily returns batch phase 1080/2062
-2026-11-18 15:55:54,284 INFO insider_prices: daily returns batch phase 1140/2062
-2026-11-18 15:55:54,623 INFO insider_prices: daily returns batch phase 1200/2062
-2026-11-18 15:55:55,624 ERROR yfinance: $OD7F.DE: No data found, symbol may be delisted
-2026-11-18 15:55:55,901 INFO insider_prices: daily returns batch phase 1260/2062
-2026-11-18 15:55:56,419 ERROR yfinance: 
+2026-11-18 23:48:30,095 ERROR yfinance: ['SJW']: No data found, symbol may be delisted
+2026-11-18 23:48:30,190 INFO insider_prices: daily returns batch phase 2040/2534
+2026-11-18 23:48:30,243 INFO insider_prices: daily returns batch phase 2100/2534
+2026-11-18 23:48:31,723 ERROR yfinance: $STX-USD: No data found, symbol may be delisted
+2026-11-18 23:48:31,734 ERROR yfinance: $TAO-USD: No data found, symbol may be delisted
+2026-11-18 23:48:31,781 INFO insider_prices: daily returns batch phase 2160/2534
+2026-11-18 23:48:32,274 ERROR yfinance: $SUI-USD: No data found, symbol may be delisted
+2026-11-18 23:48:32,343 ERROR yfinance: 
+3 Failed downloads:
+2026-11-18 23:48:32,343 ERROR yfinance: ['STX-USD', 'TAO-USD', 'SUI-USD']: No data found, symbol may be delisted
+2026-11-18 23:48:32,406 INFO insider_prices: daily returns batch phase 2220/2534
+2026-11-18 23:48:33,241 ERROR yfinance: $U9UA.DE: No data found, symbol may be delisted
+2026-11-18 23:48:33,855 ERROR yfinance: 
 1 Failed download:
-2026-11-18 15:55:56,419 ERROR yfinance: ['OD7F.DE']: No data found, symbol may be delisted
-2026-11-18 15:55:56,447 INFO insider_prices: daily returns batch phase 1320/2062
-2026-11-18 15:55:57,537 ERROR yfinance: $POL-USD: No data found, symbol may be delisted
-2026-11-18 15:55:57,596 INFO insider_prices: daily returns batch phase 1380/2062
-2026-11-18 15:55:58,203 ERROR yfinance: 
-1 Failed download:
-2026-11-18 15:55:58,204 ERROR yfinance: ['POL-USD']: No data found, symbol may be delisted
-2026-11-18 15:55:58,232 INFO insider_prices: daily returns batch phase 1440/2062
-2026-11-18 15:55:59,182 INFO insider_prices: daily returns batch phase 1500/2062
-2026-11-18 15:55:59,882 INFO insider_prices: daily returns batch phase 1560/2062
-2026-11-18 15:56:00,486 ERROR yfinance: $SPLG: possibly delisted; no price data found  (period=6mo)
-2026-11-18 15:56:01,022 INFO insider_prices: daily returns batch phase 1620/2062
-2026-11-18 15:56:01,072 ERROR yfinance: $SJW: No data found, symbol may be delisted
-2026-11-18 15:56:01,665 ERROR yfinance: $SUI-USD: No data found, symbol may be delisted
-2026-11-18 15:56:01,883 ERROR yfinance: 
-2 Failed downloads:
-2026-11-18 15:56:01,884 ERROR yfinance: ['SPLG']: possibly delisted; no price data found  (period=6mo)
-2026-11-18 15:56:01,884 ERROR yfinance: ['SJW']: No data found, symbol may be delisted
-2026-11-18 15:56:01,910 INFO insider_prices: daily returns batch phase 1680/2062
-2026-11-18 15:56:02,255 ERROR yfinance: $STX-USD: No data found, symbol may be delisted
-2026-11-18 15:56:03,003 ERROR yfinance: 
-2 Failed downloads:
-2026-11-18 15:56:03,003 ERROR yfinance: ['SUI-USD', 'STX-USD']: No data found, symbol may be delisted
-2026-11-18 15:56:03,036 INFO insider_prices: daily returns batch phase 1740/2062
-2026-11-18 15:56:03,585 ERROR yfinance: $TAO-USD: No data found, symbol may be delisted
-2026-11-18 15:56:03,621 ERROR yfinance: $U9UA.DE: No data found, symbol may be delisted
-2026-11-18 15:56:03,726 ERROR yfinance: 
-1 Failed download:
-2026-11-18 15:56:03,727 ERROR yfinance: ['TAO-USD']: No data found, symbol may be delisted
-2026-11-18 15:56:03,754 INFO insider_prices: daily returns batch phase 1800/2062
-2026-11-18 15:56:04,921 ERROR yfinance: 
-1 Failed download:
-2026-11-18 15:56:04,921 ERROR yfinance: ['U9UA.DE']: No data found, symbol may be delisted
-2026-11-18 15:56:04,950 INFO insider_prices: daily returns batch phase 1860/2062
-2026-11-18 15:56:05,430 INFO insider_prices: daily returns batch phase 1920/2062
-2026-11-18 15:56:06,630 INFO insider_prices: daily returns batch phase 1980/2062
-2026-11-18 15:56:07,307 INFO insider_prices: daily returns batch phase 2040/2062
-2026-11-18 15:56:07,320 INFO insider_prices: daily returns batch phase 2062/2062
-2026-11-18 15:56:07,322 INFO insider_prices: daily returns direct fallback for 25 missing tickers
-2026-11-18 15:56:07,612 INFO run: SECTOR_RELATIVE_EXCLUSIONS {"reasons":{"latest_session_mismatch":3,"stock_sessions_missing":5,"verified":367},"total":375}
-2026-11-18 15:56:07,612 INFO run: PIPELINE_STAGE done price_history elapsed=64.5s
-2026-11-18 15:56:10,322 INFO run: Wrote 1946 rows to /home/runner/work/Vestra/Vestra/scripts/../data/stocks.json
-2026-11-18 15:56:10,326 INFO run: SECTOR_RELATIVE_COVERAGE {"interpretation":"Observed published fields only; not a performance or alpha test","sectors":{"Basic Materials":{"coverage_pct":80.9,"eligible":89,"incomplete":0,"unavailable":17,"verified":72},"Communication Services":{"coverage_pct":84.31,"eligible":51,"incomplete":0,"unavailable":8,"verified":43},"Consumer Cyclical":{"coverage_pct":80.56,"eligible":108,"incomplete":0,"unavailable":21,"verified":87},"Consumer Defensive":{"coverage_pct":80.39,"eligible":51,"incomplete":0,"unavailable":10,"verified":41},"Energy":{"coverage_pct":86.76,"eligible":68,"incomplete":0,"unavailable":9,"verified":59},"Financial Services":{"coverage_pct":79.87,"eligible":159,"incomplete":0,"unavailable":32,"verified":127},"Healthcare":{"coverage_pct":87.21,"eligible":219,"incomplete":0,"unavailable":28,"verified":191},"Industrials":{"coverage_pct":87.36,"eligible":174,"incomplete":0,"unavailable":22,"verified":152},"Materials":{"coverage_pct":100.0,"eligible":5,"incomplete":0,"unavailable":0,"verified":5},"Real Estate":{"coverage_pct":82.46,"eligible":57,"incomplete":0,"unavailable":10,"verified":47},"Technology":{"coverage_pct":89.57,"eligible":230,"incomplete":0,"unavailable":24,"verified":206},"Utilities":{"coverage_pct":91.3,"eligible":46,"incomplete":0,"unavailable":4,"verified":42},"unknown":{"coverage_pct":0.0,"eligible":5,"incomplete":0,"unavailable":5,"verified":0}},"source_generated_at":"2026-11-18T15:56:08.455300Z","total":{"coverage_pct":84.94,"eligible":1262,"incomplete":0,"unavailable":190,"verified":1072}}
-2026-11-18 15:56:10,326 INFO run: PIPELINE_STAGE start metals_fx_history_news
-2026-11-18 15:56:12,403 WARNING physical_metals: WGC central bank changes unavailable: 403 Client Error: Forbidden for url: https://www.gold.org/download/file/7741/Changes_latest_as_of_Nov2026_IFS.xlsx
-2026-11-18 15:56:12,613 WARNING physical_metals: SGE benchmark unavailable: benchmark table not found
-2026-11-18 15:56:36,331 WARNING physical_metals: CME gold stocks unavailable: HTTPSConnectionPool(host='www.cmegroup.com', port=443): Read timed out. (read timeout=25)
-2026-11-18 15:56:36,362 WARNING physical_metals: CME silver stocks unavailable: HTTPSConnectionPool(host='www.cmegroup.com', port=443): Read timed out. (read timeout=25)
-2026-11-18 15:56:41,356 WARNING physical_metals: CME delivery notices unavailable: HTTPSConnectionPool(host='www.cmegroup.com', port=443): Read timed out. (read timeout=30)
-2026-11-18 15:56:41,492 INFO run: Wrote metals data to /home/runner/work/Vestra/Vestra/scripts/../data/metals.json
-2026-11-18 15:56:41,493 INFO run: Wrote daily metals brief to /home/runner/work/Vestra/Vestra/scripts/../data/metals_brief.json
-2026-11-18 15:56:43,831 INFO run: Wrote FX data to /home/runner/work/Vestra/Vestra/scripts/../data/fx.json
-2026-11-18 15:56:43,926 INFO history: Wrote history for 3929 tickers to /home/runner/work/Vestra/Vestra/scripts/../data/history.json
-2026-11-18 15:56:44,361 INFO valuation_history: Wrote valuation history for 3869 tickers to /home/runner/work/Vestra/Vestra/scripts/../data/valuation_history.json
-2026-11-18 15:56:46,405 INFO thesis_history: Wrote thesis history for 4697 tickers to /home/runner/work/Vestra/Vestra/scripts/../data/thesis_history.json
-2026-11-18 15:56:46,407 INFO run: PIPELINE_TASK start news
-2026-11-18 15:57:48,910 INFO news: news: 1856/2063 tickers returned relevant headlines
-2026-11-18 15:57:49,456 INFO news: dashboard news: wrote 40 compact candidates to /home/runner/work/Vestra/Vestra/scripts/../data/dashboard-news.json
-2026-11-18 15:57:49,458 INFO run: PIPELINE_TASK done news elapsed=63.1s
-2026-11-18 15:57:49,523 INFO run: Wrote news for 1856 tickers to /home/runner/work/Vestra/Vestra/scripts/../data/news.json
-2026-11-18 15:57:49,523 INFO run: PIPELINE_STAGE done metals_fx_history_news elapsed=99.2s
+2026-11-18 23:48:33,856 ERROR yfinance: ['U9UA.DE']: No data found, symbol may be delisted
+2026-11-18 23:48:33,943 INFO insider_prices: daily returns batch phase 2280/2534
+2026-11-18 23:48:34,036 INFO insider_prices: daily returns batch phase 2340/2534
+2026-11-18 23:48:35,527 INFO insider_prices: daily returns batch phase 2400/2534
+2026-11-18 23:48:36,005 INFO insider_prices: daily returns batch phase 2460/2534
+2026-11-18 23:48:36,421 INFO insider_prices: daily returns batch phase 2474/2534
+2026-11-18 23:48:37,298 INFO insider_prices: daily returns batch phase 2534/2534
+2026-11-18 23:48:37,300 INFO insider_prices: daily returns direct fallback for 25 missing tickers
+2026-11-18 23:48:38,448 INFO run: SECTOR_RELATIVE_EXCLUSIONS {"reasons":{"latest_session_mismatch":2,"stock_sessions_missing":1,"verified":370},"total":373}
+2026-11-18 23:48:38,448 INFO run: PIPELINE_STAGE done price_history elapsed=89.4s
+2026-11-18 23:48:42,540 INFO run: Wrote 2109 rows to /home/runner/work/Vestra/Vestra/scripts/../data/stocks.json
+2026-11-18 23:48:42,545 INFO run: SECTOR_RELATIVE_COVERAGE {"interpretation":"Observed published fields only; not a performance or alpha test","sectors":{"Basic Materials":{"coverage_pct":84.47,"eligible":103,"incomplete":0,"unavailable":16,"verified":87},"Communication Services":{"coverage_pct":86.44,"eligible":59,"incomplete":0,"unavailable":8,"verified":51},"Consumer Cyclical":{"coverage_pct":83.74,"eligible":123,"incomplete":0,"unavailable":20,"verified":103},"Consumer Defensive":{"coverage_pct":82.76,"eligible":58,"incomplete":0,"unavailable":10,"verified":48},"Energy":{"coverage_pct":88.0,"eligible":75,"incomplete":0,"unavailable":9,"verified":66},"Financial Services":{"coverage_pct":82.8,"eligible":186,"incomplete":0,"unavailable":32,"verified":154},"Healthcare":{"coverage_pct":89.19,"eligible":259,"incomplete":0,"unavailable":28,"verified":231},"Industrials":{"coverage_pct":88.54,"eligible":192,"incomplete":0,"unavailable":22,"verified":170},"Materials":{"coverage_pct":100.0,"eligible":4,"incomplete":0,"unavailable":0,"verified":4},"Real Estate":{"coverage_pct":84.85,"eligible":66,"incomplete":0,"unavailable":10,"verified":56},"Technology":{"coverage_pct":90.12,"eligible":253,"incomplete":0,"unavailable":25,"verified":228},"Utilities":{"coverage_pct":91.3,"eligible":46,"incomplete":0,"unavailable":4,"verified":42},"unknown":{"coverage_pct":0.0,"eligible":7,"incomplete":0,"unavailable":7,"verified":0}},"source_generated_at":"2026-11-18T23:48:39.990903Z","total":{"coverage_pct":86.65,"eligible":1431,"incomplete":0,"unavailable":191,"verified":1240}}
+2026-11-18 23:48:42,546 INFO run: PIPELINE_STAGE start metals_fx_history_news
+2026-11-18 23:48:44,110 WARNING physical_metals: WGC central bank changes unavailable: 403 Client Error: Forbidden for url: https://www.gold.org/download/file/7741/Changes_latest_as_of_Nov2026_IFS.xlsx
+2026-11-18 23:48:44,934 WARNING physical_metals: SGE benchmark unavailable: benchmark table not found
+2026-11-18 23:49:08,388 WARNING physical_metals: CME gold stocks unavailable: HTTPSConnectionPool(host='www.cmegroup.com', port=443): Read timed out. (read timeout=25)
+2026-11-18 23:49:08,388 WARNING physical_metals: CME silver stocks unavailable: HTTPSConnectionPool(host='www.cmegroup.com', port=443): Read timed out. (read timeout=25)
+2026-11-18 23:49:13,400 WARNING physical_metals: CME delivery notices unavailable: HTTPSConnectionPool(host='www.cmegroup.com', port=443): Read timed out. (read timeout=30)
+2026-11-18 23:49:13,553 INFO run: Wrote metals data to /home/runner/work/Vestra/Vestra/scripts/../data/metals.json
+2026-11-18 23:49:13,554 INFO run: Wrote daily metals brief to /home/runner/work/Vestra/Vestra/scripts/../data/metals_brief.json
+2026-11-18 23:49:15,526 INFO run: Wrote FX data to /home/runner/work/Vestra/Vestra/scripts/../data/fx.json
+2026-11-18 23:49:15,699 INFO history: Wrote history for 3960 tickers to /home/runner/work/Vestra/Vestra/scripts/../data/history.json
+2026-11-18 23:49:16,463 INFO valuation_history: Wrote valuation history for 3901 tickers to /home/runner/work/Vestra/Vestra/scripts/../data/valuation_history.json
+2026-11-18 23:49:19,511 INFO thesis_history: Wrote thesis history for 4731 tickers to /home/runner/work/Vestra/Vestra/scripts/../data/thesis_history.json
+2026-11-18 23:49:19,512 INFO run: PIPELINE_TASK start news
+2026-11-18 23:50:30,593 INFO news: news: 2306/2536 tickers returned relevant headlines
+2026-11-18 23:50:31,230 INFO news: dashboard news: wrote 40 compact candidates to /home/runner/work/Vestra/Vestra/scripts/../data/dashboard-news.json
+2026-11-18 23:50:31,233 INFO run: PIPELINE_TASK done news elapsed=71.7s
+2026-11-18 23:50:31,323 INFO run: Wrote news for 2306 tickers to /home/runner/work/Vestra/Vestra/scripts/../data/news.json
+2026-11-18 23:50:31,323 INFO run: PIPELINE_STAGE done metals_fx_history_news elapsed=108.8s
