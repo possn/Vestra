@@ -3,6 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync('market-opportunities.js', 'utf8');
+assert.match(source,/payload\.early_setup_policy_version!==EARLY_SETUP_POLICY_VERSION/);
+assert.match(source,/prebreakoutFeedStatus='old_policy'/);
 const document = {readyState: 'loading', addEventListener() {}};
 const window = {};
 vm.runInNewContext(source, {document, window, console, Date});

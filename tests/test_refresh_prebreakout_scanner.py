@@ -508,13 +508,17 @@ class CrossSlotPersistenceTests(unittest.TestCase):
     def test_retains_only_verified_recent_nonrechecked_rows(self):
         now=datetime(2026,10,25,12,tzinfo=timezone.utc)
         row={"ticker":"AAA","date":"2026-10-24","source":"yahoo:daily_ohlcv",
+             "early_setup_policy_version":mod.EARLY_SETUP_POLICY_VERSION,
              "vcpConfirmed":True,"stage":"pré-breakout","score":75,"distancePct":2,
              "scanner_verified_at":"2026-10-25T08:00:00+00:00",
              "quantitativeDiagnostics":{"averageDollarVolume20":6_000_000,
                 "liquidityCurrencySource":"yahoo_fast_info","liquidityFxReferenceDate":"2026-10-23"}}
         previous={"schema":"vestra_prebreakout_v1","quality_model":"vcp_before_pivot_v3",
+                  "early_setup_policy_version":mod.EARLY_SETUP_POLICY_VERSION,
                   "generated_at":"2026-10-25T08:00:00+00:00","signals":[row]}
         self.assertEqual(mod.recent_verified_signals(previous,["BBB"],now),[row])
+        self.assertEqual(mod.recent_verified_signals({**previous,"early_setup_policy_version":"legacy"},["BBB"],now),[])
+        self.assertEqual(mod.recent_verified_signals({**previous,"signals":[{**row,"early_setup_policy_version":"legacy"}]},["BBB"],now),[])
         # Publishing a fresh feed must never renew the timestamp of an old row.
         old_row={**row,"scanner_verified_at":"2026-10-24T12:00:00+00:00"}
         refreshed={**previous,"generated_at":"2026-10-25T11:59:00+00:00","signals":[old_row]}
