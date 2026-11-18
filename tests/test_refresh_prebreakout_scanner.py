@@ -659,6 +659,22 @@ class PrebreakoutDataTests(unittest.TestCase):
         self.assertEqual(trace["trend_phase"]["classification"],
                          "continuation_after_prior_impulse")
 
+    def test_prior_volume_confirmed_breakout_is_not_an_initial_setup(self):
+        observations=self.bars()
+        self.assertIsNotNone(mod.scan_bars("BASE",observations))
+        past=[dict(bar) for bar in observations]
+        historical_pivot=max(x["high"] for x in past[85:125])
+        past[125].update({"close":historical_pivot*1.12,
+                          "high":historical_pivot*1.125,
+                          "low":historical_pivot*1.08,"volume":1_000_000})
+        trace={}
+        self.assertIsNone(mod.scan_bars("LATE",past,audit=trace))
+        self.assertEqual(trace["first_rejection"],"prior_impulse_continuation")
+        self.assertEqual(trace["trend_phase"]["classification"],
+                         "continuation_after_confirmed_breakout")
+        self.assertEqual(trace["trend_phase"]["previous_confirmed_breakout_date"],
+                         past[125]["date"])
+
     def test_quality_gate_requires_liquidity_and_upper_base(self):
         good=self.bars()
         accepted=mod.scan_bars("TEST",good)
