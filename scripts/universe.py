@@ -538,7 +538,11 @@ def us_small_micro_cap(limit: int = 2500) -> list[str]:
         allowance = min(750, max(0, limit - len(found)))
         if not allowance:
             break
-        found.update(_us_cap_range_screener(low, high, allowance))
+        fetched = _us_cap_range_screener(low, high, allowance)
+        before = len(found)
+        found.update(fetched)
+        log.info("US cap-band %.0fM–%.0fM: provider returned %d, new unique %d, cumulative %d; discovery only",
+                 low / 1_000_000, high / 1_000_000, len(fetched), len(found) - before, len(found))
     tickers = sorted(found)[:limit]
     log.info("US small/micro-cap candidate symbols: %d (unverified; %d cap bands)",
              len(tickers), len(bands))
