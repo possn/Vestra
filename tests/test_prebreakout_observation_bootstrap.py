@@ -28,6 +28,17 @@ class PublishedObservationProvenance(unittest.TestCase):
             slots+=1
             for signal in source["signals"]:
                 if not isinstance(signal,dict):continue
+                # Carried signals are not independently observed in this slot.
+                # Match the publisher: a verified-at stamp must equal the
+                # immutable slot capture, otherwise it is historical carry.
+                verified=signal.get("scanner_verified_at")
+                if verified is not None:
+                    try:
+                        actual=datetime.fromisoformat(str(verified).replace("Z","+00:00"))
+                        if actual.tzinfo is None or actual.astimezone(timezone.utc)!=stamp:
+                            continue
+                    except (ValueError,TypeError,AttributeError):
+                        continue
                 ticker=str(signal.get("ticker") or "").strip().upper()
                 if not ticker or signal.get("stage") not in ("compressão","pré-breakout","confirmado") or signal.get("source")!="yahoo:daily_ohlcv":
                     continue

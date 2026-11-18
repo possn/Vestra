@@ -666,12 +666,34 @@ def verified_standalone_recovery(batch_bars, standalone_bars, today, audit=None)
 
     if not evaluable_recheck(standalone_bars, today):
         return reject("independent_history_not_evaluable")
+    # A positive-volume batch placeholder without ANY OHLC price is ambiguous.
+    # It may be skipped only at the terminal boundary, and only if the
+    # separately fetched valid series has no session on that date. Never
+    # discard a priced bar or an interior / partially priced observation.
+    standalone_dates={str(bar.get("date") or "")[:10] for bar in standalone_bars}
+    terminal_unpriced=set()
+    for bar in reversed(batch_bars):
+        if not isinstance(bar,dict):break
+        if not all(bar.get(key) is None for key in ("close","high","low")):
+            break
+        day=str(bar.get("date") or "")[:10]
+        try:date.fromisoformat(day)
+        except (ValueError,TypeError):break
+        if day in standalone_dates:
+            return reject("terminal_missing_price_conflicts_with_independent_session")
+        terminal_unpriced.add(day)
     observed = {}
     for bar in batch_bars:
         if not isinstance(bar, dict):
             return reject("batch_non_mapping_bar")
         fields = (bar.get("close"), bar.get("high"), bar.get("low"), bar.get("volume"))
         if all(v is None for v in fields):
+            continue
+        if (str(bar.get("date") or "")[:10] in terminal_unpriced
+                and all(v is None for v in fields[:3])
+                and not isinstance(fields[3],bool)
+                and (fields[3] is None or type(fields[3]) in (int,float)
+                     and math.isfinite(fields[3]) and fields[3]>=0)):
             continue
         if any(v is None or isinstance(v, bool) for v in fields):
             return reject("batch_partial_or_boolean_bar")
@@ -692,6 +714,7 @@ def verified_standalone_recovery(batch_bars, standalone_bars, today, audit=None)
                 return reject("conflicting_observed_ohlcv")
     if audit is not None:
         audit["verified"] = True
+        audit["verified_terminal_unpriced_rows"] = len(terminal_unpriced)
     return standalone_bars
 
 
@@ -989,7 +1012,9 @@ def main():
                 bars,trimmed=trim_leading_provider_padding(bars)
                 bars,trailing_trimmed=trim_trailing_provider_padding(bars)
                 gap_profile=interior_all_null_gap_diagnostic(bars)
-                if gap_profile["gap_runs"] and recovery_attempted<recovery_budget:
+                terminal_unpriced=bool(bars and all(bars[-1].get(k) is None
+                    for k in ("close","high","low")))
+                if (gap_profile["gap_runs"] or terminal_unpriced) and recovery_attempted<recovery_budget:
                     recovery_attempted+=1
                     recovery_trace={}
                     try:
