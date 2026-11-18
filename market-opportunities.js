@@ -10,6 +10,7 @@
   let activeLens='all';
   let smallcapFeed=new Map();
   let smallcapGeometryWatch=[];
+  let smallcapSwingWatch=[];
   let smallcapFeedStatus='loading';
   let smallcapCoveragePct=null;
   let smallcapFeedGeneratedAt=null;
@@ -36,6 +37,7 @@
       if(!Number.isFinite(age)||age< -1||age>96){
         smallcapFeed=new Map();
         smallcapGeometryWatch=[];
+        smallcapSwingWatch=[];
         smallcapFeedStatus='outdated';
         if(activeLens==='smallcap_breakout')opportunities();
         return;
@@ -63,12 +65,27 @@
             widths.length===5&&widths.every(v=>typeof v==='number'&&Number.isFinite(v)&&v>=0)&&
             n(r.average_dollar_volume_20_usd)>=1000000&&ageDays>=-1&&ageDays<=7;
         }).slice(0,12);
+      // Variable-duration price contractions are an independent research
+      // watchlist, NOT a verified VCP, score or entry recommendation.
+      smallcapSwingWatch=(Array.isArray(payload.swing_watch_observations)?payload.swing_watch_observations:[])
+        .filter(r=>{
+          const ageDays=(Date.now()-Date.parse(String(r?.last_session||'')+'T23:59:59Z'))/86400000;
+          return r?.status==='swing_geometry_research_not_signal'&&
+            r.missing_volume_ma_lineage_and_independent_forward_validation===true&&
+            /^[A-Z0-9.^-]{1,18}$/.test(t(r.ticker))&&
+            Array.isArray(r.leg_depths_pct)&&r.leg_depths_pct.length===3&&
+            r.leg_depths_pct.every(v=>typeof v==='number'&&Number.isFinite(v)&&v>=3)&&
+            typeof r.base_width_pct==='number'&&Number.isFinite(r.base_width_pct)&&r.base_width_pct>=0&&r.base_width_pct<=22&&
+            typeof r.distance_to_resistance_pct==='number'&&Number.isFinite(r.distance_to_resistance_pct)&&r.distance_to_resistance_pct>=0&&r.distance_to_resistance_pct<=8&&
+            ageDays>=-1&&ageDays<=7;
+        }).slice(0,8);
       smallcapFeedStatus='ready';
       if(activeLens==='smallcap_breakout')opportunities();
     }catch(error){
       smallcapFeedGeneratedAt=null;
       smallcapFeed=new Map();
       smallcapGeometryWatch=[];
+      smallcapSwingWatch=[];
       smallcapFeedStatus='unavailable';
       if(activeLens==='smallcap_breakout')opportunities();
       console.warn('[Vestra] Small Caps OHLCV unavailable',error);
@@ -907,8 +924,12 @@
         const ma=(item.moving_average_failed_checks||[]).length;
         return `<div class="market-row ux453-opp" data-market-ticker="${esc(item.ticker)}" tabindex="0"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(item.ticker)}</span></div><div class="market-row__description">Largura da base ${item.base_width_pct.toFixed(1)}% · Contrações ${esc(widths)}</div><div class="ux453-thesis">Critério observado: ${esc(passed)} · Critério não cumprido: ${esc(failed)}</div><div class="ux453-opportunity-type">${ma?`${ma} verificações de médias móveis falharam · `:''}Dados ${esc(item.last_session)} · Apenas observação geométrica, sem setup validado · Abrir dossier</div></div><div class="ux453-entry"><small>OBSERVAÇÃO</small><strong>—</strong><em>Não confirmado</em></div></div>`;
       }).join('');
+      const swingRows=(smallcapFeedStatus==='ready'?smallcapSwingWatch:[])
+        .filter(item=>!watch.some(existing=>existing.ticker===item.ticker))
+        .map(item=>`<div class="market-row ux453-opp" data-market-ticker="${esc(item.ticker)}" tabindex="0"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(item.ticker)}</span></div><div class="market-row__description">Três recuos ${item.leg_depths_pct.map(v=>v.toFixed(1)+'%').join(' → ')} · Base ${item.base_width_pct.toFixed(1)}%</div><div class="ux453-thesis">Contrações em movimentos de duração variável · ${item.distance_to_resistance_pct.toFixed(1)}% abaixo da resistência</div><div class="ux453-opportunity-type">Dados ${esc(item.last_session)} · Médias móveis, volume, histórico de breakouts e desempenho ainda não validados · Abrir dossier</div></div><div class="ux453-entry"><small>INVESTIGAÇÃO</small><strong>—</strong><em>Não confirmado</em></div></div>`).join('');
       list.innerHTML='<div class="market-empty">'+esc(message)+'</div>'+
-        (watchRows?'<div class="market-empty">Padrões incompletos para investigar — sem score, confirmação ou estimativa de valorização:</div>'+watchRows:'');
+        (watchRows?'<div class="market-empty">Padrões incompletos para investigar — sem score, confirmação ou estimativa de valorização:</div>'+watchRows:'')+
+        (swingRows?'<div class="market-empty">Contrações por movimentos de preço · investigação experimental, não são sinais validados:</div>'+swingRows:'');
     }
     else if(activeLens==='breakout'&&!rows.length){
       const message=prebreakoutEmptyCopy();

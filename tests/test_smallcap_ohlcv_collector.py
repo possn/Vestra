@@ -30,6 +30,32 @@ class Provider:
         return FakeFrame()
 
 class ResearchCollectorTests(unittest.TestCase):
+    def test_swing_geometry_is_diagnostic_and_does_not_promote_a_rejected_setup(self):
+        rows=[{"ticker":"OBS","status":"evaluable_ohlcv",
+               "technical_first_rejection":"moving_average_structure",
+               "technical_swing_geometry_shadow":{"status":"measured",
+                    "legs_found":3,"sequential_contraction_pass":True,
+                    "base_width_pass":True,"all_geometry_pass":True},
+               "verified_prebreakout_setup":None},
+              {"ticker":"ILLIQ","status":"evaluable_ohlcv",
+               "technical_first_rejection":"below_1m_usd_turnover",
+               "technical_swing_geometry_shadow":{"status":"measured",
+                    "all_geometry_pass":True}}]
+        report=mod.swing_geometry_audit(rows)
+        self.assertEqual(report["measured_rows"],1)
+        self.assertEqual(report["all_geometry_pass"],1)
+        self.assertTrue(report["research_only_no_signal_promotion_or_performance_claim"])
+        self.assertIsNone(rows[0]["verified_prebreakout_setup"])
+        watch=mod.swing_watch_observations([{
+            **rows[0],"last_session":"2026-11-18",
+            "average_dollar_volume_20_usd":2_000_000,
+            "technical_swing_geometry_shadow":{
+                **rows[0]["technical_swing_geometry_shadow"],
+                "leg_depths_pct":[17.0,12.0,7.0],
+                "base_width_pct":18.0,"distance_to_resistance_pct":2.0}}])
+        self.assertEqual([w["ticker"] for w in watch],["OBS"])
+        self.assertEqual(watch[0]["status"],"swing_geometry_research_not_signal")
+
     def test_unseen_cohort_cannot_starve_continuous_and_phase_backfill(self):
         now=datetime(2026,11,17,12,tzinfo=timezone.utc)
         stamp=now.isoformat()

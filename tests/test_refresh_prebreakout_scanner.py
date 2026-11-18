@@ -12,6 +12,27 @@ mod=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 
 class FirstFailingGateAuditTests(unittest.TestCase):
+    def test_swing_vcp_uses_confirmed_variable_length_pullbacks_without_signal_promotion(self):
+        anchors=[(0,100),(10,110),(20,94),(40,108),(50,96),
+                 (75,106),(100,99),(119,104)]
+        closes=[]
+        for (a,va),(b,vb) in zip(anchors,anchors[1:]):
+            closes.extend(va+(vb-va)*(i-a)/(b-a) for i in range(a,b))
+        closes.append(anchors[-1][1])
+        bars=[{"high":x*1.001,"low":x*.999,"close":x} for x in closes]
+        report=mod.swing_contraction_shadow(bars)
+        self.assertTrue(report["all_geometry_pass"])
+        self.assertEqual(report["legs_found"],3)
+        self.assertEqual(len(report["leg_depths_pct"]),3)
+        self.assertTrue(report["research_only"])
+        self.assertTrue(report["not_a_signal_no_volume_liquidity_lineage_or_forward_validation"])
+        # A third pullback becoming larger must fail; no threshold relaxation.
+        for i in range(95,106):
+            bars[i] = {"high":bars[i]["high"],"close":bars[i]["close"],
+                       "low":min(bars[i]["low"],93.0)}
+        wider=mod.swing_contraction_shadow(bars)
+        self.assertFalse(wider["all_geometry_pass"])
+
     def test_vcp_phase_shadow_is_consistent_and_never_changes_gate(self):
         today=date(2026,11,17)
         bars=[{"date":(today-timedelta(days=240-i)).isoformat(),

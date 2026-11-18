@@ -51,6 +51,72 @@ def historical_breakout_dates(clean: list[dict], start: int, stop: int) -> list[
             dates.append(bar["day"].isoformat())
     return dates
 
+def swing_contraction_shadow(bars: list[dict], *, lookback: int=120, radius: int=3)->dict:
+    """Research-only VCP geometry from completed local price swings.
+
+    This is deliberately NOT an eligibility gate: extrema need `radius`
+    subsequently observed bars and only use the closed history supplied at
+    the evaluation timestamp. Three successive, non-overlapping pullbacks
+    are necessary, but they cannot establish a tradable signal on their own.
+    """
+    if len(bars)<lookback or radius<2:
+        return {"status":"insufficient_history","research_only":True}
+    sample=bars[-lookback:]
+    extremes=[]
+    for i in range(radius,len(sample)-radius):
+        prev=sample[i-radius:i]
+        future=sample[i+1:i+1+radius]
+        h=sample[i]["high"];l=sample[i]["low"]
+        if h>max(x["high"] for x in prev) and h>=max(x["high"] for x in future):
+            extremes.append((i,"peak",h))
+        if l<min(x["low"] for x in prev) and l<=min(x["low"] for x in future):
+            extremes.append((i,"trough",l))
+    # Adjacent identical types are one extremum: keep the most extreme.
+    alternating=[]
+    for item in sorted(extremes,key=lambda x:(x[0],0 if x[1]=="peak" else 1)):
+        if alternating and item[1]==alternating[-1][1]:
+            last=alternating[-1]
+            if (item[2]>last[2] if item[1]=="peak" else item[2]<last[2]):
+                alternating[-1]=item
+        else:
+            alternating.append(item)
+    legs=[]
+    for peak,trough in zip(alternating,alternating[1:]):
+        if peak[1]!="peak" or trough[1]!="trough":continue
+        duration=trough[0]-peak[0]
+        depth=(peak[2]/trough[2]-1)*100
+        if 4<=duration<=45 and depth>=3:
+            legs.append({"peak_index":peak[0],"trough_index":trough[0],
+                         "depth_pct":round(depth,3),"duration_sessions":duration})
+    latest=legs[-3:]
+    depths=[leg["depth_pct"] for leg in latest]
+    contracted=(len(depths)==3 and depths[0]>0 and
+                depths[1]<=depths[0]*.85 and depths[2]<=depths[1]*.85)
+    if latest:
+        first=latest[0]["peak_index"]
+        base=sample[first:]
+        width=(max(x["high"] for x in base)/min(x["low"] for x in base)-1)*100
+        resistance=max(x["high"] for x in base[:-1]) if len(base)>1 else None
+    else:
+        width=None;resistance=None
+    close=sample[-1]["close"]
+    distance=(resistance/close-1)*100 if resistance and close>0 else None
+    near_pivot=(distance is not None and 0<=distance<=8 and
+                sample[-1]["high"]<=resistance*1.005)
+    narrow=(width is not None and width<=22)
+    fresh_pullback=bool(latest and len(sample)-1-latest[-1]["trough_index"]<=25)
+    return {"status":"measured","research_only":True,
+            "method":"confirmed_radius3_local_extrema_last120_closed_bars",
+            "leg_depths_pct":depths,"leg_durations_sessions":[x["duration_sessions"] for x in latest],
+            "legs_found":len(legs),"base_width_pct":round(width,3) if width is not None else None,
+            "distance_to_resistance_pct":round(distance,3) if distance is not None else None,
+            "sequential_contraction_pass":bool(contracted),
+            "base_width_pass":bool(narrow),"below_pivot_pass":bool(near_pivot),
+            "latest_pullback_recent":fresh_pullback,
+            "all_geometry_pass":bool(contracted and narrow and near_pivot and fresh_pullback),
+            "not_a_signal_no_volume_liquidity_lineage_or_forward_validation":True}
+
+
 def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_quality: bool=True, liquidity_floor: float=5_000_000, audit: dict|None=None):
     """Identify a contracting base, not a prediction of future returns."""
     def reject(reason: str):
@@ -132,6 +198,7 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     base_width_ok=old_width>0 and base_width<=.22 and base_width<old_width*.8
     vcp_ok=w1>0 and w2<=w1*.85 and w3<=w2*.85
     if audit is not None:
+        audit["swing_geometry_shadow"]=swing_contraction_shadow(clean)
         # The canonical signal remains end-anchored. This separate research
         # measurement asks whether the same fixed-window geometry survives a
         # change of window phase by up to ten historical sessions. A pattern
@@ -998,6 +1065,8 @@ def main():
     phase_shadow_counts={"examined":0,"canonical_both_pass":0,
                          "any_phase_both_pass":0,"alternate_phase_only_both_pass":0,
                          "multi_phase_both_pass":0}
+    swing_shadow_counts={"examined":0,"three_pullbacks":0,"contracting":0,
+                         "narrow_base":0,"near_unbroken_pivot":0,"all_geometry_pass":0}
     missing_close_locations={};missing_close_patterns={}
     padding_rows_trimmed=0;tickers_with_padding_trimmed=0
     trailing_rows_trimmed=0;tickers_with_trailing_trimmed=0
@@ -1098,10 +1167,19 @@ def main():
                     "first_rejection":first,
                     "trend_phase":trace.get("trend_phase"),
                     "geometry_shadow":trace.get("geometry_shadow"),
+                    "swing_geometry_shadow":trace.get("swing_geometry_shadow"),
                     "ma_failed_checks":trace.get("moving_average_failed_checks",[]),
                     "no_future_outcome_at_capture":True})
                 gate_exclusions[first]=gate_exclusions.get(first,0)+1
                 geometry=trace.get("geometry_shadow")
+                swing=trace.get("swing_geometry_shadow")
+                if isinstance(swing,dict) and swing.get("status")=="measured":
+                    swing_shadow_counts["examined"]+=1
+                    swing_shadow_counts["three_pullbacks"]+=int(swing.get("legs_found",0)>=3)
+                    swing_shadow_counts["contracting"]+=int(swing.get("sequential_contraction_pass") is True)
+                    swing_shadow_counts["narrow_base"]+=int(swing.get("base_width_pass") is True)
+                    swing_shadow_counts["near_unbroken_pivot"]+=int(swing.get("below_pivot_pass") is True)
+                    swing_shadow_counts["all_geometry_pass"]+=int(swing.get("all_geometry_pass") is True)
                 phase=trace.get("geometry_phase_shadow")
                 if isinstance(phase,dict):
                     phase_shadow_counts["examined"]+=1
@@ -1209,6 +1287,9 @@ def main():
              "vcp_phase_robustness_audit":{**phase_shadow_counts,
                  "method":"fixed_20_session_windows_shifted_0_to_10_past_sessions",
                  "research_only_not_signal_or_backtest":True},
+             "vcp_swing_geometry_audit":{**swing_shadow_counts,
+                 "method":"confirmed_radius3_local_extrema_last120_closed_bars",
+                 "research_only_no_promotion_or_backtest":True},
              "standalone_gap_recovery_audit":{"method":"independent_single_ticker_ohlcv_with_exact_overlap_checks",
                  "attempted":recovery_attempted,"verified":recovery_verified,
                  "rejected":recovery_rejected,"max_per_slot":recovery_budget,
