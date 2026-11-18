@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Independent, bounded *observed* OHLCV collector for USD 100m–500m small caps.
+"""Independent, bounded *observed* OHLCV collector for USD 100m–2b small caps.
 
 Research output only. Never writes production signals or modifies quote engines.
 Missing data and uncertain currencies are failures, not zeroes or signals.
@@ -42,7 +42,7 @@ def cohort(rows):
         kind=str(row.get("quote_type") or "").upper()
         if (kind in {"ETF","FUND","MUTUALFUND","CRYPTO"}
             or type(cap) not in (int,float) or not math.isfinite(cap)
-            or not 100_000_000<=cap<500_000_000):continue
+            or not 100_000_000<=cap<=2_000_000_000):continue
         found[symbol]=float(cap)
     return sorted(set(found)-ambiguous)
 
@@ -462,7 +462,11 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
             "early_setup_policy_version":EARLY_SETUP_POLICY_VERSION,
             "status":"observed_research_only_not_breakout_signals",
             "generated_at":checked_at.isoformat(),"source":"yfinance",
-            "universe_100m_500m_count":len(names),"universe_tickers_sha256":cohort_sha256,
+            "universe_100m_2b_count":len(names),
+            "universe_cap_range_usd":[100_000_000,2_000_000_000],
+            "universe_100m_500m_count":sum(1 for cap in (cap_by_ticker[t] for t in names)
+                                            if type(cap) in (int,float) and cap<500_000_000),
+            "universe_tickers_sha256":cohort_sha256,
             "universe_tickers":names,"slot":slot,"budget":budget,
             "provider_tickers_attempted":len(observed),
             "provider_attempt_status_counts":attempt_status_counts,
@@ -492,7 +496,7 @@ def merge_slots(current, previous, now, ttl_hours=96, *, eligible_tickers=None):
         return current
     cutoff=now-timedelta(hours=ttl_hours)
     eligible=set(eligible_tickers) if eligible_tickers is not None else None
-    count=current.get("universe_100m_500m_count") or 0
+    count=current.get("universe_100m_2b_count",current.get("universe_100m_500m_count")) or 0
     if eligible is not None and len(eligible)!=count:
         raise ValueError("current smallcap universe count and identities disagree")
     excluded_outside_current_universe=0

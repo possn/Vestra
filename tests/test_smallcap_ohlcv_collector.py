@@ -275,7 +275,12 @@ class ResearchCollectorTests(unittest.TestCase):
               {"ticker":"B","market_cap":499e6,"quote_type":"EQUITY"},
               {"ticker":"C","market_cap":500e6,"quote_type":"EQUITY"},
               {"ticker":"ETF","market_cap":200e6,"quote_type":"ETF"}]
-        self.assertEqual(mod.cohort(rows),["A","B"])
+        self.assertEqual(mod.cohort(rows),["A","B","C"])
+        expanded=mod.collect(rows,Provider(),slot=0,budget=3,
+                             checked_at=datetime(2026,7,10,tzinfo=timezone.utc))
+        self.assertEqual(expanded["universe_100m_2b_count"],3)
+        self.assertEqual(expanded["universe_100m_500m_count"],2)
+        self.assertEqual(expanded["universe_cap_range_usd"],[100_000_000,2_000_000_000])
     def test_duplicate_symbol_is_excluded_regardless_of_row_order(self):
         # A ticker alone is not issuer identity across multiple index rows.
         eligible={"ticker":"DUPE", "market_cap":150e6, "quote_type":"EQUITY"}

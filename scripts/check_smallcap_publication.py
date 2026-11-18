@@ -33,7 +33,12 @@ def assess_publication(report: dict, now: datetime, max_age_hours: int = 8) -> d
         return {"status": "stale", "reason": "publication_age_exceeded",
                 "age_hours": round(age.total_seconds() / 3600, 2)}
     rows = report.get("observations")
-    total = report.get("universe_100m_500m_count")
+    total = report.get("universe_100m_2b_count", report.get("universe_100m_500m_count"))
+    if "universe_100m_2b_count" in report:
+        subset = report.get("universe_100m_500m_count")
+        if (report.get("universe_cap_range_usd") != [100_000_000, 2_000_000_000]
+            or type(subset) is not int or not 0 <= subset <= total):
+            return {"status": "invalid", "reason": "invalid_universe_range_or_subset"}
     evaluable = report.get("evaluable_ohlcv")
     observed = report.get("distinct_tickers_observed", len(rows) if isinstance(rows, list) else -1)
     if (not isinstance(rows, list) or type(total) is not int or total < 0

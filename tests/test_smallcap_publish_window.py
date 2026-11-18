@@ -80,7 +80,7 @@ class SmallcapPublishWindowTests(unittest.TestCase):
         workflow=(ROOT/".github/workflows/smallcap-prebreakout-research.yml").read_text()
         self.assertIn("git show HEAD:data/breakout-lab-smallcap-ohlcv-research.json",workflow)
         self.assertLess(workflow.index("Snapshot previously published research"),
-                        workflow.index("Collect independent 100m-500m"))
+                          workflow.index("Collect independent 100m-2b"))
         self.assertIn("VESTRA_SMALLCAP_PREVIOUS: /tmp/vestra-smallcap-previous.json",workflow)
         self.assertIn("--smallcap-max-staleness-hours 8",workflow)
         self.assertIn("python -m unittest discover -s tests -p 'test_smallcap_ohlcv_collector.py'",workflow)

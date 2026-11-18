@@ -39,7 +39,7 @@ jobs:
       - name: Snapshot previously published research before recomputing
         run: |
           git show HEAD:data/breakout-lab-smallcap-ohlcv-research.json > /tmp/vestra-smallcap-previous.json || printf '{}' > /tmp/vestra-smallcap-previous.json
-      - name: Collect independent 100m-500m USD pre-breakout evidence
+      - name: Collect independent 100m-2b USD pre-breakout evidence
         env:
           BUDGET: ${{ github.event.inputs.budget || '30' }}
         run: |
@@ -62,7 +62,8 @@ jobs:
               "### Smallcap OHLCV — collected, not yet published",
               f"- Collected at (UTC): `{report.get('generated_at')}`",
               f"- Previous published at (UTC): `{prior.get('generated_at', 'unknown')}`",
-              f"- Current universe: {report.get('universe_100m_500m_count')}",
+              f"- Current universe 100m-2b USD: {report.get('universe_100m_2b_count')}",
+              f"- Subset 100m-500m USD: {report.get('universe_100m_500m_count')}",
               f"- Fresh provider attempts: {report.get('provider_tickers_attempted')}",
               f"- Fresh provider attempt outcomes: {json.dumps(report.get('provider_attempt_status_counts', {}), sort_keys=True)}",
               f"- Fresh provider error classes: {json.dumps(report.get('provider_error_type_counts', {}), sort_keys=True)}",
