@@ -39,6 +39,20 @@ const stale=api.turningPointReading(inputs,{source:'cnn',score:5,timestamp:'2026
 assert.equal(stale.available,4,'stale fear score is missing evidence, not neutral or positive');
 assert.equal(stale.factors[4].bottom,null);
 
+// VVIX is an optional risk modifier for VIX, never a sixth independent vote.
+const n=days.length;
+const spike={...details,'^VIX':make(i=>i===n-11?45:17)};
+const vixOnly=api.turningPointInputs(spike,asOf);
+assert.equal(vixOnly.factors.length,4);
+assert.equal(vixOnly.factors[0].bottom,true,'VIX spike followed by a sharp fall qualifies for research');
+assert.equal(vixOnly.vvixContext.observed,false,'missing VVIX is not a neutral measured value');
+const withVVIX={...spike,'^VVIX':make(i=>i>=n-8?85+(i-(n-8))*9:85)};
+const guarded=api.turningPointInputs(withVVIX,asOf);
+assert.equal(guarded.factors.length,4,'VVIX must not be double-counted');
+assert.equal(guarded.vvixContext.observed,true);
+assert.equal(guarded.vvixContext.risingStress,true);
+assert.equal(guarded.factors[0].bottom,false,'rising VVIX stress blocks a premature VIX relief claim');
+
 // Adding a future-looking price row cannot change the as-of snapshot.
 details.SPY.price_history_1y.push({date:'2026-11-20',close:900});
 const before=JSON.stringify(inputs);
