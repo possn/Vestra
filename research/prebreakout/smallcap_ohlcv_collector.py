@@ -141,7 +141,9 @@ def technical_evidence_audit(observations):
                 and r["atr14_to_atr60"]<.8 for r in measured),
             "volume_dry_below_0_8":sum(type(r.get("volume9_to_prior40")) in (int,float)
                 and r["volume9_to_prior40"]<.8 for r in measured),
-            "relative_strength_observed_rows":0,
+            "relative_strength_observed_rows":sum(
+                type(r.get("relative_return_20_vs_spy_pct")) in (int,float)
+                and math.isfinite(r["relative_return_20_vs_spy_pct"]) for r in measured),
             "not_independent_predictive_validation_or_signal":True}
 
 
@@ -235,7 +237,47 @@ def cohort_churn_audit(current,previous,observations):
                                                 for row in observations}),
             "not_market_cap_point_in_time_history":True}
 
-def inspect(ticker,frame,currency,checked_at):
+def benchmark_closes(frame, checked_at):
+    """Completed, ordered, adjusted SPY closes; fail closed on provider defects."""
+    if frame is None or getattr(frame,"empty",True):return None
+    closes={}
+    try:
+        from collections import deque
+        for timestamp,row in deque(frame.iterrows(),maxlen=253):
+            day=timestamp.date().isoformat()
+            if day>=checked_at.date().isoformat():continue
+            close=float(row["Close"])
+            if not math.isfinite(close) or close<=0 or day in closes:
+                return None
+            if closes and day<=next(reversed(closes)):
+                return None
+            closes[day]=close
+    except (KeyError,TypeError,ValueError,OverflowError,AttributeError):
+        return None
+    return closes if len(closes)>=21 else None
+
+
+def relative_strength_20(stock_bars, spy_closes):
+    """20-session stock return minus SPY return on identical observed dates.
+
+    Missing benchmark sessions are missing evidence, not a zero benchmark
+    return. No interpolation, future bars, or independently shifted windows.
+    """
+    if not isinstance(spy_closes,dict) or len(stock_bars)<21:return None
+    sample=stock_bars[-21:]
+    dates=[bar["date"] for bar in sample]
+    if len(set(dates))!=21 or any(day not in spy_closes for day in dates):return None
+    try:
+        start,end=float(sample[0]["close"]),float(sample[-1]["close"])
+        spy_start,spy_end=spy_closes[dates[0]],spy_closes[dates[-1]]
+        if min(start,end,spy_start,spy_end)<=0:return None
+        value=100*((end/start-1)-(spy_end/spy_start-1))
+        return round(value,4) if math.isfinite(value) else None
+    except (KeyError,TypeError,ValueError,ZeroDivisionError):
+        return None
+
+
+def inspect(ticker,frame,currency,checked_at,*,spy_closes=None):
     if currency!="USD":
         return {"ticker":ticker,"status":"currency_not_verified_usd","currency":currency}
     if frame is None or getattr(frame,"empty",True):
@@ -297,6 +339,13 @@ def inspect(ticker,frame,currency,checked_at):
         setup=scan_bars(ticker,full_bars,checked_at.date(),
                         strict_quality=True,liquidity_floor=1_000_000,
                         audit=technical_audit)
+        evidence=technical_audit.get("technical_evidence_shadow")
+        if isinstance(evidence,dict) and evidence.get("status")=="measured":
+            evidence["relative_return_20_vs_spy_pct"]=relative_strength_20(full_bars,spy_closes)
+            evidence["relative_strength_benchmark"]="SPY"
+            evidence["relative_strength_sessions"]=20
+            evidence["relative_strength_price_basis"]="yfinance_auto_adjusted"
+            evidence["relative_strength_research_only"] = True
     technical_first_rejection=(technical_audit.get("first_rejection","unresolved")
                                if turnover>=1_000_000 else "below_1m_usd_turnover")
     if setup:
@@ -433,15 +482,25 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
     observed=[]
     cap_by_ticker={str(row.get("ticker") or "").strip().upper():row.get("market_cap")
                    for row in rows if isinstance(row,dict)}
+    spy_closes=None
+    spy_attempted=False
     for ticker in selected:
         try:
             item=provider.Ticker(ticker)
             currency=item.fast_info.get("currency")
             if currency!="USD":
                 observed.append(inspect(ticker,None,currency,checked_at));continue
+            if not spy_attempted:
+                spy_attempted=True
+                try:
+                    benchmark=provider.download("SPY",period="18mo",interval="1d",auto_adjust=True,
+                                                threads=False,progress=False,timeout=20,multi_level_index=False)
+                    spy_closes=benchmark_closes(benchmark,checked_at)
+                except Exception:
+                    spy_closes=None
             frame=provider.download(ticker,period="18mo",interval="1d",auto_adjust=True,
                                     threads=False,progress=False,timeout=20,multi_level_index=False)
-            result=inspect(ticker,frame,currency,checked_at)
+            result=inspect(ticker,frame,currency,checked_at,spy_closes=spy_closes)
             result["early_setup_policy_version"]=EARLY_SETUP_POLICY_VERSION
             if result.get("verified_prebreakout_setup"):
                 result["verified_prebreakout_setup"]["marketCapUSD"]=cap_by_ticker[ticker]

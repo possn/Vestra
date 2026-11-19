@@ -30,6 +30,36 @@ class Provider:
         return FakeFrame()
 
 class ResearchCollectorTests(unittest.TestCase):
+    def test_relative_strength_requires_exact_completed_session_alignment(self):
+        from datetime import timedelta
+        start=datetime(2026,9,1,tzinfo=timezone.utc)
+        dates=[(start+timedelta(days=i)).date().isoformat() for i in range(21)]
+        stock=[{"date":day,"close":100+i} for i,day in enumerate(dates)]
+        spy={day:200+i for i,day in enumerate(dates)}
+        self.assertEqual(mod.relative_strength_20(stock,spy),10.0)
+        self.assertIsNone(mod.relative_strength_20(stock,{k:v for k,v in spy.items() if k!=dates[10]}))
+        self.assertIsNone(mod.relative_strength_20(stock,{}))
+        self.assertIsNone(mod.relative_strength_20(stock[:20],spy))
+
+    def test_benchmark_excludes_unfinished_and_future_sessions(self):
+        from datetime import timedelta
+        class Frame:
+            empty=False
+            def iterrows(self):
+                start=datetime(2026,10,1,tzinfo=timezone.utc)
+                for i in range(25):
+                    yield start+timedelta(days=i),{"Close":200+i}
+        closes=mod.benchmark_closes(Frame(),datetime(2026,10,23,tzinfo=timezone.utc))
+        self.assertEqual(len(closes),22)
+        self.assertNotIn("2026-10-23",closes)
+
+    def test_relative_strength_audit_counts_only_observed_values(self):
+        rows=[{"status":"evaluable_ohlcv","technical_first_rejection":"moving_average_structure",
+               "technical_evidence_shadow":{"status":"measured","relative_return_20_vs_spy_pct":2.5}},
+              {"status":"evaluable_ohlcv","technical_first_rejection":"moving_average_structure",
+               "technical_evidence_shadow":{"status":"measured","relative_return_20_vs_spy_pct":None}}]
+        self.assertEqual(mod.technical_evidence_audit(rows)["relative_strength_observed_rows"],1)
+
     def test_feature_availability_is_measured_not_interpreted_as_probability(self):
         rows=[{"status":"evaluable_ohlcv",
                "technical_first_rejection":"moving_average_structure",
@@ -331,7 +361,8 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertEqual(result["not_observed"],1)
         self.assertTrue(result["not_breakout_candidates"])
         self.assertTrue(all(x["liquidity_5m_usd_verified"] for x in result["observations"]))
-        self.assertEqual(len([c for c in p.calls if c[0]=="download"]),2)
+        self.assertEqual(len([c for c in p.calls if c[0]=="download"]),3)
+        self.assertEqual(len([c for c in p.calls if c==("download","SPY")]),1)
     def test_fresh_provider_attempt_outcomes_are_reported_separately_from_rolling_coverage(self):
         class MixedProvider(Provider):
             def Ticker(self, ticker):
@@ -474,7 +505,8 @@ class ResearchCollectorTests(unittest.TestCase):
         provider=Provider()
         result=mod.collect(rows,provider,slot=0,budget=2,checked_at=now,previous=prior)
         self.assertEqual([r["ticker"] for r in result["observations"]],["C","D"])
-        self.assertEqual(len([c for c in provider.calls if c[0]=="download"]),2)
+        self.assertEqual(len([c for c in provider.calls if c[0]=="download"]),3)
+        self.assertEqual(len([c for c in provider.calls if c==("download","SPY")]),1)
 
     def test_recent_zero_volume_is_incomplete_research_not_an_invalid_price(self):
         from datetime import timedelta
