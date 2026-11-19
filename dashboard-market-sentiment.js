@@ -4,7 +4,7 @@
 
   const STYLE_ID='vestraDashboardMarketSentimentStyle';
   const CARD_ID='vestraMarketSentimentCard';
-  const CACHE_KEY='vestra-market-sentiment-v3';
+  const CACHE_KEY='vestra-market-sentiment-v4';
   const CACHE_TTL_MS=15*60*1000;
   const FETCH_TIMEOUT_MS=10000;
   const AAII_REFRESH_INTERVAL_MS=15*60*1000;
@@ -20,6 +20,7 @@
     {ticker:'EEM',name:'Emergentes',weight:.10},
   ];
   const VIX_TICKER='^VIX';
+  const VVIX_TICKER='^VVIX'; // Optional volatility-of-volatility context, not a sixth vote.
 
   const S={loading:false,data:null,error:'',scheduled:false,expanded:false,aaiiExpanded:false,aaii:null,cnn:null};
   const num=v=>{if(v===null||v===undefined||v==='') return null;const n=Number(v);return Number.isFinite(n)?n:null};
@@ -36,7 +37,7 @@
     const link=document.createElement('link');
     link.id=STYLE_ID;
     link.rel='stylesheet';
-    link.href='dashboard-market-sentiment.css?v=1.6';
+    link.href='dashboard-market-sentiment.css?v=1.7';
     document.head.appendChild(link);
   }
 
@@ -198,6 +199,20 @@
     if(!anchor||!vix.some(row=>row.date===anchor)) return null;
     const index=vix.findIndex(row=>row.date===anchor);
     const alignedVix=vix.slice(0,index+1);
+    const vvix=completedHistory(details[VVIX_TICKER],asOf);
+    const vvixIndex=vvix.findIndex(row=>row.date===anchor);
+    const vvixRecent=vvixIndex>=125?vvix.slice(vvixIndex-125,vvixIndex+1):[];
+    let vvixContext=null;
+    if(vvixRecent.length===126){
+      const levels=vvixRecent.map(row=>row.close).sort((a,b)=>a-b);
+      const current=vvixRecent.at(-1).close;
+      const peak=Math.max(...vvixRecent.slice(-10).map(row=>row.close));
+      const prior5=vvixRecent.at(-6).close;
+      vvixContext={current,
+        risingStress:current>=levels[113]&&current>prior5*1.08,
+        cooling:peak>=levels[113]&&current<=peak*.90,
+        change5Pct:100*(current/prior5-1)};
+    }
     const factors=[];
     const recent=alignedVix.slice(-126);
     if(recent.length===126){
@@ -205,9 +220,10 @@
       const peak=Math.max(...recent.slice(-10).map(row=>row.close));
       const trough=Math.min(...recent.slice(-10).map(row=>row.close));
       const current=recent.at(-1).close;
-      factors.push({name:'VIX · tensão a aliviar',value:`VIX ${current.toFixed(1)}`,
-        bottom:peak>=Math.max(25,sorted[113])&&current<=peak*.92,
-        top:trough<=Math.min(18,sorted[12])&&current>=trough*1.12});
+      factors.push({name:'VIX + VVIX · tensão',
+        value:`VIX ${current.toFixed(1)} · ${vvixContext?`VVIX ${vvixContext.current.toFixed(1)} (${vvixContext.change5Pct>=0?'+':''}${vvixContext.change5Pct.toFixed(1)}%/5s)`:'VVIX sem histórico comparável'}`,
+        bottom:peak>=Math.max(25,sorted[113])&&current<=peak*.92&&vvixContext?.risingStress!==true,
+        top:trough<=Math.min(18,sorted[12])&&current>=trough*1.12&&vvixContext?.cooling!==true});
     }else factors.push({name:'VIX',value:'Histórico insuficiente',bottom:null,top:null});
 
     const weekly=weeklyRsi14(weeklyCompletedCloses(spy,asOf));
@@ -237,7 +253,10 @@
     factors.push({name:'Participação · 6 mercados proxy',value:`${coverage}/6 mercados comparáveis`,
       bottom:coverage>=5?recovering>=4:null,
       top:coverage>=5?deteriorating>=4:null});
-    return {date:anchor,factors,method:'experimental_unvalidated_not_probability'};
+    return {date:anchor,factors,vvixContext:vvixContext?{
+      observed:true,risingStress:vvixContext.risingStress,cooling:vvixContext.cooling,
+      current:vvixContext.current}: {observed:false},
+      method:'experimental_unvalidated_not_probability'};
   }
 
   function turningSentiment(cnn,aaii,asOf=new Date()){
@@ -273,7 +292,7 @@
     return `<section class="dms-turning" aria-label="Possíveis inversões de mercado, investigação experimental">
       <span>INVERSÕES · EXPERIMENTAL</span><strong>${esc(r.label)}</strong>
       <p>${r.direction?`${count} de ${r.available} critérios observados convergem.`:`Fundo ${r.bottom} · topo ${r.top} de ${r.available} critérios observados.`} Contagem de evidências, não probabilidade nem sinal de investimento.</p>
-      <details><summary>Ver VIX, RSI e outras evidências <span aria-hidden="true">+</span></summary><ul>${rows}</ul><p>Última sessão fechada ${esc(r.asOf)}. Limiar heurístico sem validação prospetiva; participação é proxy de seis mercados, não breadth real. VIX não prevê direção.</p></details>
+      <details><summary>Ver VIX, VVIX, RSI e evidências <span aria-hidden="true">+</span></summary><ul>${rows}</ul><p>Última sessão fechada ${esc(r.asOf)}. VVIX é contexto da tensão do VIX, não um voto adicional. Sem histórico VVIX comparável, mantém-se a leitura VIX isolada. Limiar heurístico sem validação prospetiva; participação é proxy de seis mercados, não breadth real. VIX e VVIX não preveem direção.</p></details>
     </section>`;
   }
 
@@ -579,7 +598,7 @@
     if(!base){S.data=null;S.error='';render();return;}
     S.loading=true;S.error='';render();
     try{
-      const tickers=[...RISK_ASSETS.map(x=>x.ticker),VIX_TICKER];
+      const tickers=[...RISK_ASSETS.map(x=>x.ticker),VIX_TICKER,VVIX_TICKER];
       const settled=await Promise.allSettled(tickers.map(t=>fetchDetail(base,t)));
       const details={};
       settled.forEach((row,i)=>{if(row.status==='fulfilled') details[tickers[i]]=row.value;});
@@ -638,7 +657,7 @@
   else boot();
 
   window.VestraDashboardMarketSentiment=Object.freeze({
-    version:'1.8',
+    version:'1.9',
     computeSnapshot,
     turningPointInputs,
     turningPointReading,
