@@ -11,7 +11,7 @@ SW = (ROOT / "sw.js").read_text(encoding="utf-8")
 class DashboardMarketSentimentTests(unittest.TestCase):
     def test_runtime_is_reachable_without_blocking_market_load(self):
         self.assertIn("ensureDashboardMarketSentiment", LOADER)
-        self.assertIn("dashboard-market-sentiment.js?v=1.8-foreground", LOADER)
+        self.assertIn("dashboard-market-sentiment.js?v=1.9-turning-points", LOADER)
         tail = LOADER[LOADER.index("// Dashboard/mobile companions remain eager"):]
         self.assertIn("ensureDashboardMarketSentiment();", tail)
         self.assertIn("requestIdleCallback", JS)
@@ -43,7 +43,16 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn("Ver como é calculado", JS)
         self.assertIn("dms-detail", JS)
         self.assertIn(".dms-detail[hidden]", CSS)
-        self.assertIn("version:'1.7'", JS)
+        self.assertIn("version:'1.8'", JS)
+
+    def test_turning_point_exploration_is_integrated_without_new_dashboard_card(self):
+        self.assertIn('INVERSÕES · EXPERIMENTAL', JS)
+        self.assertIn('turningInputs:turningPointInputs(details)', JS)
+        self.assertIn('turningPointReading(S.data?.turningInputs,S.cnn,S.aaii)', JS)
+        self.assertIn('Contagem de evidências, não probabilidade nem sinal de investimento', JS)
+        self.assertIn('VIX não prevê direção', JS)
+        self.assertIn('.dms-turning', CSS)
+        self.assertIn('vestra-cache-v275', SW)
 
     def test_aaii_retail_sentiment_is_integrated_without_a_second_dashboard_card(self):
         data = (ROOT / "data" / "aaii-sentiment.json").read_text(encoding="utf-8")
