@@ -300,6 +300,15 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertIn('MAX_PER_RUN=40', (ROOT/"research/prebreakout/smallcap_ohlcv_collector.py").read_text())
         self.assertIn("--budget \"$BUDGET\"",workflow)
 
+    def test_redundant_market_triggers_skip_fresh_collection(self):
+        workflow=(ROOT/".github/workflows/smallcap-prebreakout-research.yml").read_text(encoding="utf-8")
+        self.assertIn('workflows: ["Update market data", "Recover missing canonical market publication"]',workflow)
+        self.assertIn("github.event.workflow_run.conclusion == 'success'",workflow)
+        self.assertIn("github.event.workflow_run.head_branch == 'main'",workflow)
+        self.assertIn("datetime.timedelta(hours=3,minutes=30)",workflow)
+        self.assertIn("steps.collection_due.outputs.collect == 'true'",workflow)
+
+
     def test_cohort_excludes_live_floor_and_non_equities(self):
         rows=[{"ticker":"A","market_cap":120e6,"quote_type":"EQUITY"},
               {"ticker":"B","market_cap":499e6,"quote_type":"EQUITY"},
