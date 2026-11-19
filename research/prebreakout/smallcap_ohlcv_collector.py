@@ -354,6 +354,7 @@ def inspect(ticker,frame,currency,checked_at,*,spy_closes=None):
                "gapRisk":"not_verified","earningsRiskGate":"unknown",
                "observedAt":checked_at.isoformat()}
     return {"ticker":ticker,"status":"evaluable_ohlcv","bars":len(clean),
+            "__closed_history":[[bar["date"],round(bar["close"],6)] for bar in full_bars],
             "last_adjusted_close":round(clean[-1][1],6),
             "zero_volume_sessions_before_contiguous_window":zero_volume_sessions,
             "verified_prebreakout_setup":setup,
@@ -480,6 +481,7 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
     cohort_sha256=hashlib.sha256("\n".join(names).encode("utf-8")).hexdigest()
     selected=pick_research_tickers(names,slot,budget,previous,checked_at)
     observed=[]
+    fresh_histories={}
     cap_by_ticker={str(row.get("ticker") or "").strip().upper():row.get("market_cap")
                    for row in rows if isinstance(row,dict)}
     spy_closes=None
@@ -501,6 +503,8 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
             frame=provider.download(ticker,period="18mo",interval="1d",auto_adjust=True,
                                     threads=False,progress=False,timeout=20,multi_level_index=False)
             result=inspect(ticker,frame,currency,checked_at,spy_closes=spy_closes)
+            history=result.pop("__closed_history",None)
+            if isinstance(history,list):fresh_histories[ticker]=history
             result["early_setup_policy_version"]=EARLY_SETUP_POLICY_VERSION
             if result.get("verified_prebreakout_setup"):
                 result["verified_prebreakout_setup"]["marketCapUSD"]=cap_by_ticker[ticker]
@@ -518,6 +522,8 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
         if x["status"]=="provider_error" and x.get("error_type")).items()))
     signals=[x["verified_prebreakout_setup"] for x in observed if x.get("verified_prebreakout_setup")]
     return {"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
+            "__fresh_histories":fresh_histories,
+            "__spy_closes":spy_closes or {},
             "early_setup_policy_version":EARLY_SETUP_POLICY_VERSION,
             "status":"observed_research_only_not_breakout_signals",
             "generated_at":checked_at.isoformat(),"source":"yfinance",
@@ -654,6 +660,11 @@ def main():
     result["universe_source_index_sha256"]=hashlib.sha256(index_bytes).hexdigest()
     result=merge_slots(result,previous,datetime.fromisoformat(result["generated_at"]),
                        eligible_tickers=cohort(rows))
+    from research.prebreakout.smallcap_watch_forward import reconcile
+    fresh_histories=result.pop("__fresh_histories",{})
+    spy_closes=result.pop("__spy_closes",{})
+    result.update(reconcile(previous,result,fresh_histories,spy_closes,
+                            datetime.fromisoformat(result["generated_at"])))
     args.output.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in result.items() if k!="observations"}))
 
