@@ -4,7 +4,7 @@
 
   const STYLE_ID='vestraDashboardMarketSentimentStyle';
   const CARD_ID='vestraMarketSentimentCard';
-  const CACHE_KEY='vestra-market-sentiment-v2';
+  const CACHE_KEY='vestra-market-sentiment-v3';
   const CACHE_TTL_MS=15*60*1000;
   const FETCH_TIMEOUT_MS=10000;
   const AAII_REFRESH_INTERVAL_MS=15*60*1000;
@@ -36,7 +36,7 @@
     const link=document.createElement('link');
     link.id=STYLE_ID;
     link.rel='stylesheet';
-    link.href='dashboard-market-sentiment.css?v=1.5';
+    link.href='dashboard-market-sentiment.css?v=1.6';
     document.head.appendChild(link);
   }
 
@@ -146,6 +146,135 @@
     if(totalWeight<.8) return null;
     const score=Math.round(parts.reduce((s,x)=>s+x[1]*x[2],0)/totalWeight);
     return {score:clamp(score),trend,momentum,participation,vol,parts};
+  }
+
+  // Experimental turning-point *confluence*, never a probability or trade signal.
+  // Use only completed daily/weekly sessions and preserve missing measurements.
+  function completedHistory(detail,asOf=new Date()){
+    const today=asOf.toISOString().slice(0,10);
+    const seen=new Set();
+    return historyFor(detail).filter(row=>{
+      const day=row.date.slice(0,10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||day>=today||seen.has(day)||!(row.close>0)) return false;
+      seen.add(day);row.date=day;return true;
+    }).sort((a,b)=>a.date.localeCompare(b.date));
+  }
+
+  function weeklyCompletedCloses(rows,asOf){
+    const groups=new Map();
+    const today=asOf.toISOString().slice(0,10);
+    for(const row of rows){
+      const date=new Date(`${row.date}T00:00:00Z`);
+      const monday=new Date(date.getTime()-((date.getUTCDay()+6)%7)*86400000);
+      const weekEnd=new Date(monday.getTime()+7*86400000).toISOString().slice(0,10);
+      if(weekEnd<=today) groups.set(monday.toISOString().slice(0,10),row.close);
+    }
+    return [...groups.values()];
+  }
+
+  function weeklyRsi14(closes){
+    if(closes.length<17) return null;
+    let gains=0,losses=0;
+    for(let i=1;i<=14;i++){
+      const delta=closes[i]-closes[i-1];gains+=Math.max(0,delta);losses+=Math.max(0,-delta);
+    }
+    let avgGain=gains/14,avgLoss=losses/14;
+    const output=[];
+    const value=()=>avgLoss===0?(avgGain===0?50:100):100-100/(1+avgGain/avgLoss);
+    output.push(value());
+    for(let i=15;i<closes.length;i++){
+      const delta=closes[i]-closes[i-1];
+      avgGain=(avgGain*13+Math.max(0,delta))/14;
+      avgLoss=(avgLoss*13+Math.max(0,-delta))/14;
+      output.push(value());
+    }
+    return {current:output.at(-1),previous:output.at(-2),recent:output.slice(-4)};
+  }
+
+  function turningPointInputs(details,asOf=new Date()){
+    const spy=completedHistory(details.SPY,asOf);
+    const vix=completedHistory(details[VIX_TICKER],asOf);
+    const anchor=spy.at(-1)?.date;
+    if(!anchor||!vix.some(row=>row.date===anchor)) return null;
+    const index=vix.findIndex(row=>row.date===anchor);
+    const alignedVix=vix.slice(0,index+1);
+    const factors=[];
+    const recent=alignedVix.slice(-126);
+    if(recent.length===126){
+      const sorted=recent.map(row=>row.close).sort((a,b)=>a-b);
+      const peak=Math.max(...recent.slice(-10).map(row=>row.close));
+      const trough=Math.min(...recent.slice(-10).map(row=>row.close));
+      const current=recent.at(-1).close;
+      factors.push({name:'VIX · tensão a aliviar',value:`VIX ${current.toFixed(1)}`,
+        bottom:peak>=Math.max(25,sorted[113])&&current<=peak*.92,
+        top:trough<=Math.min(18,sorted[12])&&current>=trough*1.12});
+    }else factors.push({name:'VIX',value:'Histórico insuficiente',bottom:null,top:null});
+
+    const weekly=weeklyRsi14(weeklyCompletedCloses(spy,asOf));
+    factors.push({name:'RSI · semanal fechado',value:weekly?`RSI ${weekly.current.toFixed(1)}`:'Sem 17 semanas completas',
+      bottom:weekly?Math.min(...weekly.recent)<=35&&weekly.current>weekly.previous+2:null,
+      top:weekly?Math.max(...weekly.recent)>=65&&weekly.current<weekly.previous-2:null});
+
+    const closes=spy.map(row=>row.close),n=closes.length;
+    if(n>=60){
+      const last=closes[n-1],prior=closes[n-6],low=Math.min(...closes.slice(-60)),high=Math.max(...closes.slice(-60));
+      const ma5=closes.slice(-5).reduce((a,b)=>a+b,0)/5;
+      factors.push({name:'S&P 500 · estabilização',value:`5 sessões ${((last/prior-1)*100).toFixed(1)}%`,
+        bottom:last>ma5&&last>prior&&last/low-1<=.10,
+        top:last<ma5&&last<prior&&high/last-1<=.10});
+    }else factors.push({name:'S&P 500',value:'Histórico insuficiente',bottom:null,top:null});
+
+    let coverage=0,recovering=0,deteriorating=0;
+    for(const asset of RISK_ASSETS){
+      const rows=completedHistory(details[asset.ticker],asOf).filter(row=>row.date<=anchor);
+      if(rows.length<21||rows.at(-1).date<anchor) continue;
+      coverage++;
+      const values=rows.map(row=>row.close),last=values.at(-1),prior=values.at(-6);
+      const ma10=values.slice(-10).reduce((a,b)=>a+b,0)/10;
+      if(last>prior&&last>ma10) recovering++;
+      if(last<prior&&last<ma10) deteriorating++;
+    }
+    factors.push({name:'Participação · 6 mercados proxy',value:`${coverage}/6 mercados comparáveis`,
+      bottom:coverage>=5?recovering>=4:null,
+      top:coverage>=5?deteriorating>=4:null});
+    return {date:anchor,factors,method:'experimental_unvalidated_not_probability'};
+  }
+
+  function turningSentiment(cnn,aaii,asOf=new Date()){
+    const age=iso=>{const t=Date.parse(iso||'');return Number.isFinite(t)?(asOf.getTime()-t)/86400000:Infinity;};
+    const score=num(cnn?.score);
+    if(cnn?.source==='cnn'&&score!=null&&score>=0&&score<=100&&age(cnn.timestamp)>=0&&age(cnn.timestamp)<=3)
+      return {name:'Sentimento · CNN',value:`Fear & Greed ${Math.round(score)}`,bottom:score<=25,top:score>=75};
+    const latest=aaii?.weeks?.[0],spread=aaiiSpread(latest);
+    if(spread!=null&&age(`${latest.date}T23:59:59Z`)>=0&&age(`${latest.date}T23:59:59Z`)<=8)
+      return {name:'Sentimento · AAII',value:`Bull−Bear ${spread.toFixed(1)} pp`,bottom:spread<=-20,top:spread>=20};
+    return {name:'Sentimento',value:'Sem observação recente',bottom:null,top:null};
+  }
+
+  function turningPointReading(base,cnn,aaii,asOf=new Date()){
+    if(!base||!Array.isArray(base.factors)) return null;
+    const factors=[...base.factors,turningSentiment(cnn,aaii,asOf)];
+    const available=factors.filter(f=>typeof f.bottom==='boolean').length;
+    const bottom=factors.filter(f=>f.bottom===true).length,top=factors.filter(f=>f.top===true).length;
+    const ageDays=(asOf.getTime()-Date.parse(`${base.date}T23:59:59Z`))/86400000;
+    const usable=available>=4&&Number.isFinite(ageDays)&&ageDays>=-1&&ageDays<=5;
+    const direction=usable&&bottom>=3&&bottom>top&&factors[2]?.bottom===true?'bottom':
+      usable&&top>=3&&top>bottom&&factors[2]?.top===true?'top':null;
+    return {direction,bottom,top,available,factors,asOf:base.date,
+      label:!usable?'Evidência incompleta ou antiga':direction==='bottom'?'Possível fundo em formação':direction==='top'?'Possível topo em formação':'Sem confluência de inversão',
+      unvalidated:true};
+  }
+
+  function turningMarkup(){
+    const r=turningPointReading(S.data?.turningInputs,S.cnn,S.aaii);
+    if(!r) return '<section class="dms-turning"><span>INVERSÕES · EXPERIMENTAL</span><strong>Leitura indisponível</strong><p>Faltam históricos completos do SPY e do VIX.</p></section>';
+    const rows=r.factors.map(f=>`<li><span>${esc(f.name)}</span><b>${esc(f.value)}</b><small>${f.bottom===null?'Sem evidência':f.bottom?'Pista de fundo':f.top?'Pista de topo':'Não confirma'}</small></li>`).join('');
+    const count=r.direction==='top'?r.top:r.bottom;
+    return `<section class="dms-turning" aria-label="Possíveis inversões de mercado, investigação experimental">
+      <span>INVERSÕES · EXPERIMENTAL</span><strong>${esc(r.label)}</strong>
+      <p>${r.direction?`${count} de ${r.available} critérios observados convergem.`:`Fundo ${r.bottom} · topo ${r.top} de ${r.available} critérios observados.`} Contagem de evidências, não probabilidade nem sinal de investimento.</p>
+      <details><summary>Ver VIX, RSI e outras evidências <span aria-hidden="true">+</span></summary><ul>${rows}</ul><p>Última sessão fechada ${esc(r.asOf)}. Limiar heurístico sem validação prospetiva; participação é proxy de seis mercados, não breadth real. VIX não prevê direção.</p></details>
+    </section>`;
   }
 
   function labelFor(score){
@@ -374,6 +503,7 @@
         ${gauge(current.score,tone)}
       </div>
       <div class="dms-context" aria-label="Frescura das cotações">Cotações até ${esc(priceDateText)} · ${priceCoverage}/7 fontes${priceWarning?' · Dados antigos':''}</div>
+      ${turningMarkup()}
       ${cnnMarkup()}
       ${aaiiMarkup()}
       <button class="dms-detail-toggle" type="button" data-dms-detail-toggle aria-expanded="${S.expanded?'true':'false'}">
@@ -460,6 +590,7 @@
       if(!current) throw new Error('Dados insuficientes para calcular o score');
       const data={
         current,
+        turningInputs:turningPointInputs(details),
         previousDay:computeSnapshot(details,1),
         previousWeek:computeSnapshot(details,5),
         priceFreshness:freshness,
@@ -507,8 +638,11 @@
   else boot();
 
   window.VestraDashboardMarketSentiment=Object.freeze({
-    version:'1.7',
+    version:'1.8',
     computeSnapshot,
+    turningPointInputs,
+    turningPointReading,
+    weeklyRsi14,
     priceFreshness,
     labelFor,
     load,
