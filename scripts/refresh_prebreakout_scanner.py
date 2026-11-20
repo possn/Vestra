@@ -250,6 +250,31 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
         last_bar=clean[-1]
         pivot_distance_pct=100*(prior_pivot/last_bar["close"]-1)
         confirmed_in_base=historical_breakout_dates(clean,len(clean)-39,len(clean)-1)
+        # Freeze the exact as-of reference used by the observation. Later
+        # Yahoo auto-adjustments can revise prices; the archived pivot/close
+        # are original observed evidence, not a reconstructed price factor.
+        # This never overrides a gate or certifies future price comparability.
+        base_bars=clean[-40:]
+        compact_bars=[
+            [b["day"].isoformat(),b["close"],b["high"],b["low"],
+             float(b["volume"]) if type(b.get("volume")) in (int,float)
+                 and math.isfinite(b["volume"]) else None]
+            for b in base_bars]
+        audit["asof_base_price_anchor"]={
+            "schema":"vestra_prebreakout_asof_base_anchor_v1",
+            "session":last_bar["day"].isoformat(),
+            "base_start_session":base_bars[0]["day"].isoformat(),
+            "reference_bars":39,
+            "window_bars":40,
+            "adjusted_close":last_bar["close"],
+            "adjusted_pivot_high":prior_pivot,
+            "observed_last_high":last_bar["high"],
+            "basis":"yahoo_auto_adjusted_daily_ohlcv_at_capture",
+            "closed_bar_snapshot_sha256":hashlib.sha256(
+                json.dumps(compact_bars,separators=(",",":"),allow_nan=False)
+                .encode("utf-8")).hexdigest(),
+            "historical_adjustment_factor_verified":False,
+            "research_only_no_eligibility_or_score_effect":True}
         audit["research_prebreakout_lineage"]={
             "distance_to_pivot_pct":round(pivot_distance_pct,3),
             "prior_confirmed_breakouts_in_base":len(confirmed_in_base),
@@ -1223,6 +1248,7 @@ def main():
                     "last_session":last["date"] if last else None,
                     "adjusted_close":round(float(last["close"]),6) if last else None,
                     "price_basis":"yahoo_auto_adjusted_daily_close" if last else None,
+                    "asof_base_price_anchor":trace.get("asof_base_price_anchor"),
                     "first_rejection":first,
                     "trend_phase":trace.get("trend_phase"),
                     "geometry_shadow":trace.get("geometry_shadow"),
