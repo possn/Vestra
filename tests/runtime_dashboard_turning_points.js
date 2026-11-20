@@ -39,6 +39,22 @@ const stale=api.turningPointReading(inputs,{source:'cnn',score:5,timestamp:'2026
 assert.equal(stale.available,4,'stale fear score is missing evidence, not neutral or positive');
 assert.equal(stale.factors[4].bottom,null);
 
+// No NYSE observations are inferred from ETF prices or from a provider label alone.
+assert.equal(reading.nyseBreadth.bottom,null);
+const nyseSessions=days.filter(day=>day<=inputs.date).slice(-75).map((date,i)=>({date,advancers:1500+i,decliners:1400}));
+const nyse={venue:'NYSE',instrument_scope:'listed_common_stocks',method:'issues_advancers_minus_decliners',
+  source_url:'https://www.nyse.com/market-data/historical',sessions:nyseSessions};
+const observed=api.nyseBreadthFactor(nyse,inputs.spyDaily,inputs.date);
+assert.equal(typeof observed.bottom,'boolean');
+const supplemented=api.turningPointReading(inputs,null,null,asOf,nyse);
+assert.equal(supplemented.factors.length,5,'NYSE must replace proxy, not add a sixth vote');
+assert.equal(supplemented.factors[3].name,'NYSE · Advance–Decline');
+assert.equal(supplemented.available,4);
+assert.equal(api.nyseBreadthFactor({...nyse,sessions:nyseSessions.slice(0,-1)},inputs.spyDaily,inputs.date).bottom,null,
+  'a feed missing the anchor session cannot participate');
+assert.equal(api.nyseBreadthFactor({...nyse,source_url:''},inputs.spyDaily,inputs.date).bottom,null);
+assert.equal(api.nyseBreadthFactor({...nyse,sessions:nyseSessions.map(x=>({...x,advancers:null}))},inputs.spyDaily,inputs.date).bottom,null);
+
 // VVIX is an optional risk modifier for VIX, never a sixth independent vote.
 const n=days.length;
 const spike={...details,'^VIX':make(i=>i===n-11?45:17)};
