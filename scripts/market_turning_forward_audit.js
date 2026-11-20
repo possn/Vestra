@@ -106,6 +106,11 @@ function audit(details,now=new Date()){
     }
   }
   report.matured={};
+  report.purgedEpisodeEvaluation={};
+  const episodeStarts=[...report.episodes.bottom.map(x=>({sign:1,event:x})),
+    ...report.episodes.top.map(x=>({sign:-1,event:x}))]
+    .sort((a,b)=>a.event.start.localeCompare(b.event.start));
+  const sessionByDate=new Map(spy.map((row,index)=>[row.date,index]));
   for(const h of report.horizons){
     const candidates=[...report.confirmed.bottom.map(x=>({sign:1,event:x})),
       ...report.confirmed.top.map(x=>({sign:-1,event:x}))]
@@ -120,6 +125,34 @@ function audit(details,now=new Date()){
       averageAdverseExcursionPct:adverse.length?Number((adverse.reduce((a,b)=>a+b,0)/adverse.length).toFixed(2)):null,
       unconditionalSpyMeanReturnPct:benchmark.length?Number((benchmark.reduce((a,b)=>a+b,0)/benchmark.length).toFixed(2)):null,
       benchmarkCaveat:'Unconditional SPY return is descriptive, not a direction-matched or regime-matched control'};
+    // An episode's first actionable observation is its *first* flagged close.
+    // Purge overlapping h-session forward windows, regardless of direction.
+    // This is a descriptive chronological sample, NOT a trained or held-out test.
+    const selected=[];
+    let overlapExcluded=0,pending=0,blockedUntil=-1;
+    for(const candidate of episodeStarts){
+      const i=sessionByDate.get(candidate.event.start);
+      if(i==null||i+h>=spy.length){pending++;continue;}
+      if(i<=blockedUntil){overlapExcluded++;continue;}
+      selected.push(candidate);
+      blockedUntil=i+h;
+    }
+    const episodeReturns=selected.map(({sign,event})=>sign*event.firstReadingReturns[h]);
+    const episodeAdverse=selected.map(({event})=>event.firstReadingAdverseExcursionPct[h]);
+    const spyMean=benchmark.length?benchmark.reduce((a,b)=>a+b,0)/benchmark.length:null;
+    const directionMatchedBaseline=spyMean==null?[]:selected.map(x=>x.sign*spyMean);
+    const mean=rows=>rows.length?Number((rows.reduce((a,b)=>a+b,0)/rows.length).toFixed(2)):null;
+    report.purgedEpisodeEvaluation[h]={
+      maturedEpisodes:selected.length,pendingEpisodes:pending,overlapExcluded,
+      favorableEpisodes:episodeReturns.filter(x=>x>0).length,
+      averageSignedReturnPct:mean(episodeReturns),
+      averageAdverseExcursionPct:mean(episodeAdverse),
+      directionMatchedUnconditionalSpyPct:mean(directionMatchedBaseline),
+      unadjustedDifferenceVsBaselinePct:episodeReturns.length?
+        Number((mean(episodeReturns)-mean(directionMatchedBaseline)).toFixed(2)):null,
+      method:'first_signal_close_per_episode_chronological_purged_horizon',
+      predictiveValidityEstablished:false,
+      limitations:'Small sample; baseline direction matched but not time/regime matched; returns use same-day close, not executable fills'};
   }
   return report;
 }

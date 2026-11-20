@@ -19,6 +19,12 @@ assert.equal(Object.values(r.priceStructureStates).reduce((a,b)=>a+b,0),r.asOfSe
   'every historical as-of observation has one descriptive price state');
 assert.equal(r.signalCount,0,'a rising synthetic ETF market cannot fabricate a turning point');
 assert.equal(r.matured[60].count,0,'no signals means no estimated forward accuracy');
+for(const h of r.horizons){
+  const episode=r.purgedEpisodeEvaluation[h];
+  assert.equal(episode.maturedEpisodes,0,'never manufacture an episode from no signal');
+  assert.equal(episode.averageSignedReturnPct,null);
+  assert.equal(episode.predictiveValidityEstablished,false);
+}
 assert.equal(r.signalSessionsPct,0);
 assert.deepEqual(r.episodes,{bottom:[],top:[]});
 assert.equal(r.matured[5].positiveRatePct,null,'never fabricate hit rates from empty samples');
@@ -33,4 +39,5 @@ const withFuture={...details,SPY:{...details.SPY,price_history_1y:[...details.SP
 const after=audit(withFuture,earlier);
 assert.deepEqual(after.confirmed,before.confirmed);
 assert.deepEqual(after.matured,before.matured);
+assert.deepEqual(after.purgedEpisodeEvaluation,before.purgedEpisodeEvaluation);
 console.log('Market turning-point forward-audit invariants passed');
