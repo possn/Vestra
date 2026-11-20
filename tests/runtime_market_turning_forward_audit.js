@@ -24,6 +24,8 @@ for(const h of r.horizons){
   assert.equal(episode.maturedEpisodes,0,'never manufacture an episode from no signal');
   assert.equal(episode.averageSignedReturnPct,null);
   assert.equal(episode.predictiveValidityEstablished,false);
+  assert.equal(r.delayedEntrySensitivity[h].evaluatedEpisodes,0);
+  assert.equal(r.delayedEntrySensitivity[h].averageSignedReturnPct,null);
 }
 assert.equal(r.signalSessionsPct,0);
 assert.deepEqual(r.episodes,{bottom:[],top:[]});
@@ -40,4 +42,5 @@ const after=audit(withFuture,earlier);
 assert.deepEqual(after.confirmed,before.confirmed);
 assert.deepEqual(after.matured,before.matured);
 assert.deepEqual(after.purgedEpisodeEvaluation,before.purgedEpisodeEvaluation);
+assert.deepEqual(after.delayedEntrySensitivity,before.delayedEntrySensitivity);
 console.log('Market turning-point forward-audit invariants passed');
