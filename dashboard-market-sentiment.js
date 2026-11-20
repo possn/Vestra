@@ -346,8 +346,37 @@
     const direction=usable&&bottom>=3&&bottom>top&&factors[2]?.bottom===true?'bottom':
       usable&&top>=3&&top>bottom&&factors[2]?.top===true?'top':null;
     return {direction,bottom,top,available,factors,nyseBreadth:breadth,asOf:base.date,
+      priceStructure:turningPriceStructure(base.spyDaily),
       label:!usable?'Evidência incompleta ou antiga':direction==='bottom'?'Possível fundo em formação':direction==='top'?'Possível topo em formação':'Sem confluência de inversão',
       unvalidated:true};
+  }
+
+  // Descriptive price-structure context, deliberately NOT an additional vote.
+  // This distinguishes a falling market from an observed recovery without
+  // asserting that either state predicts the final bottom or top.
+  function turningPriceStructure(rows){
+    const values=(Array.isArray(rows)?rows:[]).map(r=>Number(r?.close));
+    if(values.length<55||values.some(v=>!Number.isFinite(v)||v<=0))
+      return {state:'unavailable',label:'Estrutura de preços indisponível'};
+    const mean=(part)=>part.reduce((a,b)=>a+b,0)/part.length;
+    const last=values.at(-1),ma20=mean(values.slice(-20)),ma50=mean(values.slice(-50));
+    const priorMa20=mean(values.slice(-25,-5));
+    const r5=last/values.at(-6)-1,r20=last/values.at(-21)-1;
+    const low20=Math.min(...values.slice(-20));
+    let state='mixed',label='Estrutura sem direção clara';
+    if(last>ma20&&last>ma50&&ma20>priorMa20&&r20>0){
+      state='technical_recovery';label='Recuperação técnica observada';
+    }else if(last>ma20&&r5>0&&last<=ma50){
+      state='early_recovery';label='Recuperação inicial, ainda abaixo da média de 50 sessões';
+    }else if(last<=ma20&&r20<0&&last>values.at(-6)&&last<=low20*1.05){
+      state='stabilizing_decline';label='Queda com estabilização inicial a verificar';
+    }else if(last<=ma20&&r20<0){
+      state='declining';label='Queda ainda em curso';
+    }
+    return {state,label,asOf:rows.at(-1)?.date||null,
+      aboveMa20:last>ma20,aboveMa50:last>ma50,
+      return5Pct:Number((r5*100).toFixed(2)),return20Pct:Number((r20*100).toFixed(2)),
+      descriptiveOnly:true};
   }
 
   function turningMarkup(){
@@ -357,7 +386,7 @@
     const count=r.direction==='top'?r.top:r.bottom;
     return `<section class="dms-turning" aria-label="Possíveis inversões de mercado, investigação experimental">
       <span>INVERSÕES · EXPERIMENTAL</span><strong>${esc(r.label)}</strong>
-      <p>${r.direction?`${count} de ${r.available} critérios observados convergem.`:`Fundo ${r.bottom} · topo ${r.top} de ${r.available} critérios observados.`} Contagem de evidências, não probabilidade nem sinal de investimento.</p>
+      <p>${esc(r.priceStructure.label)}. ${r.direction?`${count} de ${r.available} critérios observados convergem.`:`Fundo ${r.bottom} · topo ${r.top} de ${r.available} critérios observados.`} Estrutura técnica descritiva e contagem de evidências, não probabilidade nem sinal de investimento.</p>
       <button type="button" class="dms-turning-toggle" data-dms-turning-toggle aria-expanded="${S.turningExpanded?'true':'false'}" aria-controls="dmsTurningEvidence">${S.turningExpanded?'Ocultar evidências':'Ver VIX, VVIX, RSI e evidências'} <span aria-hidden="true">${S.turningExpanded?'−':'+'}</span></button>
       <div class="dms-turning-evidence" id="dmsTurningEvidence"${S.turningExpanded?'':' hidden'}><ul>${rows}</ul><p><strong>Crédito (contexto, sem voto):</strong> ${esc(S.data?.turningInputs?.creditContext?.value||'HYG/LQD indisponível')}. ${esc(r.nyseBreadth.value)}${r.nyseBreadth.sourceUrl?` · <a href="${esc(r.nyseBreadth.sourceUrl)}" target="_blank" rel="noopener noreferrer">Fonte NYSE ↗</a>`:''}. Última sessão fechada ${esc(r.asOf)}. VVIX ajusta o contexto do VIX, sem voto adicional. A linha A−D NYSE substitui a proxy dos seis mercados apenas com dados auditáveis; não soma um voto. HYG/LQD é uma proxy de preços, não um spread de crédito. Limiar heurístico sem validação prospetiva; VIX e VVIX não preveem direção.</p></div>
     </section>`;
