@@ -24,7 +24,7 @@
   const VVIX_TICKER='^VVIX'; // Optional volatility-of-volatility context, not a sixth vote.
   const CREDIT_TICKERS=['HYG','LQD']; // Optional tradable credit proxies, not a credit spread.
 
-  const S={loading:false,data:null,error:'',scheduled:false,expanded:false,aaiiExpanded:false,aaii:null,cnn:null,nyse:null};
+  const S={loading:false,data:null,error:'',scheduled:false,expanded:false,turningExpanded:false,aaiiExpanded:false,aaii:null,cnn:null,nyse:null};
   const num=v=>{if(v===null||v===undefined||v==='') return null;const n=Number(v);return Number.isFinite(n)?n:null};
   const clamp=(v,min=0,max=100)=>Math.max(min,Math.min(max,v));
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -39,7 +39,7 @@
     const link=document.createElement('link');
     link.id=STYLE_ID;
     link.rel='stylesheet';
-    link.href='dashboard-market-sentiment.css?v=1.7';
+    link.href='dashboard-market-sentiment.css?v=1.8';
     document.head.appendChild(link);
   }
 
@@ -358,7 +358,8 @@
     return `<section class="dms-turning" aria-label="Possíveis inversões de mercado, investigação experimental">
       <span>INVERSÕES · EXPERIMENTAL</span><strong>${esc(r.label)}</strong>
       <p>${r.direction?`${count} de ${r.available} critérios observados convergem.`:`Fundo ${r.bottom} · topo ${r.top} de ${r.available} critérios observados.`} Contagem de evidências, não probabilidade nem sinal de investimento.</p>
-      <details><summary>Ver VIX, VVIX, RSI e evidências <span aria-hidden="true">+</span></summary><ul>${rows}</ul><p><strong>Crédito (contexto, sem voto):</strong> ${esc(S.data?.turningInputs?.creditContext?.value||'HYG/LQD indisponível')}. ${esc(r.nyseBreadth.value)}${r.nyseBreadth.sourceUrl?` · <a href="${esc(r.nyseBreadth.sourceUrl)}" target="_blank" rel="noopener noreferrer">Fonte NYSE ↗</a>`:''}. Última sessão fechada ${esc(r.asOf)}. VVIX ajusta o contexto do VIX, sem voto adicional. A linha A−D NYSE substitui a proxy dos seis mercados apenas com dados auditáveis; não soma um voto. HYG/LQD é uma proxy de preços, não um spread de crédito. Limiar heurístico sem validação prospetiva; VIX e VVIX não preveem direção.</p></details>
+      <button type="button" class="dms-turning-toggle" data-dms-turning-toggle aria-expanded="${S.turningExpanded?'true':'false'}" aria-controls="dmsTurningEvidence">${S.turningExpanded?'Ocultar evidências':'Ver VIX, VVIX, RSI e evidências'} <span aria-hidden="true">${S.turningExpanded?'−':'+'}</span></button>
+      <div class="dms-turning-evidence" id="dmsTurningEvidence"${S.turningExpanded?'':' hidden'}><ul>${rows}</ul><p><strong>Crédito (contexto, sem voto):</strong> ${esc(S.data?.turningInputs?.creditContext?.value||'HYG/LQD indisponível')}. ${esc(r.nyseBreadth.value)}${r.nyseBreadth.sourceUrl?` · <a href="${esc(r.nyseBreadth.sourceUrl)}" target="_blank" rel="noopener noreferrer">Fonte NYSE ↗</a>`:''}. Última sessão fechada ${esc(r.asOf)}. VVIX ajusta o contexto do VIX, sem voto adicional. A linha A−D NYSE substitui a proxy dos seis mercados apenas com dados auditáveis; não soma um voto. HYG/LQD é uma proxy de preços, não um spread de crédito. Limiar heurístico sem validação prospetiva; VIX e VVIX não preveem direção.</p></div>
     </section>`;
   }
 
@@ -727,6 +728,7 @@
       if(details) S.aaiiExpanded=!!details.open;
     },true);
     document.addEventListener('click',event=>{
+      if(event.target?.closest?.('[data-dms-turning-toggle]')){S.turningExpanded=!S.turningExpanded;render();return;}
       if(event.target?.closest?.('[data-dms-detail-toggle]')){S.expanded=!S.expanded;render();return;}
       if(event.target?.closest?.('[data-dms-refresh]')){load(true);loadAaii(true);loadCnn();loadNyseBreadth();return;}
       if(event.target?.closest?.('[data-view="dashboard"]')) setTimeout(()=>{render();scheduleLoad();},60);
@@ -737,7 +739,7 @@
   else boot();
 
   window.VestraDashboardMarketSentiment=Object.freeze({
-    version:'1.11',
+    version:'1.12',
     computeSnapshot,
     turningPointInputs,
     turningPointReading,
