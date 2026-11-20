@@ -2,6 +2,7 @@ from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+HTML = (ROOT / "index.html").read_text(encoding="utf-8")
 JS = (ROOT / "dashboard-market-sentiment.js").read_text(encoding="utf-8")
 CSS = (ROOT / "dashboard-market-sentiment.css").read_text(encoding="utf-8")
 LOADER = (ROOT / "market-static-universe.js").read_text(encoding="utf-8")
@@ -61,7 +62,9 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn('S.turningExpanded=!S.turningExpanded;render()', JS)
         self.assertIn('.dms-turning-evidence[hidden]{display:none}', CSS)
         self.assertIn('min-height:44px', CSS)
-        self.assertIn('vestra-cache-v279', SW)
+        self.assertIn('vestra-cache-v280', SW)
+        self.assertIn('id="vestraDashboardMarketSentimentStyle"', HTML)
+        self.assertIn('dashboard-market-sentiment.css?v=1.9-static-head', HTML)
 
     def test_aaii_retail_sentiment_is_integrated_without_a_second_dashboard_card(self):
         data = (ROOT / "data" / "aaii-sentiment.json").read_text(encoding="utf-8")

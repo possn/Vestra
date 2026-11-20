@@ -46,3 +46,22 @@ test('iPhone/WebKit: turning evidence opens by touch and survives market-card re
   await expect(toggle).toHaveAttribute('aria-expanded','false');
   await expect(evidence).toBeHidden();
 });
+
+test('iPhone/WebKit: full app loads market sentiment CSS before showing the card',async({page})=>{
+  await page.goto('/index.html?vestra2=0');
+  await page.waitForFunction(()=>window.__vestraAppHydrated===true);
+  await page.getByRole('button',{name:'Abrir barómetro de mercado'}).click();
+  const card=page.locator('#vestraMarketSentimentCard');
+  await expect(card).toBeVisible({timeout:15000});
+  const appearance=await card.evaluate(el=>{
+    const s=getComputedStyle(el);
+    const needle=el.querySelector('.dms-needle');
+    return {background:s.backgroundColor,borderRadius:s.borderRadius,
+      needleColor:needle?getComputedStyle(needle).stroke:null,
+      preloaded:!!document.querySelector('head > link#vestraDashboardMarketSentimentStyle[rel="stylesheet"]')};
+  });
+  expect(appearance.preloaded).toBe(true);
+  expect(appearance.borderRadius).not.toBe('0px');
+  expect(appearance.background).not.toBe('rgba(0, 0, 0, 0)');
+  if(appearance.needleColor)expect(appearance.needleColor).not.toBe('rgb(0, 0, 0)');
+});
