@@ -172,7 +172,7 @@ function audit(details,now=new Date()){
         adverseExcursionPct:100*(sign===1?Math.min(...subsequent):-Math.max(...subsequent))});
     }
     report.delayedEntrySensitivity[h]={
-      sameEpisodesAsPurgedEvaluation:true,
+      subsetOfPurgedEpisodes:true,
       evaluatedEpisodes:delayed.length,unavailableAfterOneSessionDelay:delayedUnavailable,
       favorableEpisodes:delayed.filter(x=>x.signedReturnPct>0).length,
       averageSignedReturnPct:mean(delayed.map(x=>x.signedReturnPct)),
