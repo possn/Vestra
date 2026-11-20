@@ -243,6 +243,21 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     if audit is not None:
         audit["swing_geometry_shadow"]=swing_contraction_shadow(clean)
         audit["technical_evidence_shadow"]=technical_evidence_shadow(clean)
+        # A research watch is displayed even when the main scan rejects on
+        # moving averages. Independently verify that its base is still below
+        # an unbroken pivot; never let a MA rejection hide an earlier breakout.
+        prior_pivot=max(b["high"] for b in clean[-40:-1])
+        last_bar=clean[-1]
+        pivot_distance_pct=100*(prior_pivot/last_bar["close"]-1)
+        confirmed_in_base=historical_breakout_dates(clean,len(clean)-39,len(clean)-1)
+        audit["research_prebreakout_lineage"]={
+            "distance_to_pivot_pct":round(pivot_distance_pct,3),
+            "prior_confirmed_breakouts_in_base":len(confirmed_in_base),
+            "unbroken_prebreakout_position":(
+                0<=pivot_distance_pct<=8 and
+                last_bar["high"]<=prior_pivot*1.005 and
+                not confirmed_in_base),
+            "research_only_no_eligibility_or_score_effect":True}
         # The canonical signal remains end-anchored. This separate research
         # measurement asks whether the same fixed-window geometry survives a
         # change of window phase by up to ten historical sessions. A pattern
@@ -1211,6 +1226,7 @@ def main():
                     "first_rejection":first,
                     "trend_phase":trace.get("trend_phase"),
                     "geometry_shadow":trace.get("geometry_shadow"),
+                    "research_prebreakout_lineage":trace.get("research_prebreakout_lineage"),
                     "swing_geometry_shadow":trace.get("swing_geometry_shadow"),
                     "technical_evidence_shadow":trace.get("technical_evidence_shadow"),
                     "ma_failed_checks":trace.get("moving_average_failed_checks",[]),

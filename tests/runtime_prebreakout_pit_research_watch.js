@@ -15,6 +15,9 @@ const observed = {
   adjusted_close: 12.5, first_rejection: 'sequential_vcp_contractions',
   geometry_shadow: {research_only_not_eligibility: true,
     base_width_pass: true, contractions_pass: false, base_width_pct: 15},
+  research_prebreakout_lineage: {research_only_no_eligibility_or_score_effect: true,
+    unbroken_prebreakout_position: true, distance_to_pivot_pct: 3.2,
+    prior_confirmed_breakouts_in_base: 0},
   ma_failed_checks: []
 };
 const feed = rows => ({research_observations: {
@@ -26,6 +29,9 @@ assert.equal(getRows(feed([{...observed, adjusted_close: null}])).length, 0);
 assert.equal(getRows(feed([{...observed, geometry_shadow: {
   ...observed.geometry_shadow, base_width_pass: false}}])).length, 0);
 assert.equal(getRows(feed([{...observed, first_rejection: 'passed_structural_gates'}])).length, 0);
+assert.equal(getRows(feed([{...observed, research_prebreakout_lineage: null}])).length, 0);
+assert.equal(getRows(feed([{...observed, research_prebreakout_lineage: {
+  ...observed.research_prebreakout_lineage, unbroken_prebreakout_position: false}}])).length, 0);
 assert.equal(getRows({research_observations: {rows: [observed]}}).length, 0);
 assert.equal(getRows(feed([{...observed, last_session: '2020-01-01'}])).length, 0);
 const extended={...observed, first_rejection:'prior_impulse_continuation',

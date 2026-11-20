@@ -36,6 +36,23 @@ class ContinuousGeometryTests(unittest.TestCase):
         self.assertEqual(geom["both_pass"],
                          geom["base_width_pass"] and geom["contractions_pass"])
         self.assertTrue(geom["research_only_not_eligibility"])
+        lineage = audit["research_prebreakout_lineage"]
+        self.assertTrue(lineage["research_only_no_eligibility_or_score_effect"])
+        self.assertEqual(lineage["prior_confirmed_breakouts_in_base"], 0)
+        self.assertIsInstance(lineage["unbroken_prebreakout_position"], bool)
+
+    def test_already_exceeded_pivot_is_not_research_watch_even_on_ma_failure(self):
+        last = date(2026, 11, 14)
+        bars = []
+        for i in range(230):
+            close = 10 + i * .001
+            bars.append({"date": (last - timedelta(days=229-i)).isoformat(),
+                         "close": close, "high": close * 1.01,
+                         "low": close * .99, "volume": 1_000_000})
+        bars[-1]["high"] = 12.0  # Intraday excursion beyond prior 39-session high.
+        audit = {}
+        scan_bars("LATE", bars, date(2026, 11, 15), audit=audit)
+        self.assertFalse(audit["research_prebreakout_lineage"]["unbroken_prebreakout_position"])
 
 
 if __name__ == "__main__":
