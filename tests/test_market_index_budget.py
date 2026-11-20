@@ -55,6 +55,19 @@ def test_detail_only_thesis_copy_does_not_enter_startup_row():
     assert "thesis_summary" not in compact
 
 
+def test_featured_decision_survives_mobile_index_without_client_recalculation():
+    m = load_builder()
+    for featured in (True, False):
+        compact = m.index_row({
+            "ticker": "TEST", "quote_type": "EQUITY", "risk_gate": "high",
+            "opportunity_eligible": True, "opportunity_score": 59,
+            "opportunity_featured": featured,
+        })
+        assert compact["opportunity_featured"] is featured
+        assert compact["opportunity_score"] == 59
+    assert "opportunity_featured" not in m.index_row({"ticker": "LEGACY"})
+
+
 def test_compact_rotation_returns_use_observed_daily_scalars_without_shipping_history():
     m = load_builder()
     row = {

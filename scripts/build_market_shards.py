@@ -96,7 +96,7 @@ INDEX_KEYS = {
     
     "opportunity_valuation_evidence", 
     
-    "opportunity_eligible", "opportunity_signal_count", "opportunity_structural_signal_count",
+    "opportunity_eligible", "opportunity_featured", "opportunity_signal_count", "opportunity_structural_signal_count",
     "opportunity_timing_score", "opportunity_timing_label", "opportunity_overextended",
     "opportunity_rotation_theme", "opportunity_rotation_signal",
       
