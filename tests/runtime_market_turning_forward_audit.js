@@ -17,6 +17,12 @@ assert.ok(r.creditObserved>0);
 assert.ok(r.qualifiedDates>0);
 assert.equal(r.signalCount,0,'a rising synthetic ETF market cannot fabricate a turning point');
 assert.equal(r.matured[60].count,0,'no signals means no estimated forward accuracy');
+assert.equal(r.signalSessionsPct,0);
+assert.deepEqual(r.episodes,{bottom:[],top:[]});
+assert.equal(r.matured[5].positiveRatePct,null,'never fabricate hit rates from empty samples');
+assert.equal(r.matured[5].averageAdverseExcursionPct,null);
+assert.ok(Number.isFinite(r.matured[5].unconditionalSpyMeanReturnPct));
+assert.equal(r.methodology.includes('overlapping_events'),true);
 
 // Outcomes and vote counts must not depend on bars strictly after the research as-of date.
 const earlier=new Date('2025-12-01T12:00:00Z');
