@@ -15,6 +15,8 @@ assert.equal(r.observations.SPY.count,dates.length);
 assert.ok(r.asOfSessions>=100);
 assert.ok(r.creditObserved>0);
 assert.ok(r.qualifiedDates>0);
+assert.equal(Object.values(r.priceStructureStates).reduce((a,b)=>a+b,0),r.asOfSessions,
+  'every historical as-of observation has one descriptive price state');
 assert.equal(r.signalCount,0,'a rising synthetic ETF market cannot fabricate a turning point');
 assert.equal(r.matured[60].count,0,'no signals means no estimated forward accuracy');
 assert.equal(r.signalSessionsPct,0);
