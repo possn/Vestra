@@ -19,6 +19,15 @@ def load_selector():
     return ns["_insider_refresh_selection"]
 
 
+def load_invalidator():
+    tree=ast.parse(RUN)
+    fn=next(n for n in tree.body if isinstance(n,ast.FunctionDef)
+            and n.name=="_invalidate_carried_insider_evidence")
+    ns={}
+    exec(compile(ast.Module(body=[fn],type_ignores=[]),"run.py","exec"),ns)
+    return ns["_invalidate_carried_insider_evidence"]
+
+
 class InsiderBoundedRefreshTests(unittest.TestCase):
     def test_daily_rotation_covers_full_stable_universe(self):
         select=load_selector()
@@ -39,6 +48,29 @@ class InsiderBoundedRefreshTests(unittest.TestCase):
         self.assertIn('insider_map.update(',RUN)
         self.assertIn('annotate_insiders, insider_refresh',RUN)
         self.assertIn('FINSCANNER_INSIDER_TICKER_BUDGET: "120"',WORKFLOW)
+
+    def test_carried_forward_transaction_counts_never_masquerade_as_current(self):
+        invalidate=load_invalidator()
+        old={"insider_status":"ok", "insider_buy_count_30d":30,
+             "insider_buy_value_30d":402700000,"insider_transactions":[{"date":"2026-09-30"}],
+             "insider_net_value_30d":402700000,
+             "thesis_summary":"Insider purchases support accumulation",
+             "thesis_type":"Insider Accumulation", "thesis_slug":"insider-accumulation",
+             "thesis_evidence":["Fluxo de insiders em 30 dias", "Cash flow saudável"],
+             "catalyst_events":[{"kind":"insiders","label":"30 compras"},
+                                {"kind":"earnings","label":"Resultados"}],
+             "scanner_results":{"insider_accumulation":{"score":80},"other":{"score":65}}}
+        fresh=invalidate(dict(old))
+        self.assertEqual(fresh["insider_status"],"unknown")
+        self.assertIsNone(fresh["insider_buy_count_30d"])
+        self.assertIsNone(fresh["insider_buy_value_30d"])
+        self.assertEqual(fresh["insider_transactions"],[])
+        self.assertEqual(fresh["catalyst_events"],[{"kind":"earnings","label":"Resultados"}])
+        self.assertEqual(fresh["thesis_evidence"],["Cash flow saudável"])
+        self.assertIsNone(fresh["thesis_summary"])
+        self.assertIsNone(fresh["thesis_type"])
+        self.assertEqual(list(fresh["scanner_results"]),["other"])
+        self.assertIn("insider_accumulation",old["scanner_results"],"do not mutate source row")
 
 
 if __name__=="__main__":
