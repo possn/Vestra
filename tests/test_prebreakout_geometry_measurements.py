@@ -40,6 +40,28 @@ class ContinuousGeometryTests(unittest.TestCase):
         self.assertTrue(lineage["research_only_no_eligibility_or_score_effect"])
         self.assertEqual(lineage["prior_confirmed_breakouts_in_base"], 0)
         self.assertIsInstance(lineage["unbroken_prebreakout_position"], bool)
+        anchor = audit["asof_base_price_anchor"]
+        self.assertEqual(anchor["schema"], "vestra_prebreakout_asof_base_anchor_v1")
+        self.assertEqual(anchor["session"], bars[-1]["date"])
+        self.assertEqual(anchor["base_start_session"], bars[-40]["date"])
+        self.assertEqual(anchor["reference_bars"], 39)
+        self.assertEqual(anchor["adjusted_close"], bars[-1]["close"])
+        self.assertEqual(anchor["adjusted_pivot_high"],
+                         max(b["high"] for b in bars[-40:-1]))
+        self.assertEqual(len(anchor["closed_bar_snapshot_sha256"]), 64)
+        self.assertFalse(anchor["historical_adjustment_factor_verified"])
+        self.assertTrue(anchor["research_only_no_eligibility_or_score_effect"])
+        # A changed historical OHLCV sample must not reuse the original
+        # capture fingerprint or silently recalculate past evidence as fact.
+        amended = [dict(b) for b in bars]
+        amended[-10]["high"] += 0.005
+        other = {}
+        scan_bars("FIXTURE", amended, date(2026, 11, 15),
+                  strict_quality=True, liquidity_floor=1_000_000, audit=other)
+        self.assertNotEqual(anchor["closed_bar_snapshot_sha256"],
+                            other["asof_base_price_anchor"]["closed_bar_snapshot_sha256"])
+        self.assertEqual(anchor["adjusted_pivot_high"],
+                         other["asof_base_price_anchor"]["adjusted_pivot_high"])
 
     def test_already_exceeded_pivot_is_not_research_watch_even_on_ma_failure(self):
         last = date(2026, 11, 14)
