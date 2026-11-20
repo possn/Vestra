@@ -107,6 +107,7 @@ function audit(details,now=new Date()){
   }
   report.matured={};
   report.purgedEpisodeEvaluation={};
+  report.delayedEntrySensitivity={};
   const episodeStarts=[...report.episodes.bottom.map(x=>({sign:1,event:x})),
     ...report.episodes.top.map(x=>({sign:-1,event:x}))]
     .sort((a,b)=>a.event.start.localeCompare(b.event.start));
@@ -153,6 +154,32 @@ function audit(details,now=new Date()){
       method:'first_signal_close_per_episode_chronological_purged_horizon',
       predictiveValidityEstablished:false,
       limitations:'Small sample; baseline direction matched but not time/regime matched; returns use same-day close, not executable fills'};
+    // The first flagged close is known only after its session has ended. A
+    // following-close entry is a conservative timing *proxy*, not a fill quote.
+    // Use the same chronological, non-overlapping episodes for each horizon;
+    // do not compare samples with differing entry eligibility as though paired.
+    const delayed=[];
+    let delayedUnavailable=0;
+    for(const {sign,event} of selected){
+      const i=sessionByDate.get(event.start);
+      if(i+1+h>=spy.length){delayedUnavailable++;continue;}
+      const entry=spy[i+1].close;
+      const exit=spy[i+1+h].close;
+      if(!(Number(entry)>0&&Number(exit)>0)){delayedUnavailable++;continue;}
+      const subsequent=spy.slice(i+2,i+2+h).map(x=>x.close/entry-1);
+      delayed.push({date:event.start,sign,
+        signedReturnPct:100*sign*(exit/entry-1),
+        adverseExcursionPct:100*(sign===1?Math.min(...subsequent):-Math.max(...subsequent))});
+    }
+    report.delayedEntrySensitivity[h]={
+      subsetOfPurgedEpisodes:true,
+      evaluatedEpisodes:delayed.length,unavailableAfterOneSessionDelay:delayedUnavailable,
+      favorableEpisodes:delayed.filter(x=>x.signedReturnPct>0).length,
+      averageSignedReturnPct:mean(delayed.map(x=>x.signedReturnPct)),
+      averageAdverseExcursionPct:mean(delayed.map(x=>x.adverseExcursionPct)),
+      entry:'close_of_next_completed_session_after_first_signal',
+      exit:'close_h_sessions_after_delayed_entry',
+      proxyNotTradableExecution:true,predictiveValidityEstablished:false};
   }
   return report;
 }
