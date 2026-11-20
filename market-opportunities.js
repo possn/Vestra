@@ -125,6 +125,8 @@
         typeof r.adjusted_close==='number'&&Number.isFinite(r.adjusted_close)&&r.adjusted_close>0&&
         Number.isFinite(day)&&(now-day)/86400000>=-1&&(now-day)/86400000<=7&&
         geometry?.research_only_not_eligibility===true&&
+        r?.research_prebreakout_lineage?.research_only_no_eligibility_or_score_effect===true&&
+        r.research_prebreakout_lineage.unbroken_prebreakout_position===true&&
         (geometry.base_width_pass===true||geometry.contractions_pass===true)&&
         ['moving_average_structure','base_width','sequential_vcp_contractions',
           'distance_to_pivot','local_liquidity_or_base_position'].includes(r.first_rejection);
