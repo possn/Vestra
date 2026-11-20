@@ -27,6 +27,7 @@ for(const ticker of ['ACWI','QQQ','IWM','EFA','EEM']) details[ticker]=make(i=>10
 const inputs=api.turningPointInputs(details,asOf);
 assert.ok(inputs,'completed 1y of SPY/VIX should permit an observational reading');
 assert.equal(inputs.factors.length,4);
+assert.equal(inputs.creditContext.observed,false,'credit data missing is not a neutral or favorable observation');
 assert.equal(inputs.date,days.at(-2),'today is an unfinished bar and must be excluded');
 const reading=api.turningPointReading(inputs,{source:'cnn',score:15,timestamp:'2026-11-18T23:00:00Z'},null,asOf);
 assert.equal(reading.available,5);
@@ -50,6 +51,14 @@ const supplemented=api.turningPointReading(inputs,null,null,asOf,nyse);
 assert.equal(supplemented.factors.length,5,'NYSE must replace proxy, not add a sixth vote');
 assert.equal(supplemented.factors[3].name,'NYSE · Advance–Decline');
 assert.equal(supplemented.available,4);
+const creditDetails={...details,HYG:make(i=>80+i*.02),LQD:make(i=>100-i*.005)};
+const withCredit=api.turningPointInputs(creditDetails,asOf);
+assert.equal(withCredit.creditContext.observed,true,'aligned HYG/LQD daily prices form observable risk context');
+assert.equal(withCredit.creditContext.date,inputs.date);
+assert.equal(api.turningPointReading(withCredit,null,null,asOf).factors.length,5,
+  'credit context must not create another independent vote');
+assert.equal(api.creditStressContext({...creditDetails,LQD:make(i=>i===days.length-2?0:100)},inputs.date,asOf).observed,false,
+  'missing or zero quote on anchor date must not create credit evidence');
 assert.equal(api.nyseBreadthFactor({...nyse,sessions:nyseSessions.slice(0,-1)},inputs.spyDaily,inputs.date).bottom,null,
   'a feed missing the anchor session cannot participate');
 assert.equal(api.nyseBreadthFactor({...nyse,source_url:''},inputs.spyDaily,inputs.date).bottom,null);
