@@ -4,7 +4,7 @@
 
   const STYLE_ID='vestraDashboardMarketSentimentStyle';
   const CARD_ID='vestraMarketSentimentCard';
-  const CACHE_KEY='vestra-market-sentiment-v4';
+  const CACHE_KEY='vestra-market-sentiment-v5';
   const CACHE_TTL_MS=15*60*1000;
   const FETCH_TIMEOUT_MS=10000;
   const AAII_REFRESH_INTERVAL_MS=15*60*1000;
@@ -22,6 +22,7 @@
   ];
   const VIX_TICKER='^VIX';
   const VVIX_TICKER='^VVIX'; // Optional volatility-of-volatility context, not a sixth vote.
+  const CREDIT_TICKERS=['HYG','LQD']; // Optional tradable credit proxies, not a credit spread.
 
   const S={loading:false,data:null,error:'',scheduled:false,expanded:false,aaiiExpanded:false,aaii:null,cnn:null,nyse:null};
   const num=v=>{if(v===null||v===undefined||v==='') return null;const n=Number(v);return Number.isFinite(n)?n:null};
@@ -193,6 +194,28 @@
     return {current:output.at(-1),previous:output.at(-2),recent:output.slice(-4)};
   }
 
+  // HYG/LQD relative performance is a price-only *credit risk-appetite proxy*.
+  // It is not a corporate yield spread and does not change turning-point votes.
+  function creditStressContext(details,anchor,asOf=new Date()){
+    const hyg=completedHistory(details.HYG,asOf),lqd=completedHistory(details.LQD,asOf);
+    const lqdByDate=new Map(lqd.map(row=>[row.date,row.close]));
+    const joined=hyg.filter(row=>row.date<=anchor&&lqdByDate.has(row.date))
+      .map(row=>({date:row.date,ratio:row.close/lqdByDate.get(row.date)}))
+      .filter(row=>Number.isFinite(row.ratio)&&row.ratio>0);
+    if(joined.length<65||joined.at(-1)?.date!==anchor||
+       hyg.at(-1)?.date!==anchor||lqd.at(-1)?.date!==anchor)
+      return {observed:false,value:'HYG/LQD sem histórico diário comparável'};
+    const recent=joined.slice(-61),last=recent.at(-1).ratio;
+    const change5=100*(last/recent.at(-6).ratio-1);
+    const change20=100*(last/recent.at(-21).ratio-1);
+    const low60=Math.min(...recent.map(x=>x.ratio));
+    const high60=Math.max(...recent.map(x=>x.ratio));
+    const easing=change5>0.5&&change20>0&&last/low60<=1.10;
+    const worsening=change5< -0.5&&change20<0&&high60/last<=1.10;
+    return {observed:true,easing,worsening,date:anchor,change5,change20,
+      value:`HYG/LQD ${change5>=0?'+':''}${change5.toFixed(1)}%/5s · ${change20>=0?'+':''}${change20.toFixed(1)}%/20s · ${easing?'stress a aliviar':worsening?'stress a agravar':'sem confirmação'}`};
+  }
+
   function turningPointInputs(details,asOf=new Date()){
     const spy=completedHistory(details.SPY,asOf);
     const vix=completedHistory(details[VIX_TICKER],asOf);
@@ -254,7 +277,7 @@
     factors.push({name:'Participação · 6 mercados proxy',value:`${coverage}/6 mercados comparáveis`,
       bottom:coverage>=5?recovering>=4:null,
       top:coverage>=5?deteriorating>=4:null});
-    return {date:anchor,factors,spyDaily:spy.slice(-90),vvixContext:vvixContext?{
+    return {date:anchor,factors,spyDaily:spy.slice(-90),creditContext:creditStressContext(details,anchor,asOf),vvixContext:vvixContext?{
       observed:true,risingStress:vvixContext.risingStress,cooling:vvixContext.cooling,
       current:vvixContext.current}: {observed:false},
       method:'experimental_unvalidated_not_probability'};
@@ -335,7 +358,7 @@
     return `<section class="dms-turning" aria-label="Possíveis inversões de mercado, investigação experimental">
       <span>INVERSÕES · EXPERIMENTAL</span><strong>${esc(r.label)}</strong>
       <p>${r.direction?`${count} de ${r.available} critérios observados convergem.`:`Fundo ${r.bottom} · topo ${r.top} de ${r.available} critérios observados.`} Contagem de evidências, não probabilidade nem sinal de investimento.</p>
-      <details><summary>Ver VIX, VVIX, RSI e evidências <span aria-hidden="true">+</span></summary><ul>${rows}</ul><p>${esc(r.nyseBreadth.value)}${r.nyseBreadth.sourceUrl?` · <a href="${esc(r.nyseBreadth.sourceUrl)}" target="_blank" rel="noopener noreferrer">Fonte NYSE ↗</a>`:''}. Última sessão fechada ${esc(r.asOf)}. VVIX ajusta o contexto do VIX, sem voto adicional. A linha A−D NYSE substitui a proxy dos seis mercados apenas com dados auditáveis; não soma um voto. Limiar heurístico sem validação prospetiva; VIX e VVIX não preveem direção.</p></details>
+      <details><summary>Ver VIX, VVIX, RSI e evidências <span aria-hidden="true">+</span></summary><ul>${rows}</ul><p><strong>Crédito (contexto, sem voto):</strong> ${esc(S.data?.turningInputs?.creditContext?.value||'HYG/LQD indisponível')}. ${esc(r.nyseBreadth.value)}${r.nyseBreadth.sourceUrl?` · <a href="${esc(r.nyseBreadth.sourceUrl)}" target="_blank" rel="noopener noreferrer">Fonte NYSE ↗</a>`:''}. Última sessão fechada ${esc(r.asOf)}. VVIX ajusta o contexto do VIX, sem voto adicional. A linha A−D NYSE substitui a proxy dos seis mercados apenas com dados auditáveis; não soma um voto. HYG/LQD é uma proxy de preços, não um spread de crédito. Limiar heurístico sem validação prospetiva; VIX e VVIX não preveem direção.</p></details>
     </section>`;
   }
 
@@ -654,7 +677,7 @@
     if(!base){S.data=null;S.error='';render();return;}
     S.loading=true;S.error='';render();
     try{
-      const tickers=[...RISK_ASSETS.map(x=>x.ticker),VIX_TICKER,VVIX_TICKER];
+      const tickers=[...RISK_ASSETS.map(x=>x.ticker),VIX_TICKER,VVIX_TICKER,...CREDIT_TICKERS];
       const settled=await Promise.allSettled(tickers.map(t=>fetchDetail(base,t)));
       const details={};
       settled.forEach((row,i)=>{if(row.status==='fulfilled') details[tickers[i]]=row.value;});
@@ -714,11 +737,12 @@
   else boot();
 
   window.VestraDashboardMarketSentiment=Object.freeze({
-    version:'1.10',
+    version:'1.11',
     computeSnapshot,
     turningPointInputs,
     turningPointReading,
     nyseBreadthFactor,
+    creditStressContext,
     weeklyRsi14,
     priceFreshness,
     labelFor,
