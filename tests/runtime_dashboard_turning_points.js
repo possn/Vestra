@@ -35,6 +35,15 @@ assert.equal(reading.direction,null,'extreme fear alone does not qualify a botto
 assert.equal(reading.factors[4].bottom,true);
 assert.equal(reading.unvalidated,true);
 assert.equal(Object.hasOwn(reading,'probability'),false);
+assert.equal(reading.priceStructure.state,'declining',
+  'falling closes must be described as a falling market, not an inferred bottom');
+assert.equal(reading.priceStructure.descriptiveOnly,true);
+const recovering={...inputs,spyDaily:inputs.spyDaily.map((bar,i)=>({...bar,close:100+i*.4}))};
+const recoveryReading=api.turningPointReading(recovering,null,null,asOf);
+assert.equal(recoveryReading.priceStructure.state,'technical_recovery');
+assert.equal(recoveryReading.available,4,'price context does not add an independent vote');
+assert.equal(recoveryReading.bottom,api.turningPointReading(inputs,null,null,asOf).bottom,
+  'price context does not change voting');
 
 const stale=api.turningPointReading(inputs,{source:'cnn',score:5,timestamp:'2026-10-01T00:00:00Z'},null,asOf);
 assert.equal(stale.available,4,'stale fear score is missing evidence, not neutral or positive');
