@@ -36,6 +36,7 @@ function audit(details,now=new Date()){
   const report={generatedAt:now.toISOString(),provider:worker,observations:{},
     asOfSessions:0,qualifiedDates:0,confirmed:{bottom:[],top:[]},
     creditObserved:0,creditEasing:0,creditWorsening:0,horizons:[5,10,20,60],
+    priceStructureStates:{},
     methodology:'retrospective_as_of_daily_bars_overlapping_events_not_independent_no_predictive_claim',
     limitations:['One-year rolling history; warm-up reduces the evaluable period',
       'CNN/AAII and genuine NYSE breadth unavailable point-in-time',
@@ -61,6 +62,8 @@ function audit(details,now=new Date()){
     }
     const reading=api.turningPointReading(inputs,null,null,asOf);
     if(!reading)continue;
+    const structure=reading.priceStructure?.state||'unavailable';
+    report.priceStructureStates[structure]=(report.priceStructureStates[structure]||0)+1;
     if(reading.available>=4)report.qualifiedDates++;
     if(!reading.direction)continue;
     const event={date,available:reading.available,bottomVotes:reading.bottom,topVotes:reading.top,
