@@ -44,4 +44,10 @@ assert.equal(continuations(feed([{...extended,trend_phase:{
   prebase_impulse_pct:8,previous_confirmed_breakout_date:'2026-11-01'}}])).length,1);
 assert.equal(continuations(feed([{...extended,trend_phase:{
   ...extended.trend_phase,prebase_impulse_pct:10}}])).length,0);
+// Absence of a qualified pattern is not a claim of full-market coverage.
+const front=fs.readFileSync('market-opportunities.js','utf8');
+assert.match(front,/coverageAudit\?\.current_eligible_verified_distinct/);
+assert.match(front,/prebreakoutCoverageEvidence=\{verified,eligible,percent:observedCoverage\}/);
+assert.match(front,/Cobertura OHLCV verificada em 24 h/);
+assert.match(front,/Não significa ausência de setups em todo o mercado/);
 console.log('PIT pre-breakout watch: verified current partial geometry only');
