@@ -271,6 +271,46 @@ def _insider_refresh_selection(tickers, budget, asof):
     return (names[offset:]+names[:offset])[:budget]
 
 
+def _invalidate_carried_insider_evidence(row):
+    """A copied issuer row has no fresh SEC observation in this publication.
+
+    Historical transaction snippets are incomplete (12/40 item caps), so they
+    cannot safely reconstruct rolling 30/365-day totals. Fail closed instead.
+    Derived prose and alerts must not keep claiming a current 30-day window.
+    """
+    row["insider_status"] = "unknown"
+    row["insider_reason"] = "issuer_not_refreshed_in_current_publication"
+    for window in ("30d", "365d"):
+        for name in ("form4_count", "buy_count", "sell_count", "buy_value", "sell_value", "net_value"):
+            row[f"insider_{name}_{window}"] = None
+    row["insider_transactions"] = []
+    row["insider_transactions_365d"] = []
+    row["insider_detail_filings_parsed"] = None
+    for key in ("insider_net_value_delta", "insider_net_value_delta_7d", "insider_net_value_delta_30d"):
+        row[key] = None
+    if isinstance(row.get("catalyst_events"), list):
+        row["catalyst_events"] = [x for x in row["catalyst_events"]
+                                  if not isinstance(x, dict) or x.get("kind") != "insiders"]
+    if isinstance(row.get("thesis_evidence"), list):
+        row["thesis_evidence"] = [x for x in row["thesis_evidence"]
+                                  if not isinstance(x, str) or "insider" not in x.lower()]
+    if isinstance(row.get("thesis_risks"), list):
+        row["thesis_risks"] = [x for x in row["thesis_risks"]
+                               if not isinstance(x, str) or "insider" not in x.lower()]
+    if isinstance(row.get("thesis_summary"), str) and "insider" in row["thesis_summary"].lower():
+        row["thesis_summary"] = None
+    if row.get("thesis_slug") == "insider-accumulation" or row.get("thesis_type") == "Insider Accumulation":
+        for key in ("thesis_type", "thesis_slug", "thesis_confidence", "thesis_direction",
+                    "thesis_direction_label", "thesis_evolution_summary"):
+            row[key] = None
+    if isinstance(row.get("scanner_results"), dict):
+        row["scanner_results"] = {k: v for k, v in row["scanner_results"].items()
+                                  if k != "insider_accumulation"}
+    if isinstance(row.get("scanner_tags"), list):
+        row["scanner_tags"] = [x for x in row["scanner_tags"] if x != "insider_accumulation"]
+    return row
+
+
 def main():
     # Preserve previously enriched ETF catalogue rows. The wider fund universe is
     # refreshed in rotation, so a name not fetched today should keep yesterday's
@@ -615,6 +655,7 @@ def main():
         previous = previous_equities.get(ticker)
         if previous:
             carried = dict(previous)
+            _invalidate_carried_insider_evidence(carried)
             carried["name"] = meta.get("name") or carried.get("name") or ticker
             carried["sector"] = meta.get("sector") or carried.get("sector")
             carried["industry"] = meta.get("industry") or carried.get("industry")
