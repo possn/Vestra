@@ -4,11 +4,6 @@ test('iPhone/WebKit: turning evidence opens by touch and survives market-card re
   await page.addInitScript(()=>{
     const today=new Date().toISOString().slice(0,10);
     const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
-    localStorage.setItem('PF_STATE_V6',JSON.stringify({
-      settings:{currency:'EUR',workerUrl:'https://example.invalid',autoRefreshQuotes:false},
-      assets:[],liabilities:[],transactions:[],bankTransactions:[],dividends:[],divSummaries:[],history:[],
-      brokerData:{files:[],events:[],positions:[]},priceHistory:{},fxHistory:{},
-    }));
     localStorage.setItem('vestra-market-sentiment-v5',JSON.stringify({ts:Date.now(),data:{
       current:{score:50,trend:50,momentum:50,participation:50,vol:{score:50,current:25},parts:[]},
       previousDay:null,previousWeek:null,
@@ -22,8 +17,17 @@ test('iPhone/WebKit: turning evidence opens by touch and survives market-card re
         ]},
     }}));
   });
-  await page.goto('/index.html?vestra2=0');
-  await page.waitForFunction(()=>window.__vestraAppHydrated===true);
+  // Isolate the actual companion from other Dashboard refreshers: the user
+  // interaction must not depend on loading the entire portfolio application.
+  await page.route('**/turning-fixture.html',route=>route.fulfill({
+    status:200,contentType:'text/html',body:`<!doctype html><html lang="pt"><head>
+      <meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+      <div id="viewDashboard"><div id="dashboardTodayBrief"></div></div>
+      <script>window.state={settings:{workerUrl:'https://example.invalid'}};</script>
+      <script src="/dashboard-market-sentiment.js?v=2.0-turning-tap"></script>
+      </body></html>`,
+  }));
+  await page.goto('/turning-fixture.html');
   await page.waitForFunction(()=>Boolean(window.VestraDashboardMarketSentiment));
   await page.evaluate(()=>window.VestraDashboardMarketSentiment.load(false));
   const card=page.locator('#vestraMarketSentimentCard');
