@@ -1,44 +1,44 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-19T16:05:04.611917+00:00",
+  "generated_at": "2026-11-20T12:06:29.641384+00:00",
   "production_unchanged": true,
   "min_peer_observations": 20,
-  "rows_analysed": 1928,
+  "rows_analysed": 2064,
   "models": {
     "bank": {
-      "peer_rows": 92,
+      "peer_rows": 107,
       "metrics_defined": 14,
       "metrics_peer_first_eligible": 13,
       "eligible_ratio": 0.929,
       "metrics": [
         {
           "field": "roe",
-          "peer_observations": 92,
-          "global_observations": 1920,
+          "peer_observations": 107,
+          "global_observations": 2053,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 11.986,
-          "max_absolute_percentile_shift": 42.749
+          "median_absolute_percentile_shift": 11.721,
+          "max_absolute_percentile_shift": 40.103
         },
         {
           "field": "roa",
-          "peer_observations": 92,
-          "global_observations": 1925,
+          "peer_observations": 107,
+          "global_observations": 2061,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 18.159,
-          "max_absolute_percentile_shift": 41.57
+          "median_absolute_percentile_shift": 18.26,
+          "max_absolute_percentile_shift": 41.56
         },
         {
           "field": "profit_margin",
-          "peer_observations": 92,
-          "global_observations": 1928,
+          "peer_observations": 107,
+          "global_observations": 2064,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 34.186,
-          "max_absolute_percentile_shift": 62.383
+          "median_absolute_percentile_shift": 32.665,
+          "max_absolute_percentile_shift": 60.108
         },
         {
           "field": "efficiency_ratio_proxy",
-          "peer_observations": 36,
-          "global_observations": 36,
+          "peer_observations": 37,
+          "global_observations": 37,
           "peer_first_eligible": true,
           "median_absolute_percentile_shift": 0.0,
           "max_absolute_percentile_shift": 0.0
@@ -53,30 +53,110 @@
         },
         {
           "field": "equity_to_assets",
-          "peer_observations": 92,
-          "global_observations": 92,
+          "peer_observations": 107,
+          "global_observations": 107,
           "peer_first_eligible": true,
           "median_absolute_percentile_shift": 0.0,
           "max_absolute_percentile_shift": 0.0
         },
         {
           "field": "revenue_growth",
-          "peer_observations": 91,
-          "global_observations": 1770,
+          "peer_observations": 106,
+          "global_observations": 1881,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 9.234,
-          "max_absolute_percentile_shift": 14.897
+          "median_absolute_percentile_shift": 8.38,
+          "max_absolute_percentile_shift": 11.672
         },
         {
           "field": "earnings_growth",
-          "peer_observations": 90,
-          "global_observations": 1432,
+          "peer_observations": 105,
+          "global_observations": 1516,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 12.949,
-          "max_absolute_percentile_shift": 19.538
+          "median_absolute_percentile_shift": 11.905,
+          "max_absolute_percentile_shift": 19.521
         },
         {
           "field": "net_interest_income_yoy",
+          "peer_observations": 84,
+          "global_observations": 84,
+          "peer_first_eligible": true,
+          "median_absolute_percentile_shift": 0.0,
+          "max_absolute_percentile_shift": 0.0
+        },
+        {
+          "field": "price_to_book",
+          "peer_observations": 107,
+          "global_observations": 2058,
+          "peer_first_eligible": true,
+          "median_absolute_percentile_shift": 12.618,
+          "max_absolute_percentile_shift": 31.372
+        },
+        {
+          "field": "trailing_pe",
+          "peer_observations": 105,
+          "global_observations": 1366,
+          "peer_first_eligible": true,
+          "median_absolute_percentile_shift": 23.973,
+          "max_absolute_percentile_shift": 46.407
+        },
+        {
+          "field": "forward_pe",
+          "peer_observations": 104,
+          "global_observations": 1893,
+          "peer_first_eligible": true,
+          "median_absolute_percentile_shift": 16.289,
+          "max_absolute_percentile_shift": 28.441
+        },
+        {
+          "field": "dividend_yield",
+          "peer_observations": 106,
+          "global_observations": 2030,
+          "peer_first_eligible": true,
+          "median_absolute_percentile_shift": 24.968,
+          "max_absolute_percentile_shift": 40.366
+        },
+        {
+          "field": "beta",
+          "peer_observations": 106,
+          "global_observations": 1897,
+          "peer_first_eligible": true,
+          "median_absolute_percentile_shift": 8.058,
+          "max_absolute_percentile_shift": 28.921
+        }
+      ]
+    },
+    "reit": {
+      "peer_rows": 91,
+      "metrics_defined": 11,
+      "metrics_peer_first_eligible": 11,
+      "eligible_ratio": 1.0,
+      "metrics": [
+        {
+          "field": "reit_ffo_per_share_proxy",
+          "peer_observations": 78,
+          "global_observations": 78,
+          "peer_first_eligible": true,
+          "median_absolute_percentile_shift": 0.0,
+          "max_absolute_percentile_shift": 0.0
+        },
+        {
+          "field": "roe",
+          "peer_observations": 91,
+          "global_observations": 2053,
+          "peer_first_eligible": true,
+          "median_absolute_percentile_shift": 13.521,
+          "max_absolute_percentile_shift": 31.139
+        },
+        {
+          "field": "profit_margin",
+          "peer_observations": 91,
+          "global_observations": 2064,
+          "peer_first_eligible": true,
+          "median_absolute_percentile_shift": 7.176,
+          "max_absolute_percentile_shift": 21.275
+        },
+        {
+          "field": "reit_net_debt_to_ebitda",
           "peer_observations": 71,
           "global_observations": 71,
           "peer_first_eligible": true,
@@ -84,103 +164,47 @@
           "max_absolute_percentile_shift": 0.0
         },
         {
-          "field": "price_to_book",
-          "peer_observations": 92,
-          "global_observations": 1922,
-          "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 12.481,
-          "max_absolute_percentile_shift": 30.494
-        },
-        {
-          "field": "trailing_pe",
-          "peer_observations": 91,
-          "global_observations": 1296,
-          "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 25.753,
-          "max_absolute_percentile_shift": 49.348
-        },
-        {
-          "field": "forward_pe",
-          "peer_observations": 90,
-          "global_observations": 1788,
-          "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 16.504,
-          "max_absolute_percentile_shift": 29.232
-        },
-        {
-          "field": "dividend_yield",
-          "peer_observations": 91,
-          "global_observations": 1894,
-          "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 27.592,
-          "max_absolute_percentile_shift": 44.013
-        },
-        {
-          "field": "beta",
-          "peer_observations": 92,
-          "global_observations": 1780,
-          "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 6.61,
-          "max_absolute_percentile_shift": 27.916
-        }
-      ]
-    },
-    "reit": {
-      "peer_rows": 86,
-      "metrics_defined": 11,
-      "metrics_peer_first_eligible": 11,
-      "eligible_ratio": 1.0,
-      "metrics": [
-        {
-          "field": "reit_ffo_per_share_proxy",
-          "peer_observations": 75,
-          "global_observations": 75,
-          "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 0.0,
-          "max_absolute_percentile_shift": 0.0
-        },
-        {
-          "field": "roe",
-          "peer_observations": 86,
-          "global_observations": 1920,
-          "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 14.081,
-          "max_absolute_percentile_shift": 31.463
-        },
-        {
-          "field": "profit_margin",
-          "peer_observations": 86,
-          "global_observations": 1928,
-          "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 7.379,
-          "max_absolute_percentile_shift": 23.547
-        },
-        {
-          "field": "reit_net_debt_to_ebitda",
-          "peer_observations": 68,
-          "global_observations": 68,
-          "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 0.0,
-          "max_absolute_percentile_shift": 0.0
-        },
-        {
           "field": "revenue_growth",
-          "peer_observations": 77,
-          "global_observations": 1770,
+          "peer_observations": 81,
+          "global_observations": 1881,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 8.726,
-          "max_absolute_percentile_shift": 15.094
+          "median_absolute_percentile_shift": 8.813,
+          "max_absolute_percentile_shift": 15.276
         },
         {
           "field": "earnings_growth",
-          "peer_observations": 69,
-          "global_observations": 1432,
+          "peer_observations": 73,
+          "global_observations": 1516,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 16.319,
-          "max_absolute_percentile_shift": 21.71
+          "median_absolute_percentile_shift": 15.535,
+          "max_absolute_percentile_shift": 21.037
         },
         {
           "field": "reit_p_ffo_proxy",
+          "peer_observations": 69,
+          "global_observations": 69,
+          "peer_first_eligible": true,
+          "median_absolute_percentile_shift": 0.0,
+          "max_absolute_percentile_shift": 0.0
+        },
+        {
+          "field": "price_to_book",
+          "peer_observations": 91,
+          "global_observations": 2058,
+          "peer_first_eligible": true,
+          "median_absolute_percentile_shift": 21.589,
+          "max_absolute_percentile_shift": 29.88
+        },
+        {
+          "field": "dividend_yield",
+          "peer_observations": 90,
+          "global_observations": 2030,
+          "peer_first_eligible": true,
+          "median_absolute_percentile_shift": 35.468,
+          "max_absolute_percentile_shift": 55.681
+        },
+        {
+          "field": "reit_ffo_payout_proxy",
           "peer_observations": 66,
           "global_observations": 66,
           "peer_first_eligible": true,
@@ -188,68 +212,44 @@
           "max_absolute_percentile_shift": 0.0
         },
         {
-          "field": "price_to_book",
-          "peer_observations": 86,
-          "global_observations": 1922,
-          "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 22.083,
-          "max_absolute_percentile_shift": 30.309
-        },
-        {
-          "field": "dividend_yield",
-          "peer_observations": 85,
-          "global_observations": 1894,
-          "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 33.446,
-          "max_absolute_percentile_shift": 54.175
-        },
-        {
-          "field": "reit_ffo_payout_proxy",
-          "peer_observations": 63,
-          "global_observations": 63,
-          "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 0.0,
-          "max_absolute_percentile_shift": 0.0
-        },
-        {
           "field": "beta",
-          "peer_observations": 84,
-          "global_observations": 1780,
+          "peer_observations": 89,
+          "global_observations": 1897,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 10.092,
-          "max_absolute_percentile_shift": 20.321
+          "median_absolute_percentile_shift": 10.282,
+          "max_absolute_percentile_shift": 21.836
         }
       ]
     },
     "insurance": {
-      "peer_rows": 46,
+      "peer_rows": 49,
       "metrics_defined": 13,
       "metrics_peer_first_eligible": 11,
       "eligible_ratio": 0.846,
       "metrics": [
         {
           "field": "roe",
-          "peer_observations": 46,
-          "global_observations": 1920,
+          "peer_observations": 49,
+          "global_observations": 2053,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 21.277,
-          "max_absolute_percentile_shift": 36.929
+          "median_absolute_percentile_shift": 22.611,
+          "max_absolute_percentile_shift": 38.598
         },
         {
           "field": "roa",
-          "peer_observations": 46,
-          "global_observations": 1925,
+          "peer_observations": 49,
+          "global_observations": 2061,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 10.375,
-          "max_absolute_percentile_shift": 25.618
+          "median_absolute_percentile_shift": 7.736,
+          "max_absolute_percentile_shift": 26.635
         },
         {
           "field": "profit_margin",
-          "peer_observations": 46,
-          "global_observations": 1928,
+          "peer_observations": 49,
+          "global_observations": 2064,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 16.416,
-          "max_absolute_percentile_shift": 40.375
+          "median_absolute_percentile_shift": 16.567,
+          "max_absolute_percentile_shift": 42.315
         },
         {
           "field": "insurance_claims_to_revenue",
@@ -269,67 +269,67 @@
         },
         {
           "field": "insurance_equity_to_assets",
-          "peer_observations": 45,
-          "global_observations": 45,
+          "peer_observations": 48,
+          "global_observations": 48,
           "peer_first_eligible": true,
           "median_absolute_percentile_shift": 0.0,
           "max_absolute_percentile_shift": 0.0
         },
         {
           "field": "debt_to_equity",
-          "peer_observations": 46,
-          "global_observations": 1832,
+          "peer_observations": 48,
+          "global_observations": 1951,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 7.876,
-          "max_absolute_percentile_shift": 18.727
+          "median_absolute_percentile_shift": 8.098,
+          "max_absolute_percentile_shift": 18.926
         },
         {
           "field": "revenue_growth",
-          "peer_observations": 46,
-          "global_observations": 1770,
+          "peer_observations": 49,
+          "global_observations": 1881,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 13.736,
-          "max_absolute_percentile_shift": 20.418
+          "median_absolute_percentile_shift": 13.139,
+          "max_absolute_percentile_shift": 20.129
         },
         {
           "field": "earnings_growth",
-          "peer_observations": 45,
-          "global_observations": 1432,
+          "peer_observations": 48,
+          "global_observations": 1516,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 8.113,
-          "max_absolute_percentile_shift": 24.623
+          "median_absolute_percentile_shift": 8.567,
+          "max_absolute_percentile_shift": 23.56
         },
         {
           "field": "price_to_book",
-          "peer_observations": 46,
-          "global_observations": 1922,
+          "peer_observations": 49,
+          "global_observations": 2058,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 11.227,
-          "max_absolute_percentile_shift": 16.873
+          "median_absolute_percentile_shift": 11.322,
+          "max_absolute_percentile_shift": 17.007
         },
         {
           "field": "trailing_pe",
-          "peer_observations": 45,
-          "global_observations": 1296,
+          "peer_observations": 48,
+          "global_observations": 1366,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 19.753,
-          "max_absolute_percentile_shift": 33.827
+          "median_absolute_percentile_shift": 20.341,
+          "max_absolute_percentile_shift": 34.883
         },
         {
           "field": "dividend_yield",
-          "peer_observations": 46,
-          "global_observations": 1894,
+          "peer_observations": 49,
+          "global_observations": 2030,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 16.917,
-          "max_absolute_percentile_shift": 37.512
+          "median_absolute_percentile_shift": 16.96,
+          "max_absolute_percentile_shift": 35.264
         },
         {
           "field": "beta",
-          "peer_observations": 45,
-          "global_observations": 1780,
+          "peer_observations": 47,
+          "global_observations": 1897,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 30.012,
-          "max_absolute_percentile_shift": 54.782
+          "median_absolute_percentile_shift": 30.644,
+          "max_absolute_percentile_shift": 54.848
         }
       ]
     },
@@ -342,98 +342,98 @@
         {
           "field": "roe",
           "peer_observations": 68,
-          "global_observations": 1920,
+          "global_observations": 2053,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 13.108,
-          "max_absolute_percentile_shift": 32.794
+          "median_absolute_percentile_shift": 12.629,
+          "max_absolute_percentile_shift": 33.857
         },
         {
           "field": "operating_margin",
           "peer_observations": 68,
-          "global_observations": 1928,
+          "global_observations": 2064,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 17.493,
-          "max_absolute_percentile_shift": 32.743
+          "median_absolute_percentile_shift": 17.963,
+          "max_absolute_percentile_shift": 34.026
         },
         {
           "field": "roce_proxy",
           "peer_observations": 65,
-          "global_observations": 1685,
+          "global_observations": 1781,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 18.713,
-          "max_absolute_percentile_shift": 31.294
+          "median_absolute_percentile_shift": 18.821,
+          "max_absolute_percentile_shift": 31.14
         },
         {
           "field": "debt_to_equity",
           "peer_observations": 67,
-          "global_observations": 1832,
+          "global_observations": 1951,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 23.833,
-          "max_absolute_percentile_shift": 48.989
+          "median_absolute_percentile_shift": 24.005,
+          "max_absolute_percentile_shift": 49.243
         },
         {
           "field": "dividend_yield",
           "peer_observations": 68,
-          "global_observations": 1894,
+          "global_observations": 2030,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 26.931,
-          "max_absolute_percentile_shift": 46.299
+          "median_absolute_percentile_shift": 26.362,
+          "max_absolute_percentile_shift": 45.274
         },
         {
           "field": "payout_ratio",
           "peer_observations": 66,
-          "global_observations": 1672,
+          "global_observations": 1778,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 24.751,
-          "max_absolute_percentile_shift": 40.49
+          "median_absolute_percentile_shift": 24.692,
+          "max_absolute_percentile_shift": 40.94
         },
         {
           "field": "forward_pe",
           "peer_observations": 67,
-          "global_observations": 1788,
+          "global_observations": 1893,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 13.958,
-          "max_absolute_percentile_shift": 25.56
+          "median_absolute_percentile_shift": 13.833,
+          "max_absolute_percentile_shift": 27.044
         },
         {
           "field": "trailing_pe",
           "peer_observations": 64,
-          "global_observations": 1296,
+          "global_observations": 1366,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 7.224,
-          "max_absolute_percentile_shift": 28.665
+          "median_absolute_percentile_shift": 7.83,
+          "max_absolute_percentile_shift": 28.5
         },
         {
           "field": "price_to_book",
           "peer_observations": 68,
-          "global_observations": 1922,
+          "global_observations": 2058,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 12.645,
-          "max_absolute_percentile_shift": 25.45
+          "median_absolute_percentile_shift": 13.05,
+          "max_absolute_percentile_shift": 24.108
         },
         {
           "field": "revenue_growth",
           "peer_observations": 65,
-          "global_observations": 1770,
+          "global_observations": 1881,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 4.902,
-          "max_absolute_percentile_shift": 14.85
+          "median_absolute_percentile_shift": 4.632,
+          "max_absolute_percentile_shift": 14.317
         },
         {
           "field": "earnings_growth",
           "peer_observations": 58,
-          "global_observations": 1432,
+          "global_observations": 1516,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 7.724,
-          "max_absolute_percentile_shift": 14.845
+          "median_absolute_percentile_shift": 6.957,
+          "max_absolute_percentile_shift": 15.272
         },
         {
           "field": "beta",
-          "peer_observations": 64,
-          "global_observations": 1780,
+          "peer_observations": 65,
+          "global_observations": 1897,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 26.341,
-          "max_absolute_percentile_shift": 51.44
+          "median_absolute_percentile_shift": 24.589,
+          "max_absolute_percentile_shift": 49.722
         }
       ]
     },
@@ -446,250 +446,250 @@
         {
           "field": "roe",
           "peer_observations": 98,
-          "global_observations": 1920,
+          "global_observations": 2053,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 7.856,
-          "max_absolute_percentile_shift": 19.807
+          "median_absolute_percentile_shift": 7.836,
+          "max_absolute_percentile_shift": 20.935
         },
         {
           "field": "operating_margin",
           "peer_observations": 99,
-          "global_observations": 1928,
+          "global_observations": 2064,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 5.808,
-          "max_absolute_percentile_shift": 16.375
+          "median_absolute_percentile_shift": 5.611,
+          "max_absolute_percentile_shift": 16.35
         },
         {
           "field": "roce_proxy",
-          "peer_observations": 97,
-          "global_observations": 1685,
+          "peer_observations": 98,
+          "global_observations": 1781,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 9.808,
-          "max_absolute_percentile_shift": 20.489
+          "median_absolute_percentile_shift": 10.128,
+          "max_absolute_percentile_shift": 21.493
         },
         {
           "field": "debt_to_equity",
           "peer_observations": 98,
-          "global_observations": 1832,
+          "global_observations": 1951,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 3.685,
-          "max_absolute_percentile_shift": 12.528
+          "median_absolute_percentile_shift": 3.604,
+          "max_absolute_percentile_shift": 14.8
         },
         {
           "field": "trailing_pe",
-          "peer_observations": 72,
-          "global_observations": 1296,
+          "peer_observations": 71,
+          "global_observations": 1366,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 21.373,
-          "max_absolute_percentile_shift": 29.398
+          "median_absolute_percentile_shift": 21.167,
+          "max_absolute_percentile_shift": 31.111
         },
         {
           "field": "forward_pe",
-          "peer_observations": 94,
-          "global_observations": 1788,
+          "peer_observations": 95,
+          "global_observations": 1893,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 7.345,
-          "max_absolute_percentile_shift": 18.497
+          "median_absolute_percentile_shift": 7.635,
+          "max_absolute_percentile_shift": 18.227
         },
         {
           "field": "enterprise_to_ebitda",
           "peer_observations": 97,
-          "global_observations": 1710,
+          "global_observations": 1808,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 10.969,
-          "max_absolute_percentile_shift": 23.995
+          "median_absolute_percentile_shift": 11.069,
+          "max_absolute_percentile_shift": 24.067
         },
         {
           "field": "revenue_growth",
           "peer_observations": 94,
-          "global_observations": 1770,
+          "global_observations": 1881,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 14.848,
-          "max_absolute_percentile_shift": 34.969
+          "median_absolute_percentile_shift": 17.561,
+          "max_absolute_percentile_shift": 36.557
         },
         {
           "field": "earnings_growth",
-          "peer_observations": 79,
-          "global_observations": 1432,
+          "peer_observations": 80,
+          "global_observations": 1516,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 12.161,
-          "max_absolute_percentile_shift": 30.652
+          "median_absolute_percentile_shift": 11.456,
+          "max_absolute_percentile_shift": 30.016
         },
         {
           "field": "beta",
-          "peer_observations": 94,
-          "global_observations": 1780,
+          "peer_observations": 93,
+          "global_observations": 1897,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 26.37,
-          "max_absolute_percentile_shift": 35.704
+          "median_absolute_percentile_shift": 25.922,
+          "max_absolute_percentile_shift": 35.68
         }
       ]
     },
     "biotech": {
-      "peer_rows": 210,
+      "peer_rows": 238,
       "metrics_defined": 8,
       "metrics_peer_first_eligible": 8,
       "eligible_ratio": 1.0,
       "metrics": [
         {
           "field": "gross_margin",
-          "peer_observations": 210,
-          "global_observations": 1925,
+          "peer_observations": 238,
+          "global_observations": 2061,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 12.221,
-          "max_absolute_percentile_shift": 32.121
+          "median_absolute_percentile_shift": 10.494,
+          "max_absolute_percentile_shift": 33.585
         },
         {
           "field": "operating_margin",
-          "peer_observations": 210,
-          "global_observations": 1928,
+          "peer_observations": 238,
+          "global_observations": 2064,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 18.639,
-          "max_absolute_percentile_shift": 42.364
+          "median_absolute_percentile_shift": 19.067,
+          "max_absolute_percentile_shift": 42.731
         },
         {
           "field": "revenue_growth",
-          "peer_observations": 134,
-          "global_observations": 1770,
+          "peer_observations": 149,
+          "global_observations": 1881,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 6.554,
-          "max_absolute_percentile_shift": 13.301
+          "median_absolute_percentile_shift": 7.289,
+          "max_absolute_percentile_shift": 14.991
         },
         {
           "field": "earnings_growth",
-          "peer_observations": 120,
-          "global_observations": 1432,
+          "peer_observations": 136,
+          "global_observations": 1516,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 3.762,
-          "max_absolute_percentile_shift": 11.681
+          "median_absolute_percentile_shift": 2.933,
+          "max_absolute_percentile_shift": 7.927
         },
         {
           "field": "debt_to_equity",
-          "peer_observations": 186,
-          "global_observations": 1832,
+          "peer_observations": 211,
+          "global_observations": 1951,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 12.142,
-          "max_absolute_percentile_shift": 22.164
+          "median_absolute_percentile_shift": 13.179,
+          "max_absolute_percentile_shift": 25.105
         },
         {
           "field": "current_ratio",
-          "peer_observations": 209,
-          "global_observations": 1842,
+          "peer_observations": 237,
+          "global_observations": 1965,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 23.051,
-          "max_absolute_percentile_shift": 38.837
+          "median_absolute_percentile_shift": 24.764,
+          "max_absolute_percentile_shift": 41.257
         },
         {
           "field": "quick_ratio",
-          "peer_observations": 209,
-          "global_observations": 1841,
+          "peer_observations": 237,
+          "global_observations": 1964,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 22.058,
-          "max_absolute_percentile_shift": 40.029
+          "median_absolute_percentile_shift": 23.434,
+          "max_absolute_percentile_shift": 42.46
         },
         {
           "field": "beta",
-          "peer_observations": 190,
-          "global_observations": 1780,
+          "peer_observations": 212,
+          "global_observations": 1897,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 6.283,
-          "max_absolute_percentile_shift": 11.177
+          "median_absolute_percentile_shift": 5.974,
+          "max_absolute_percentile_shift": 12.113
         }
       ]
     },
     "growth_tech": {
-      "peer_rows": 249,
+      "peer_rows": 253,
       "metrics_defined": 11,
       "metrics_peer_first_eligible": 11,
       "eligible_ratio": 1.0,
       "metrics": [
         {
           "field": "roe",
-          "peer_observations": 247,
-          "global_observations": 1920,
+          "peer_observations": 252,
+          "global_observations": 2053,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 3.705,
-          "max_absolute_percentile_shift": 8.28
+          "median_absolute_percentile_shift": 3.711,
+          "max_absolute_percentile_shift": 8.562
         },
         {
           "field": "roa",
-          "peer_observations": 248,
-          "global_observations": 1925,
+          "peer_observations": 253,
+          "global_observations": 2061,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 3.603,
-          "max_absolute_percentile_shift": 8.795
+          "median_absolute_percentile_shift": 4.272,
+          "max_absolute_percentile_shift": 8.547
         },
         {
           "field": "gross_margin",
-          "peer_observations": 249,
-          "global_observations": 1925,
+          "peer_observations": 253,
+          "global_observations": 2061,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 11.986,
-          "max_absolute_percentile_shift": 18.615
+          "median_absolute_percentile_shift": 12.295,
+          "max_absolute_percentile_shift": 19.593
         },
         {
           "field": "operating_margin",
-          "peer_observations": 249,
-          "global_observations": 1928,
+          "peer_observations": 253,
+          "global_observations": 2064,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 6.409,
-          "max_absolute_percentile_shift": 13.338
+          "median_absolute_percentile_shift": 5.886,
+          "max_absolute_percentile_shift": 13.513
         },
         {
           "field": "revenue_growth",
-          "peer_observations": 245,
-          "global_observations": 1770,
+          "peer_observations": 249,
+          "global_observations": 1881,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 17.654,
-          "max_absolute_percentile_shift": 36.255
+          "median_absolute_percentile_shift": 18.111,
+          "max_absolute_percentile_shift": 35.277
         },
         {
           "field": "earnings_growth",
-          "peer_observations": 187,
-          "global_observations": 1432,
+          "peer_observations": 186,
+          "global_observations": 1516,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 9.148,
-          "max_absolute_percentile_shift": 21.098
+          "median_absolute_percentile_shift": 9.495,
+          "max_absolute_percentile_shift": 20.356
         },
         {
           "field": "debt_to_equity",
-          "peer_observations": 241,
-          "global_observations": 1832,
+          "peer_observations": 248,
+          "global_observations": 1951,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 8.991,
-          "max_absolute_percentile_shift": 16.005
+          "median_absolute_percentile_shift": 7.502,
+          "max_absolute_percentile_shift": 14.606
         },
         {
           "field": "forward_pe",
-          "peer_observations": 233,
-          "global_observations": 1788,
+          "peer_observations": 236,
+          "global_observations": 1893,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 5.698,
-          "max_absolute_percentile_shift": 13.225
+          "median_absolute_percentile_shift": 5.277,
+          "max_absolute_percentile_shift": 12.907
         },
         {
           "field": "enterprise_to_ebitda",
-          "peer_observations": 244,
-          "global_observations": 1710,
+          "peer_observations": 248,
+          "global_observations": 1808,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 6.812,
-          "max_absolute_percentile_shift": 15.188
+          "median_absolute_percentile_shift": 6.289,
+          "max_absolute_percentile_shift": 15.362
         },
         {
           "field": "peg_ratio",
-          "peer_observations": 148,
-          "global_observations": 1227,
+          "peer_observations": 150,
+          "global_observations": 1264,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 15.471,
-          "max_absolute_percentile_shift": 23.474
+          "median_absolute_percentile_shift": 15.368,
+          "max_absolute_percentile_shift": 23.381
         },
         {
           "field": "beta",
-          "peer_observations": 222,
-          "global_observations": 1780,
+          "peer_observations": 226,
+          "global_observations": 1897,
           "peer_first_eligible": true,
-          "median_absolute_percentile_shift": 20.677,
-          "max_absolute_percentile_shift": 31.44
+          "median_absolute_percentile_shift": 21.231,
+          "max_absolute_percentile_shift": 32.013
         }
       ]
     }
