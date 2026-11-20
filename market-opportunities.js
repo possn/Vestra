@@ -97,6 +97,7 @@
   const EARLY_SETUP_POLICY_VERSION='initial_base_lineage_v2';
   let prebreakoutFeedGeneratedAt=null;
   let prebreakoutSlotEvidence=null;
+  let prebreakoutCoverageEvidence=null;
   let prebreakoutResearchWatch=[];
   let prebreakoutContinuationWatch=[];
   function continuationWatchRows(payload){
@@ -153,10 +154,12 @@
     if(prebreakoutFeedStatus==='old_policy')return 'Pré-breakout a atualizar: o último relatório foi calculado com critérios anteriores. Os sinais aguardam nova verificação.';
     if(prebreakoutFeedStatus==='unavailable')return 'Pré-breakout indisponível: não foi possível validar o relatório publicado.';
     const sample=prebreakoutSlotEvidence;
+    const coverage=prebreakoutCoverageEvidence;
+    const denominator=coverage?` Cobertura OHLCV verificada em 24 h: ${coverage.verified}/${coverage.eligible} ações (${coverage.percent.toFixed(1).replace('.',',')}%).`:'';
     if(sample&&sample.attempted>0&&sample.evaluable===0)
       return 'Pré-breakout inconclusivo: nenhum dos '+sample.attempted+
         ' ativos analisados tinha histórico OHLCV avaliável. Sem evidência suficiente para identificar setups atuais.';
-    return 'Sem sinais de pré-breakout elegíveis no último relatório verificado. Não significa ausência de setups em todo o mercado.';
+    return 'Sem sinais de pré-breakout elegíveis no último relatório verificado.'+denominator+' Não significa ausência de setups em todo o mercado.';
   }
   async function loadPrebreakoutFeed(){
     // During publication checks, never present locally inferred setups as current signals.
@@ -164,6 +167,7 @@
     prebreakoutFeedStatus='loading';
     prebreakoutFeedGeneratedAt=null;
     prebreakoutSlotEvidence=null;
+    prebreakoutCoverageEvidence=null;
     prebreakoutResearchWatch=[];
     prebreakoutContinuationWatch=[];
     try{
@@ -192,6 +196,12 @@
         throw new Error('prebreakout feed invalid quality coverage');
       if(observedCoverage!=null&&auditCoverage!=null&&Math.abs(observedCoverage-auditCoverage)>0.01)
         throw new Error('prebreakout feed conflicting coverage audits');
+      const coverageAudit=payload?.coverage_audit_24h;
+      const verified=coverageAudit?.current_eligible_verified_distinct;
+      const eligible=coverageAudit?.eligible_universe;
+      if(Number.isInteger(verified)&&Number.isInteger(eligible)&&eligible>0&&verified>=0&&verified<=eligible&&
+        Number.isFinite(observedCoverage)&&Math.abs(100*verified/eligible-observedCoverage)<=0.02)
+        prebreakoutCoverageEvidence={verified,eligible,percent:observedCoverage};
       // A seven-day-old bar may be valid after holidays, but an old publisher
       // snapshot is never fresh technical evidence. Explicit empty published
       // scans remain authoritative; stale snapshots must not revive candidates.
