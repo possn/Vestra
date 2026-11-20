@@ -217,7 +217,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         market = read('market.js')
         self.assertIn("function rankLens(universe,lens", source)
         self.assertIn(".filter(s=>lensEligible(s,lens))", source)
-        self.assertIn("ranked.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0))", source)
+        self.assertIn("ranked.sort(compareDiscoveryPriority)", source)
         self.assertIn("const rows=rankLens(universe,activeLens,{limit:12,sector:sec})", source)
         self.assertIn("function lensEligible(s,lens)", source)
         self.assertIn("function lensScore(s,lens)", source)
@@ -247,8 +247,11 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('return discoveryScore(s);', block)
         self.assertNotIn('lensTilt', source)
         self.assertNotIn('discovery*.82', source)
-        self.assertIn("ranked.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0))", ranked)
-        self.assertIn("rows:general.filter(s=>lensEligible(s,type)).sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0))", buckets)
+        self.assertIn("ranked.sort(compareDiscoveryPriority)", ranked)
+        self.assertIn("rows:general.filter(s=>lensEligible(s,type)).sort(compareDiscoveryPriority)", buckets)
+        self.assertIn("const scored=(discoveryScore(b)??-1)-(discoveryScore(a)??-1)", block)
+        self.assertIn("if(scored)return scored", block)
+        self.assertIn("if(rawA!==null&&rawB!==null&&rawA!==rawB)return rawB-rawA", block)
         self.assertNotIn('confidence_score', block)
 
     def test_opportunity_rows_explain_why_now_without_new_alpha(self):
