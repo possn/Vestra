@@ -1306,6 +1306,15 @@ def main():
         "ma_failed_checks":[],"no_future_outcome_at_capture":True}
         for ticker in tickers if ticker not in observed_names)
     scan_quality=slot_quality_audit(slot_telemetry,audit)
+    # Data-provider failures must be visible independently of pattern scarcity.
+    # No missing prices are patched or interpreted as negative setups.
+    invalid_rows=gate_exclusions.get("invalid_ohlcv_or_date",0)
+    invalid_pct=round(100*invalid_rows/len(tickers),2) if tickers else None
+    scan_quality["invalid_ohlcv_slot_pct"]=invalid_pct
+    scan_quality["ohlcv_integrity_alert"]=bool(invalid_pct is not None and invalid_pct>10)
+    scan_quality["ohlcv_integrity_alert_reason"]=(
+        "more_than_10_pct_invalid_ohlcv_in_current_slot"
+        if scan_quality["ohlcv_integrity_alert"] else None)
     observed_features=[r["technical_evidence_shadow"] for r in research_rows
         if r.get("evaluable") is True and isinstance(r.get("technical_evidence_shadow"),dict)
         and r["technical_evidence_shadow"].get("status")=="measured"]
