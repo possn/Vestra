@@ -8,6 +8,7 @@
   const CACHE_TTL_MS=15*60*1000;
   const FETCH_TIMEOUT_MS=10000;
   const AAII_REFRESH_INTERVAL_MS=15*60*1000;
+  const NYSE_BREADTH_PATH='data/nyse-advance-decline.json';
   let aaiiLastAttempt=0;
   let aaiiRequest=null;
 
@@ -22,7 +23,7 @@
   const VIX_TICKER='^VIX';
   const VVIX_TICKER='^VVIX'; // Optional volatility-of-volatility context, not a sixth vote.
 
-  const S={loading:false,data:null,error:'',scheduled:false,expanded:false,aaiiExpanded:false,aaii:null,cnn:null};
+  const S={loading:false,data:null,error:'',scheduled:false,expanded:false,aaiiExpanded:false,aaii:null,cnn:null,nyse:null};
   const num=v=>{if(v===null||v===undefined||v==='') return null;const n=Number(v);return Number.isFinite(n)?n:null};
   const clamp=(v,min=0,max=100)=>Math.max(min,Math.min(max,v));
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -253,7 +254,7 @@
     factors.push({name:'Participação · 6 mercados proxy',value:`${coverage}/6 mercados comparáveis`,
       bottom:coverage>=5?recovering>=4:null,
       top:coverage>=5?deteriorating>=4:null});
-    return {date:anchor,factors,vvixContext:vvixContext?{
+    return {date:anchor,factors,spyDaily:spy.slice(-90),vvixContext:vvixContext?{
       observed:true,risingStress:vvixContext.risingStress,cooling:vvixContext.cooling,
       current:vvixContext.current}: {observed:false},
       method:'experimental_unvalidated_not_probability'};
@@ -270,29 +271,71 @@
     return {name:'Sentimento',value:'Sem observação recente',bottom:null,top:null};
   }
 
-  function turningPointReading(base,cnn,aaii,asOf=new Date()){
+  // NYSE advancing minus declining *listed common shares*, never ETF-proxy breadth.
+  // The source must provide observed issue counts and an auditable provenance URL.
+  // Missing, mismatched or stale observations never become a vote.
+  function nyseBreadthFactor(payload,spyDaily,anchor){
+    const unavailable=(reason)=>({name:'NYSE · Advance–Decline',value:reason,bottom:null,top:null});
+    if(payload?.venue!=='NYSE'||payload?.instrument_scope!=='listed_common_stocks'||
+       payload?.method!=='issues_advancers_minus_decliners'||
+       !/^https:\/\//.test(payload?.source_url||'')||!Array.isArray(payload?.sessions))
+      return unavailable('Fonte NYSE verificável indisponível');
+    const spy=new Map((spyDaily||[]).map(row=>[row.date,row.close]));
+    const sessions=payload.sessions;
+    if(sessions.length<60||sessions.length>1500) return unavailable('Série NYSE insuficiente');
+    let prev='',cumulative=0;
+    const aligned=[];
+    for(const row of sessions){
+      const {date,advancers,decliners}=row||{};
+      if(typeof date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(date)||date<=prev||date>anchor||
+         !Number.isSafeInteger(advancers)||!Number.isSafeInteger(decliners)||
+         advancers<0||decliners<0||advancers+decliners<100||advancers+decliners>10000)
+        return unavailable('Série NYSE inválida');
+      prev=date;cumulative+=advancers-decliners;
+      if(spy.has(date)) aligned.push({date,price:spy.get(date),ad:cumulative});
+    }
+    if(prev!==anchor||aligned.length<45||aligned.at(-1)?.date!==anchor)
+      return unavailable('NYSE sem cobertura comparável ao S&P 500');
+    const recent=aligned.slice(-41);
+    if(recent.length<41) return unavailable('NYSE sem janela de divergência');
+    const prior=recent.slice(0,20),last=recent.slice(20);
+    const p=last.at(-1),prevPriceLow=Math.min(...prior.map(x=>x.price));
+    const prevPriceHigh=Math.max(...prior.map(x=>x.price));
+    const priorAdLow=Math.min(...prior.map(x=>x.ad)),priorAdHigh=Math.max(...prior.map(x=>x.ad));
+    const adChange5=p.ad-last.at(-6).ad;
+    const bottom=p.price<=prevPriceLow*1.005&&p.ad>priorAdLow&&adChange5>0;
+    const top=p.price>=prevPriceHigh*.995&&p.ad<priorAdHigh&&adChange5<0;
+    return {name:'NYSE · Advance–Decline',value:`A−D 5 sessões ${adChange5>=0?'+':''}${adChange5} · divergência ${bottom?'positiva':top?'negativa':'não confirmada'}`,
+      bottom,top,sourceUrl:payload.source_url};
+  }
+
+  function turningPointReading(base,cnn,aaii,asOf=new Date(),nyse=null){
     if(!base||!Array.isArray(base.factors)) return null;
-    const factors=[...base.factors,turningSentiment(cnn,aaii,asOf)];
+    const breadth=nyseBreadthFactor(nyse,base.spyDaily,base.date);
+    // NYSE breadth supersedes, rather than double-counts, the six-ETF proxy.
+    const factors=[...base.factors];
+    if(typeof breadth.bottom==='boolean') factors[3]=breadth;
+    factors.push(turningSentiment(cnn,aaii,asOf));
     const available=factors.filter(f=>typeof f.bottom==='boolean').length;
     const bottom=factors.filter(f=>f.bottom===true).length,top=factors.filter(f=>f.top===true).length;
     const ageDays=(asOf.getTime()-Date.parse(`${base.date}T23:59:59Z`))/86400000;
     const usable=available>=4&&Number.isFinite(ageDays)&&ageDays>=-1&&ageDays<=5;
     const direction=usable&&bottom>=3&&bottom>top&&factors[2]?.bottom===true?'bottom':
       usable&&top>=3&&top>bottom&&factors[2]?.top===true?'top':null;
-    return {direction,bottom,top,available,factors,asOf:base.date,
+    return {direction,bottom,top,available,factors,nyseBreadth:breadth,asOf:base.date,
       label:!usable?'Evidência incompleta ou antiga':direction==='bottom'?'Possível fundo em formação':direction==='top'?'Possível topo em formação':'Sem confluência de inversão',
       unvalidated:true};
   }
 
   function turningMarkup(){
-    const r=turningPointReading(S.data?.turningInputs,S.cnn,S.aaii);
+    const r=turningPointReading(S.data?.turningInputs,S.cnn,S.aaii,new Date(),S.nyse);
     if(!r) return '<section class="dms-turning"><span>INVERSÕES · EXPERIMENTAL</span><strong>Leitura indisponível</strong><p>Faltam históricos completos do SPY e do VIX.</p></section>';
     const rows=r.factors.map(f=>`<li><span>${esc(f.name)}</span><b>${esc(f.value)}</b><small>${f.bottom===null?'Sem evidência':f.bottom?'Pista de fundo':f.top?'Pista de topo':'Não confirma'}</small></li>`).join('');
     const count=r.direction==='top'?r.top:r.bottom;
     return `<section class="dms-turning" aria-label="Possíveis inversões de mercado, investigação experimental">
       <span>INVERSÕES · EXPERIMENTAL</span><strong>${esc(r.label)}</strong>
       <p>${r.direction?`${count} de ${r.available} critérios observados convergem.`:`Fundo ${r.bottom} · topo ${r.top} de ${r.available} critérios observados.`} Contagem de evidências, não probabilidade nem sinal de investimento.</p>
-      <details><summary>Ver VIX, VVIX, RSI e evidências <span aria-hidden="true">+</span></summary><ul>${rows}</ul><p>Última sessão fechada ${esc(r.asOf)}. VVIX é contexto da tensão do VIX, não um voto adicional. Sem histórico VVIX comparável, mantém-se a leitura VIX isolada. Limiar heurístico sem validação prospetiva; participação é proxy de seis mercados, não breadth real. VIX e VVIX não preveem direção.</p></details>
+      <details><summary>Ver VIX, VVIX, RSI e evidências <span aria-hidden="true">+</span></summary><ul>${rows}</ul><p>${esc(r.nyseBreadth.value)}${r.nyseBreadth.sourceUrl?` · <a href="${esc(r.nyseBreadth.sourceUrl)}" target="_blank" rel="noopener noreferrer">Fonte NYSE ↗</a>`:''}. Última sessão fechada ${esc(r.asOf)}. VVIX ajusta o contexto do VIX, sem voto adicional. A linha A−D NYSE substitui a proxy dos seis mercados apenas com dados auditáveis; não soma um voto. Limiar heurístico sem validação prospetiva; VIX e VVIX não preveem direção.</p></details>
     </section>`;
   }
 
@@ -437,6 +480,19 @@
       }finally{aaiiRequest=null;}
     })();
     return aaiiRequest;
+  }
+
+  async function loadNyseBreadth(){
+    try{
+      const response=await fetchWithTimeout(NYSE_BREADTH_PATH);
+      if(!response.ok) throw new Error(`NYSE breadth ${response.status}`);
+      const payload=await response.json();
+      S.nyse=payload;
+    }catch(error){
+      S.nyse=null;
+      console.warn('[Vestra] NYSE advance-decline unavailable',error);
+    }
+    render();
   }
 
   function reason(snapshot){
@@ -639,6 +695,7 @@
     scheduleLoad();
     loadAaii();
     loadCnn();
+    loadNyseBreadth();
     window.addEventListener('focus',()=>loadAaii());
     document.addEventListener('visibilitychange',()=>{if(!document.hidden) loadAaii();});
     window.addEventListener('vestra:app-ready',()=>{render();scheduleLoad();});
@@ -648,7 +705,7 @@
     },true);
     document.addEventListener('click',event=>{
       if(event.target?.closest?.('[data-dms-detail-toggle]')){S.expanded=!S.expanded;render();return;}
-      if(event.target?.closest?.('[data-dms-refresh]')){load(true);loadAaii(true);loadCnn();return;}
+      if(event.target?.closest?.('[data-dms-refresh]')){load(true);loadAaii(true);loadCnn();loadNyseBreadth();return;}
       if(event.target?.closest?.('[data-view="dashboard"]')) setTimeout(()=>{render();scheduleLoad();},60);
     });
   }
@@ -657,10 +714,11 @@
   else boot();
 
   window.VestraDashboardMarketSentiment=Object.freeze({
-    version:'1.9',
+    version:'1.10',
     computeSnapshot,
     turningPointInputs,
     turningPointReading,
+    nyseBreadthFactor,
     weeklyRsi14,
     priceFreshness,
     labelFor,
