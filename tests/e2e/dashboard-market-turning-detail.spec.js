@@ -48,7 +48,7 @@ test('iPhone/WebKit: turning evidence opens by touch and survives market-card re
 });
 
 test('iPhone/WebKit: full app loads market sentiment CSS before showing the card',async({page})=>{
-  await page.goto('/index.html?vestra2=0');
+  await page.goto('/index.html');
   await page.waitForFunction(()=>window.__vestraAppHydrated===true);
   await page.getByRole('button',{name:'Abrir barómetro de mercado'}).click();
   const card=page.locator('#vestraMarketSentimentCard');
