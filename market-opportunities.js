@@ -548,6 +548,16 @@
     // alpha signal or reweight the canonical opportunity ranking.
     return discoveryScore(s);
   }
+  function compareDiscoveryPriority(a,b){
+    // Market-wide risk caps can intentionally collapse many valid scores onto
+    // 59. Keep that safety cap visible, but recover the *within-cap* ordering
+    // from the canonical pre-cap score. Never promote a lower capped score.
+    const scored=(discoveryScore(b)??-1)-(discoveryScore(a)??-1);
+    if(scored)return scored;
+    const rawA=n(a?.opportunity_score_raw),rawB=n(b?.opportunity_score_raw);
+    if(rawA!==null&&rawB!==null&&rawA!==rawB)return rawB-rawA;
+    return t(a?.ticker).localeCompare(t(b?.ticker));
+  }
   function rankedCandidates(universe,lens,sector='all'){
     const source=Array.isArray(universe)?universe:[];
     // Independently verified Small Caps must not disappear merely because
@@ -563,7 +573,7 @@
       const tier=s=>['opportunity','watch'].includes(t(s?.low52_status).toLowerCase())?0:1;
       return ranked.sort((a,b)=>tier(a)-tier(b) || (low52Above(a)-low52Above(b)));
     }
-    ranked.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
+    ranked.sort(compareDiscoveryPriority);
     return ranked;
   }
   function diversify(rows,limit,{sectorCap=3,industryCap=2,recoveryCap=Infinity}={}){
@@ -597,11 +607,11 @@
 
     const canonical=(Array.isArray(universe)?universe:[]).filter(s=>eligible(s));
     const scoped=sector==='all'?canonical:canonical.filter(s=>t(s?.sector)===sector);
-    const general=scoped.slice().sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
+    const general=scoped.slice().sort(compareDiscoveryPriority);
     const archetypes=['low52','emerging','recovery','value'];
     const buckets=archetypes.map(type=>({
       type,
-      rows:general.filter(s=>lensEligible(s,type)).sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0)),
+      rows:general.filter(s=>lensEligible(s,type)).sort(compareDiscoveryPriority),
       index:0
     }));
     const selected=[],seen=new Set();
