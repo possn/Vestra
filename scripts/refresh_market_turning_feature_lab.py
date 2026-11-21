@@ -12,6 +12,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from market_turning_feature_lab import lab_report
 from market_turning_walkforward import evaluate
+from market_turning_conditional_ablations import conditional_evaluate
 
 ROOT = Path(__file__).resolve().parents[1]
 SYMBOLS = ("SPY", "^VIX", "^VVIX", "^COR1M", "^VIX3M", "HYG", "LQD")
@@ -76,6 +77,8 @@ def collect(downloader, now=None, start="2004-01-01"):
     result = lab_report(prices)
     # Exploratory chronological benchmark; retrospective provider vintages remain unverified.
     result["holdout"] = evaluate(prices)
+    # Distinguish recognition of drawdown from prospective turning-point skill.
+    result["stress_conditioned_ablation"] = conditional_evaluate(prices)
     result["generated_at"] = now.isoformat()
     result["source_provenance"] = {
         "provider": "yahoo_finance",
