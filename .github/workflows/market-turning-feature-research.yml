@@ -8,6 +8,8 @@ on:
     branches: [main]
     paths:
       - 'scripts/market_turning_feature_lab.py'
+      - 'scripts/market_turning_walkforward.py'
+      - 'tests/test_market_turning_walkforward.py'
       - 'scripts/refresh_market_turning_feature_lab.py'
       - '.github/workflows/market-turning-feature-research.yml'
 
@@ -36,6 +38,7 @@ jobs:
         run: |
           python tests/test_market_turning_feature_lab.py
           python tests/test_refresh_market_turning_feature_lab.py
+          python tests/test_market_turning_walkforward.py
       - name: Read independent historical daily OHLCV
         run: python scripts/refresh_market_turning_feature_lab.py
       - name: Record research report as workflow artifact
