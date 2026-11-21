@@ -283,6 +283,29 @@
       weightFamilies:familyWeights,correlationMaxAdjustment:5};
   }
 
+  // Diagnostic only: contemporaneous capitulation pressure is not a validated
+  // bottom probability. Do not confuse it with the existing recovery votes.
+  function capitulationContext(details,anchor,asOf=new Date()){
+    const spy=completedHistory(details.SPY,asOf).filter(r=>r.date<=anchor);
+    const vix=completedHistory(details[VIX_TICKER],asOf).filter(r=>r.date<=anchor);
+    if(spy.length<126||vix.length<126||spy.at(-1).date!==anchor||vix.at(-1).date!==anchor)
+      return {available:false,reason:'SPY/VIX sem 126 sessões alinhadas'};
+    const p=spy.at(-1).close,v=vix.at(-1).close;
+    const high=Math.max(...spy.slice(-126).map(r=>r.close));
+    const drawdown=100*(p/high-1);
+    const vs=vix.slice(-126).map(r=>r.close);
+    const percentile=100*vs.filter(x=>x<=v).length/vs.length;
+    const stressExtreme=v>=35&&percentile>=90&&drawdown<=-10;
+    const stressElevated=v>=25&&percentile>=75&&drawdown<=-7;
+    const level=stressExtreme?'extreme':stressElevated?'elevated':'not_detected';
+    const label=stressExtreme?'Capitulação potencial · stress extremo':
+      stressElevated?'Pressão vendedora elevada':'Capitulação não identificada';
+    return {available:true,date:anchor,level,label,vix:v,vixPercentile:percentile,
+      spyDrawdown126:drawdown,
+      description:'Stress e drawdown contemporâneos; não confirma exaustão nem estima probabilidade de fundo',
+      methodology:'descriptive_126_session_stress_not_predictive'};
+  }
+
   function turningPointInputs(details,asOf=new Date()){
     const spy=completedHistory(details.SPY,asOf);
     const vix=completedHistory(details[VIX_TICKER],asOf);
@@ -347,6 +370,7 @@
       top:coverage>=5?deteriorating>=4:null});
     return {date:anchor,factors,spyDaily:spy.slice(-90),
       impliedCorrelation:correlation,
+      capitulation:capitulationContext(details,anchor,asOf),
       creditContext:creditStressContext(details,anchor,asOf),vvixContext:vvixContext?{
       observed:true,risingStress:vvixContext.risingStress,cooling:vvixContext.cooling,
       current:vvixContext.current}: {observed:false},
@@ -418,6 +442,7 @@
     return {direction,bottom,top,available,factors,nyseBreadth:breadth,asOf:base.date,
       correlation:base.impliedCorrelation||{observed:false,value:'COR1M indisponível'},
       proximity:turningProximityScales(factors,base.impliedCorrelation,base.date,asOf),
+      capitulation:base.capitulation||{available:false,reason:'Dados em falta'},
       priceStructure:turningPriceStructure(base.spyDaily),
       label:!usable?'Evidência incompleta ou antiga':direction==='bottom'?'Possível fundo em formação':direction==='top'?'Possível topo em formação':'Sem confluência de inversão',
       unvalidated:true};
@@ -469,6 +494,9 @@
     return `<section class="dms-turning" aria-label="Possíveis inversões de mercado, investigação experimental">
       <span>INVERSÕES · EXPERIMENTAL</span><strong>${esc(r.label)}</strong>
       ${scalesMarkup}
+      <p><strong>Capitulação (contexto separado):</strong> ${r.capitulation?.available?
+        `${esc(r.capitulation.label)} · VIX percentil ${Math.round(r.capitulation.vixPercentile)}/100 (126 sessões) · recuo SPY ${r.capitulation.spyDrawdown126.toFixed(1)}% desde máximo 126 sessões. Não é probabilidade nem fundo confirmado.`:
+        esc(r.capitulation?.reason||'indisponível')}.</p>
       <p>${esc(r.priceStructure.label)} (estrutura técnica descritiva). ${r.direction?`${count} de ${r.available} critérios observados convergem.`:`Fundo ${r.bottom} · topo ${r.top} de ${r.available} critérios observados.`} Contagem de evidências, não probabilidade nem sinal de investimento.</p>
       <button type="button" class="dms-turning-toggle" data-dms-turning-toggle aria-expanded="${S.turningExpanded?'true':'false'}" aria-controls="dmsTurningEvidence">${S.turningExpanded?'Ocultar evidências':'Ver VIX, VVIX, RSI e evidências'} <span aria-hidden="true">${S.turningExpanded?'−':'+'}</span></button>
       <div class="dms-turning-evidence" id="dmsTurningEvidence"${S.turningExpanded?'':' hidden'}><ul>${rows}</ul><p><strong>Crédito (contexto, sem voto):</strong> ${esc(S.data?.turningInputs?.creditContext?.value||'HYG/LQD indisponível')}. ${esc(r.nyseBreadth.value)}${r.nyseBreadth.sourceUrl?` · <a href="${esc(r.nyseBreadth.sourceUrl)}" target="_blank" rel="noopener noreferrer">Fonte NYSE ↗</a>`:''}. Última sessão fechada ${esc(r.asOf)}. COR1M: ${esc(r.correlation.value)}. O COR1M só pode acrescentar até 5 pontos dentro da família VIX, se houver evidência de alívio após tensão ou contágio em alta; não soma um voto independente. VVIX ajusta o contexto do VIX, sem voto adicional. A linha A−D NYSE substitui a proxy dos seis mercados apenas com dados auditáveis; não soma um voto. HYG/LQD é uma proxy de preços, não um spread de crédito. Limiar heurístico sem validação prospetiva; VIX e VVIX não preveem direção.</p></div>
@@ -856,6 +884,7 @@
     turningPointInputs,
     turningPointReading,
     turningProximityScales,
+    capitulationContext,
     impliedCorrelationContext,
     nyseBreadthFactor,
     creditStressContext,

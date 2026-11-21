@@ -11,6 +11,7 @@ import math
 from datetime import date, datetime, timezone
 from pathlib import Path
 from market_turning_feature_lab import lab_report
+from market_turning_walkforward import evaluate
 
 ROOT = Path(__file__).resolve().parents[1]
 SYMBOLS = ("SPY", "^VIX", "^VVIX", "^COR1M", "^VIX3M", "HYG", "LQD")
@@ -73,6 +74,8 @@ def collect(downloader, now=None, start="2004-01-01"):
     if len(prices["SPY"]) < 750:
         raise ValueError("SPY history insufficient for long-horizon research")
     result = lab_report(prices)
+    # Exploratory chronological benchmark; retrospective provider vintages remain unverified.
+    result["holdout"] = evaluate(prices)
     result["generated_at"] = now.isoformat()
     result["source_provenance"] = {
         "provider": "yahoo_finance",
