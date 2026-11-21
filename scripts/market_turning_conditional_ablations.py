@@ -78,6 +78,69 @@ def year_block_brier_skill_ci(model_pairs, comparator_pairs, years, *, seed=1729
             "block_unit":"calendar_year_not_independent_crisis",
             "for_research_only_not_probability_calibration":True}
 
+def stress_episode_groups(samples, *, max_gap_sessions=20):
+    """Group stress-eligible anchors into episodes using only past timestamps.
+
+    Gap is counted in SPY trading-session indices. A later eligible anchor
+    starts a new block when more than 20 trading sessions passed since the
+    preceding eligible observation. Do not label these independent crises.
+    """
+    blocks={}
+    prior=None
+    block=-1
+    for item in samples:
+        index=item["index"]
+        if prior is not None and index<=prior:
+            raise ValueError("eligible observations must be ordered and unique")
+        if prior is None or index-prior>max_gap_sessions:
+            block+=1
+        blocks[index]=block
+        prior=index
+    return blocks
+
+
+def episode_block_skill_ci(model_pairs, comparator_pairs, episode_ids, *, draws=800):
+    """Paired bootstrap respecting clusters of nearby stressed sessions."""
+    result=year_block_brier_skill_ci(model_pairs,comparator_pairs,episode_ids,
+                                    seed=2718,draws=draws)
+    result["stress_episode_blocks"]=result.pop("calendar_year_blocks")
+    result["block_unit"]="consecutive_stress_eligibility_separated_by_more_than_20_sessions"
+    result["episodes_are_not_proven_independent_market_crises"]=True
+    return result
+
+
+def conservative_research_gate(result):
+    """Interpret confidence evidence; NEVER authorize live probabilities."""
+    output={}
+    for side in ("bottom","top"):
+        row=result["results"][side]
+        episodes=row["paired_stress_episode_bootstrap"]["full_vs_baseline"]
+        years=row["paired_year_block_bootstrap"]["full_vs_baseline"]
+        sample=row["models"]["full"] or {}
+        checks={
+            "minimum_30_positive_labels":sample.get("events",0)>=30,
+            "minimum_80_nonoverlap_anchors":sample.get("n_nonoverlapping_test_anchors",0)>=80,
+            "minimum_12_stress_episode_blocks":episodes.get("stress_episode_blocks",0)>=12,
+            "year_block_ci_excludes_zero":years.get("available") is True and
+                years["percentile_95_ci"][0]>0,
+            "stress_episode_ci_excludes_zero":episodes.get("available") is True and
+                episodes["percentile_95_ci"][0]>0,
+            "original_point_in_time_vintages_verified":False,
+            "independent_prospective_outcomes_verified":False,
+        }
+        output[side]={
+            "descriptive_consistency_checks":checks,
+            "historical_consistency_observed":all(v for k,v in checks.items()
+                                                 if k not in (
+                                                   "original_point_in_time_vintages_verified",
+                                                   "independent_prospective_outcomes_verified")),
+            "live_probability_authorized":False,
+            "promotion_blockers":[k for k,v in checks.items() if not v],
+            "interpretation":"historical_study_not_a_live_signal",
+        }
+    return output
+
+
 def conditional_evaluate(raw):
     hist = {key: series(raw,key) for key in
             ("SPY", "^VIX", "^VVIX", "^COR1M", "^VIX3M", "HYG", "LQD")}
@@ -99,9 +162,11 @@ def conditional_evaluate(raw):
             label=future_reversal_labels(spy,item["index"],forward=HORIZON,nearby=5)[side]
             if label is None: continue
             samples.append({**item,"label":int(label)})
+        episode_lookup=stress_episode_groups(samples)
         by_model={name:[] for name in variants()}
         baseline=[]
         anchor_years=[]
+        anchor_episodes=[]
         folds=[]
         # Fold boundaries are calendar trading sessions, not count of
         # stressed observations; thus no event-selected time warping.
@@ -123,6 +188,7 @@ def conditional_evaluate(raw):
             for row in independent:
                 baseline.append((prevalence,row["label"]))
                 anchor_years.append(int(row["date"][:4]))
+                anchor_episodes.append(episode_lookup[row["index"]])
                 for name,keys in variants().items():
                     by_model[name].append((predict(fitted[name],row["features"],keys),row["label"]))
             folds.append({"start":independent[0]["date"],"end":independent[-1]["date"],
@@ -141,13 +207,19 @@ def conditional_evaluate(raw):
                 round(1-full["brier"]/base["brier"],5)
                 if full and base and base["brier"] else None,
             "all_variants_identical_out_of_sample_anchors":True,
+            "paired_stress_episode_bootstrap":{"full_vs_baseline":
+                episode_block_skill_ci(by_model["full"],baseline,anchor_episodes),
+                "incremental_by_family":{
+                    group:episode_block_skill_ci(
+                        by_model["full"],by_model["without_"+group],anchor_episodes)
+                    for group in GROUPS}},
             "paired_year_block_bootstrap":{"full_vs_baseline":
                 year_block_brier_skill_ci(by_model["full"],baseline,anchor_years),
                 "incremental_by_family":{
                     group:year_block_brier_skill_ci(by_model["full"],by_model["without_"+group],anchor_years)
                     for group in GROUPS}},
         }
-    return {"schema":"vestra_stress_conditioned_ablation_research_v1",
+    output={"schema":"vestra_stress_conditioned_ablation_research_v2",
             "evaluated":True,"research_only":True,"probability_calibrated":False,
             "live_prediction_enabled":False,
             "horizon_sessions":HORIZON,
@@ -161,8 +233,11 @@ def conditional_evaluate(raw):
             "limitations":["original provider vintages are not PIT verified",
                 "eligibility is part of the label definition; predictions only conditional on eligibility",
                 "calendar-year block bootstrap is not independent market-cycle bootstrap",
+                "stress eligibility clusters are not independently adjudicated market crashes",
                 "no calibration permission or investment thresholds",
                 "HYG/LQD is a relative price proxy, not HY OAS",
                 "small numbers of eligible events can prevent fitting",
                 "non-overlap in same fold does not guarantee independence between crises"],
             "results":report}
+    output["research_evidence_gate"]=conservative_research_gate(output)
+    return output
