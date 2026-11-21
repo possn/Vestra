@@ -8,6 +8,8 @@ All variants use identical as-of rows and test anchors; no cherry-picked sample
 per factor. Reports are never calibrated live probabilities.
 """
 from __future__ import annotations
+from collections import defaultdict
+from random import Random
 from market_turning_feature_lab import feature_row, future_reversal_labels, series
 from market_turning_walkforward import fit, predict, metrics, PURGE, FOLD, HORIZONS
 
@@ -40,6 +42,42 @@ def variants():
         "without_"+group: tuple(k for k in KEYS if k not in removed)
         for group, removed in GROUPS.items()}}
 
+def year_block_brier_skill_ci(model_pairs, comparator_pairs, years, *, seed=1729, draws=800):
+    """Paired calendar-year block resampling, with fixed research seed.
+
+    Returns a descriptive 95% interval for 1-Brier(model)/Brier(comparator).
+    Retains each year's correlated observations as a block. Annual blocks are
+    not genuinely independent market crises; this does NOT validate calibration.
+    """
+    if len(model_pairs)!=len(comparator_pairs) or len(years)!=len(model_pairs):
+        raise ValueError("paired forecasts and calendar blocks must align")
+    blocks=defaultdict(list)
+    for i,year in enumerate(years):
+        blocks[int(year)].append(i)
+    keys=sorted(blocks)
+    if len(keys)<5 or len(model_pairs)<25:
+        return {"available":False,"reason":"insufficient_calendar_blocks_or_anchors",
+                "calendar_year_blocks":len(keys)}
+    rng=Random(seed)
+    skills=[]
+    for _ in range(draws):
+        sampled=[j for _ in keys for j in blocks[rng.choice(keys)]]
+        numerator=sum((model_pairs[j][0]-model_pairs[j][1])**2 for j in sampled)
+        denominator=sum((comparator_pairs[j][0]-comparator_pairs[j][1])**2 for j in sampled)
+        if denominator>0:
+            skills.append(1-numerator/denominator)
+    if len(skills)<draws*.9:
+        return {"available":False,"reason":"degenerate_brier_baseline",
+                "calendar_year_blocks":len(keys)}
+    skills.sort()
+    quant=lambda q:round(skills[min(len(skills)-1,int((len(skills)-1)*q))],5)
+    return {"available":True,"calendar_year_blocks":len(keys),
+            "resamples":len(skills),"seed":seed,
+            "percentile_95_ci":[quant(.025),quant(.975)],
+            "fraction_resamples_positive":round(sum(v>0 for v in skills)/len(skills),4),
+            "block_unit":"calendar_year_not_independent_crisis",
+            "for_research_only_not_probability_calibration":True}
+
 def conditional_evaluate(raw):
     hist = {key: series(raw,key) for key in
             ("SPY", "^VIX", "^VVIX", "^COR1M", "^VIX3M", "HYG", "LQD")}
@@ -63,6 +101,7 @@ def conditional_evaluate(raw):
             samples.append({**item,"label":int(label)})
         by_model={name:[] for name in variants()}
         baseline=[]
+        anchor_years=[]
         folds=[]
         # Fold boundaries are calendar trading sessions, not count of
         # stressed observations; thus no event-selected time warping.
@@ -83,6 +122,7 @@ def conditional_evaluate(raw):
             prevalence=sum(x["label"] for x in train)/len(train)
             for row in independent:
                 baseline.append((prevalence,row["label"]))
+                anchor_years.append(int(row["date"][:4]))
                 for name,keys in variants().items():
                     by_model[name].append((predict(fitted[name],row["features"],keys),row["label"]))
             folds.append({"start":independent[0]["date"],"end":independent[-1]["date"],
@@ -101,6 +141,11 @@ def conditional_evaluate(raw):
                 round(1-full["brier"]/base["brier"],5)
                 if full and base and base["brier"] else None,
             "all_variants_identical_out_of_sample_anchors":True,
+            "paired_year_block_bootstrap":{"full_vs_baseline":
+                year_block_brier_skill_ci(by_model["full"],baseline,anchor_years),
+                "incremental_by_family":{
+                    group:year_block_brier_skill_ci(by_model["full"],by_model["without_"+group],anchor_years)
+                    for group in GROUPS}},
         }
     return {"schema":"vestra_stress_conditioned_ablation_research_v1",
             "evaluated":True,"research_only":True,"probability_calibrated":False,
@@ -115,7 +160,7 @@ def conditional_evaluate(raw):
             "training_cutoff":"first_test_index - 20-session_purge - 10-session_outcome_maturity",
             "limitations":["original provider vintages are not PIT verified",
                 "eligibility is part of the label definition; predictions only conditional on eligibility",
-                "no market-cycle cluster confidence intervals",
+                "calendar-year block bootstrap is not independent market-cycle bootstrap",
                 "no calibration permission or investment thresholds",
                 "HYG/LQD is a relative price proxy, not HY OAS",
                 "small numbers of eligible events can prevent fitting",
