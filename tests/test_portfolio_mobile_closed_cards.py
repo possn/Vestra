@@ -18,7 +18,7 @@ class PortfolioMobileClosedCardTests(unittest.TestCase):
         index = (ROOT / "index.html").read_text(encoding="utf-8")
         worker = (ROOT / "sw.js").read_text(encoding="utf-8")
         self.assertIn('vestra-portfolio-ui.css?v=3.5-guided', index)
-        self.assertIn('vestra-cache-v282', worker)
+        self.assertIn('vestra-cache-v283', worker)
 
 
 if __name__ == "__main__":
