@@ -66,5 +66,7 @@ assert.equal(expired.available,false);
 assert.match(source,/const CORRELATION_TICKER='\^COR1M'/);
 assert.match(source,/CORRELATION_TICKER,\.\.\.CREDIT_TICKERS/);
 assert.match(source,/dms-turning-proximity/);
+assert.match(source,/Confluência técnica indisponível/);
+assert.doesNotMatch(source,/>Proximidade de fundo</);
 assert.match(source,/não probabilidades de fundo\/topo/);
 console.log('Turning proximity and COR1M as-of research invariants passed');
