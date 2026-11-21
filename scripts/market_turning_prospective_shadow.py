@@ -18,6 +18,7 @@ from market_turning_conditional_ablations import KEYS
 
 ROOT=Path(__file__).resolve().parents[1]
 ARCHIVE=ROOT/"data/market-turning-prospective"
+OUTCOME_ARCHIVE=ROOT/"data/market-turning-prospective-outcome-ledger"
 HORIZON=10
 EMBARGO=20
 MIN_ELIGIBLE_TRAIN=150
@@ -131,6 +132,65 @@ def matured_shadow_assessment(archives,spy):
             "total_matured_records":len(results),
             "records":results}
 
+def freeze_matured_outcomes(archives,spy,outcome_archive,generated_at):
+    """Create each matured outcome once; later adjusted-history changes cannot rewrite it.
+
+    Newly matured labels use the provider history retrieved at assessment time.
+    The source is not original vintage PIT and the evaluation remains research.
+    Subsequent runs construct the public summary from frozen outcome records,
+    not a fresh relabel of every historical forecast.
+    """
+    if generated_at.tzinfo is None:
+        raise ValueError("UTC-aware generated_at required")
+    possible=matured_shadow_assessment(archives,spy)["records"]
+    if possible:
+        outcome_archive.mkdir(parents=True,exist_ok=True)
+    price_digest=hashlib.sha256(json.dumps(
+        spy,sort_keys=True,separators=(",",":")).encode()).hexdigest()
+    for item in possible:
+        day=item["observation_date"]
+        target=outcome_archive/(day+".json")
+        if target.exists():
+            # Do not alter an outcome once frozen, even if Yahoo revises its bars.
+            continue
+        forecast_file=archives/(day+".json")
+        forecast_bytes=forecast_file.read_bytes()
+        frozen={
+            "schema":"vestra_turning_frozen_outcome_v1",
+            **item,
+            "frozen_at":generated_at.isoformat(),
+            "frozen_forecast_sha256":hashlib.sha256(forecast_bytes).hexdigest(),
+            "outcome_provider":"yahoo_finance_adjusted_history",
+            "outcome_retrieval_sha256":price_digest,
+            "original_outcome_vintage_verified":False,
+            "research_only":True,
+            "calibrated_probability":False,
+        }
+        # Exclusive creation protects against accidental same-run overwrite.
+        try:
+            with target.open("x",encoding="utf-8") as out:
+                out.write(json.dumps(frozen,indent=2,ensure_ascii=False,allow_nan=False)+"\n")
+        except FileExistsError:
+            pass
+
+    records=[]
+    for path in sorted(outcome_archive.glob("*.json")):
+        row=json.loads(path.read_text(encoding="utf-8"))
+        if row.get("schema")!="vestra_turning_frozen_outcome_v1":
+            raise ValueError("unexpected_or_unverifiable_frozen_outcome_record")
+        if path.stem!=row.get("observation_date"):
+            raise ValueError("frozen_outcome_filename_mismatch")
+        records.append(row)
+    return {
+        "schema":"vestra_turning_prospective_outcomes_v2",
+        "research_only":True,
+        "calibrated_probability":False,
+        "original_outcome_vintages_verified":False,
+        "outcomes_append_only":True,
+        "total_matured_records":len(records),
+        "records":records,
+    }
+
 def main():
     from refresh_market_turning_feature_lab import normalize_yahoo
     import yfinance as yf
@@ -150,7 +210,7 @@ def main():
     else:
         output.write_text(json.dumps(result,indent=2,ensure_ascii=False,allow_nan=False)+"\n",encoding="utf-8")
         print("Created research-only forecast:",output)
-    assessments=matured_shadow_assessment(ARCHIVE,series(raw,"SPY"))
+    assessments=freeze_matured_outcomes(ARCHIVE,series(raw,"SPY"),OUTCOME_ARCHIVE,now)
     out=ROOT/"data/market-turning-prospective-outcomes.json"
     out.write_text(json.dumps(assessments,indent=2,ensure_ascii=False,allow_nan=False)+"\n",encoding="utf-8")
 
