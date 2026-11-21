@@ -11,7 +11,7 @@ import json
 import math
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from build_prebreakout_forward_cohorts import cohorts, build
+from build_prebreakout_forward_cohorts import cohorts, build, research_anchor_cases
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -63,7 +63,12 @@ def gather(archive:Path, downloader, now=None):
     # A forward breakout needs 20 *prior* completed volume sessions; preserve a full historical buffer.
     start=(earliest-timedelta(days=90)).isoformat()
     end=(today+timedelta(days=1)).isoformat()
-    tickers=sorted(set(c["ticker"] for c in items)|{"SPY"})
+    # Query only a bounded research subset in addition to already-qualified
+    # cohorts. These names remain a separate observational study, never
+    # additional published signals or a claim of whole-universe coverage.
+    research=research_anchor_cases(archive,limit=25)
+    tickers=sorted(set(c["ticker"] for c in items)
+                   |set(c["ticker"] for c in research)|{"SPY"})
     prices={}; event_prices={}; failures={}
     recovered_after_retry=[]
     for ticker in tickers:
@@ -87,6 +92,8 @@ def gather(archive:Path, downloader, now=None):
     results["price_metadata"]={"provider":"yahoo_finance","auto_adjust":True,
         "completed_before_utc_date":today.isoformat(),"benchmark":"SPY",
         "downloaded":len(prices),"complete_ohlcv":len(event_prices),"failed":failures,
+        "research_anchor_tickers_requested":len(set(c["ticker"] for c in research)),
+        "research_subset_limit":25,
         "recovered_after_single_retry":sorted(recovered_after_retry),
         "retry_policy":"at_most_two_same_source_requests_only_on_download_or_close_failure"}
     return results
