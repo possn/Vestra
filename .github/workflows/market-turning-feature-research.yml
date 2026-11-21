@@ -1,0 +1,61 @@
+name: Market turning feature research (no probability)
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Research-only historical feature coverage once weekly after US close.
+    - cron: '45 7 * * 1'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/market_turning_feature_lab.py'
+      - 'scripts/refresh_market_turning_feature_lab.py'
+      - '.github/workflows/market-turning-feature-research.yml'
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: market-turning-feature-research
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install historical OHLCV dependencies
+        run: pip install 'yfinance>=0.2.65' pandas
+      - name: Verify as-of RSI, MFI and historical provenance
+        run: |
+          python tests/test_market_turning_feature_lab.py
+          python tests/test_refresh_market_turning_feature_lab.py
+      - name: Read independent historical daily OHLCV
+        run: python scripts/refresh_market_turning_feature_lab.py
+      - name: Record research report as workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: market-turning-feature-research
+          path: data/market-turning-feature-lab.json
+          if-no-files-found: error
+      - name: Check automated main publish window
+        id: publish_window
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/defer_main_publish_if_code_pr.py --scanner-grace-minutes 85
+      - name: Publish non-predictive research report
+        if: steps.publish_window.outputs.defer != 'true'
+        run: |
+          git config user.name "vestra-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/market-turning-feature-lab.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Auditoria semanal de variáveis para inversões (sem probabilidade)"
+            bash scripts/publish_with_retry.sh origin main
+          fi
