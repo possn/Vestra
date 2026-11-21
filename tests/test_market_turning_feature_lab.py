@@ -96,9 +96,9 @@ class TurningFeatureLabTests(unittest.TestCase):
             lab_report(bad)
         future = copy.deepcopy(raw)
         asof = raw["SPY"][300]["date"]
-        initial = feature_row({k: series(v, k) for k, v in raw.items()}, asof)
+        initial = feature_row({k: series(raw, k) for k in raw}, asof)
         future["SPY"][-1]["close"] *= 5
-        revised = feature_row({k: series(v, k) for k, v in future.items()}, asof)
+        revised = feature_row({k: series(future, k) for k in future}, asof)
         self.assertEqual(initial, revised)
 
     def test_rsi_mfi_initializations_are_undistorted(self):
