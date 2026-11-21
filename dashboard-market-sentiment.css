@@ -58,3 +58,19 @@
 .dms-turning li span{font-size:10px;font-weight:750;color:var(--text2)}
 .dms-turning li b{font-size:10px;font-weight:850;text-align:right}
 .dms-turning li small{grid-column:1/-1;color:var(--muted);font-size:9px}
+
+/* Two research confluence scales; compact, legible, and not investment probabilities. */
+.dms-turning-proximity{margin-top:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.dms-turning-proximity-item{min-width:0;border:1px solid color-mix(in srgb,var(--line) 80%,transparent);border-radius:12px;padding:11px 12px;background:color-mix(in srgb,var(--card2) 80%,transparent)}
+.dms-turning-proximity-heading{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.dms-turning-proximity-heading>span{font-size:11px;font-weight:800;line-height:1.35;color:var(--text)}
+.dms-turning-proximity-heading>strong{font:750 23px/1 Georgia,"Times New Roman",serif;letter-spacing:-.03em;white-space:nowrap;color:var(--text)}
+.dms-turning-proximity-heading>strong small{font:650 10px/1 system-ui,sans-serif;color:var(--muted);letter-spacing:0}
+.dms-turning-proximity-track{margin-top:10px;height:7px;overflow:hidden;border-radius:99px;background:color-mix(in srgb,var(--line) 85%,transparent)}
+.dms-turning-proximity-track>span{display:block;height:100%;border-radius:inherit;transition:width .25s ease;background:linear-gradient(90deg,#769b90,#2b9b70)}
+.dms-turning-proximity-top .dms-turning-proximity-track>span{background:linear-gradient(90deg,#d2a259,#c45d61)}
+.dms-turning-proximity-item>small{display:block;margin-top:7px;color:var(--text2);font-size:10px;line-height:1.35}
+.dms-turning-proximity>p{grid-column:1/-1;font-size:10px;line-height:1.5;margin:0;color:var(--text2)}
+.dms-turning-proximity-missing{margin-top:10px;font-size:11px;color:var(--muted)}
+@media(max-width:360px){.dms-turning-proximity{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.dms-turning-proximity-track>span{transition:none}}

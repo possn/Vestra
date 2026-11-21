@@ -179,6 +179,8 @@ jobs:
         run: node tests/runtime_market_static_universe_contract.js
       - name: Runtime · market turning-point forward-audit invariants
         run: node tests/runtime_market_turning_forward_audit.js
+      - name: Runtime · COR1M point-in-time and turning proximity scales
+        run: node tests/runtime_turning_correlation_proximity.js
       - name: Runtime · opportunity risk-cap tie-break
         run: node tests/runtime_market_opportunity_cap_tiebreak.js
       - name: Runtime · market dossier signals

@@ -12,7 +12,7 @@ SW = (ROOT / "sw.js").read_text(encoding="utf-8")
 class DashboardMarketSentimentTests(unittest.TestCase):
     def test_runtime_is_reachable_without_blocking_market_load(self):
         self.assertIn("ensureDashboardMarketSentiment", LOADER)
-        self.assertIn("dashboard-market-sentiment.js?v=2.0-turning-tap", LOADER)
+        self.assertIn("dashboard-market-sentiment.js?v=2.1-correlation-scales", LOADER)
         tail = LOADER[LOADER.index("// Dashboard/mobile companions remain eager"):]
         self.assertIn("ensureDashboardMarketSentiment();", tail)
         self.assertIn("requestIdleCallback", JS)
@@ -44,7 +44,7 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn("Ver como é calculado", JS)
         self.assertIn("dms-detail", JS)
         self.assertIn(".dms-detail[hidden]", CSS)
-        self.assertIn("version:'1.12'", JS)
+        self.assertIn("version:'1.13'", JS)
 
     def test_turning_point_exploration_is_integrated_without_new_dashboard_card(self):
         self.assertIn('INVERSÕES · EXPERIMENTAL', JS)
@@ -52,6 +52,16 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn('turningPointReading(S.data?.turningInputs,S.cnn,S.aaii,new Date(),S.nyse)', JS)
         self.assertIn('Contagem de evidências, não probabilidade nem sinal de investimento', JS)
         self.assertIn('VIX e VVIX não preveem direção', JS)
+        self.assertIn("const CORRELATION_TICKER='^COR1M'", JS)
+        self.assertIn("function impliedCorrelationContext", JS)
+        self.assertIn("function turningProximityScales", JS)
+        self.assertIn("COR1M indisponível; sem pontos de correlação", JS)
+        self.assertIn("Escalas heurísticas de confluência, não probabilidades", JS)
+        self.assertIn(".dms-turning-proximity", CSS)
+        self.assertIn('role="meter"', JS)
+        self.assertIn("node tests/runtime_turning_correlation_proximity.js",
+                      (ROOT / ".github/workflows/architecture-invariants.yml").read_text(encoding="utf-8"))
+
         self.assertIn("const VVIX_TICKER='^VVIX'", JS)
         self.assertIn('vvixContext?.risingStress!==true', JS)
         self.assertIn('VVIX ajusta o contexto do VIX, sem voto adicional', JS)
@@ -62,9 +72,9 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn('S.turningExpanded=!S.turningExpanded;render()', JS)
         self.assertIn('.dms-turning-evidence[hidden]{display:none}', CSS)
         self.assertIn('min-height:44px', CSS)
-        self.assertIn('vestra-cache-v281', SW)
+        self.assertIn('vestra-cache-v282', SW)
         self.assertIn('id="vestraDashboardMarketSentimentStyle"', HTML)
-        self.assertIn('dashboard-market-sentiment.css?v=1.9-static-head', HTML)
+        self.assertIn('dashboard-market-sentiment.css?v=2.0-dual-turning', HTML)
 
     def test_aaii_retail_sentiment_is_integrated_without_a_second_dashboard_card(self):
         data = (ROOT / "data" / "aaii-sentiment.json").read_text(encoding="utf-8")
