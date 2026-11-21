@@ -239,6 +239,21 @@ def lab_report(raw, max_rows=None):
         "matured": sum(o["label"][side] is not None for o in observations),
         "events": sum(o["label"][side] is True for o in observations),
     } for side in ("bottom", "top")}
+    outcome_associations = {"bottom": [], "top": []}
+    for side in ("bottom", "top"):
+        for feature in FEATURES:
+            paired = [(o["features"][feature], int(o["label"][side]))
+                      for o in observations
+                      if o["label"][side] is not None
+                      and o["features"][feature] is not None]
+            coefficient = pearson([p[0] for p in paired], [p[1] for p in paired])
+            if coefficient is not None:
+                outcome_associations[side].append({
+                    "feature": feature,
+                    "n_correlated_sessions_not_independent_episodes": len(paired),
+                    "point_biserial_exploratory": round(coefficient, 4),
+                    "not_out_of_sample_or_causal_evidence": True,
+                })
     return {
         "schema": "vestra_market_turning_feature_lab_v1",
         "research_only": True, "probability_calibrated": False,
@@ -251,6 +266,7 @@ def lab_report(raw, max_rows=None):
                    "last": observations[-1]["date"] if observations else None},
         "event_counts_descriptive_not_independent": labels,
         "feature_coverage": coverage, "feature_correlations_descriptive_not_validation": relations,
+        "outcome_associations_in_sample_exploratory": outcome_associations,
         "model_probability": None,
         "holdout": {"evaluated": False, "reason": "no_purged_walkforward_or_probability_calibration_yet"},
     }
