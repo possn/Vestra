@@ -40,7 +40,7 @@
     const link=document.createElement('link');
     link.id=STYLE_ID;
     link.rel='stylesheet';
-    link.href='dashboard-market-sentiment.css?v=1.8';
+    link.href='dashboard-market-sentiment.css?v=2.0-dual-turning';
     document.head.appendChild(link);
   }
 
@@ -851,7 +851,7 @@
   else boot();
 
   window.VestraDashboardMarketSentiment=Object.freeze({
-    version:'1.12',
+    version:'1.13',
     computeSnapshot,
     turningPointInputs,
     turningPointReading,
