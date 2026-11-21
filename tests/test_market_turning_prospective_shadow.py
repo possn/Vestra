@@ -24,20 +24,24 @@ class ProspectiveTurningTests(unittest.TestCase):
         self.assertTrue(eligible(bars[:-1],"bottom"))
 
     def test_maturation_never_scores_unmatured_or_unfrozen(self):
-        spy=[{"date":f"2026-10-{i:02d}","close":100.-i*.1} for i in range(1,26)]
+        from datetime import date,timedelta
+        spy=[{"date":(date(2026,1,1)+timedelta(days=i)).isoformat(),
+              "close":100.-i*.1} for i in range(160)]
+        mature_day=spy[130]["date"]
+        unmatured_day=spy[155]["date"]
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)
             rec={"schema":"vestra_turning_prospective_shadow_v1",
-                 "observation_date":"2026-10-06",
+                 "observation_date":mature_day,
                  "sides":{"bottom":{"model_output_uncalibrated_not_for_live_display":.4,
                                     "conditional_train_prevalence":.25}}}
-            (root/"2026-10-06.json").write_text(json.dumps(rec))
-            latest={"schema":rec["schema"],"observation_date":"2026-10-20",
+            (root/(mature_day+".json")).write_text(json.dumps(rec))
+            latest={"schema":rec["schema"],"observation_date":unmatured_day,
                     "sides":rec["sides"]}
-            (root/"2026-10-20.json").write_text(json.dumps(latest))
+            (root/(unmatured_day+".json")).write_text(json.dumps(latest))
             out=matured_shadow_assessment(root,spy)
             self.assertEqual(out["total_matured_records"],1)
-            self.assertEqual(out["records"][0]["observation_date"],"2026-10-06")
+            self.assertEqual(out["records"][0]["observation_date"],mature_day)
             self.assertFalse(out["calibrated_probability"])
 
 if __name__=="__main__":
