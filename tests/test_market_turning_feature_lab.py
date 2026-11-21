@@ -82,6 +82,8 @@ class TurningFeatureLabTests(unittest.TestCase):
         self.assertEqual(report["event_counts_descriptive_not_independent"]["bottom"]["matured"],
                          len(spy) - 125 - 20)
         self.assertTrue(report["feature_correlations_descriptive_not_validation"])
+        self.assertIn("bottom", report["outcome_associations_in_sample_exploratory"])
+        self.assertIn("top", report["outcome_associations_in_sample_exploratory"])
         # Even if every market factor correlates perfectly, the lab never
         # publishes or returns a live probability.
         self.assertFalse(report["score_or_live_vote_changed"])
