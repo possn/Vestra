@@ -7,6 +7,8 @@
   const CACHE_KEY='vestra-market-sentiment-v5';
   const CACHE_TTL_MS=15*60*1000;
   const FETCH_TIMEOUT_MS=10000;
+  // Optional implied-correlation quote must not hold the Home hostage.
+  const CORRELATION_TIMEOUT_MS=1800;
   const AAII_REFRESH_INTERVAL_MS=15*60*1000;
   const NYSE_BREADTH_PATH='data/nyse-advance-decline.json';
   let aaiiLastAttempt=0;
@@ -295,13 +297,24 @@
     const drawdown=100*(p/high-1);
     const vs=vix.slice(-126).map(r=>r.close);
     const percentile=100*vs.filter(x=>x<=v).length/vs.length;
+    const qqq=completedHistory(details.QQQ,asOf).filter(r=>r.date<=anchor);
+    const qqqDrawdown126=qqq.length>=126&&qqq.at(-1).date===anchor?
+      100*(qqq.at(-1).close/Math.max(...qqq.slice(-126).map(r=>r.close))-1):null;
+    const spyRsi5=weeklyRsi14(spy.map(r=>r.close).slice(-90));
+    // Wilder 14 on daily completed SPY candles; a separate research feature.
+    const spyDailyRsi14=spyRsi5?.current??null;
+    const vixChange5Pct=vix.length>=6?100*(vix.at(-1).close/vix.at(-6).close-1):null;
+    const vvix=completedHistory(details[VVIX_TICKER],asOf).filter(r=>r.date<=anchor);
+    const vvixCurrent=vvix.at(-1)?.date===anchor?vvix.at(-1).close:null;
+    const credit=creditStressContext(details,anchor,asOf);
     const stressExtreme=v>=35&&percentile>=90&&drawdown<=-10;
     const stressElevated=v>=25&&percentile>=75&&drawdown<=-7;
     const level=stressExtreme?'extreme':stressElevated?'elevated':'not_detected';
-    const label=stressExtreme?'Capitulação potencial · stress extremo':
-      stressElevated?'Pressão vendedora elevada':'Capitulação não identificada';
+    const label=stressExtreme?'Stress extremo · capitulação possível':
+      stressElevated?'Stress elevado · vigilância':'Sem capitulação identificada';
     return {available:true,date:anchor,level,label,vix:v,vixPercentile:percentile,
-      spyDrawdown126:drawdown,
+      spyDrawdown126:drawdown,qqqDrawdown126,spyDailyRsi14,vixChange5Pct,
+      vvixCurrent,creditEasing:credit.observed?credit.easing:null,
       description:'Stress e drawdown contemporâneos; não confirma exaustão nem estima probabilidade de fundo',
       methodology:'descriptive_126_session_stress_not_predictive'};
   }
@@ -478,28 +491,47 @@
 
   function turningMarkup(){
     const r=turningPointReading(S.data?.turningInputs,S.cnn,S.aaii,new Date(),S.nyse);
-    if(!r) return '<section class="dms-turning"><span>INVERSÕES · EXPERIMENTAL</span><strong>Leitura indisponível</strong><p>Faltam históricos completos do SPY e do VIX.</p></section>';
-    const rows=r.factors.map(f=>`<li><span>${esc(f.name)}</span><b>${esc(f.value)}</b><small>${f.bottom===null?'Sem evidência':f.bottom?'Pista de fundo':f.top?'Pista de topo':'Não confirma'}</small></li>`).join('');
-    const count=r.direction==='top'?r.top:r.bottom;
+    if(!r) return '<section class="dms-turning"><span>INVERSÕES · EM INVESTIGAÇÃO</span><strong>Dados insuficientes</strong><p>É necessário histórico verificável de SPY e VIX.</p></section>';
+    const cap=r.capitulation;
+    const stress=cap?.available?cap.label:'Leitura de stress indisponível';
+    const factors=r.factors.map(f=>`<li><span>${esc(f.name)}</span><b>${esc(f.value)}</b><small>${f.bottom===null?'Sem dados':f.bottom?'Recuperação observada':f.top?'Fragilidade observada':'Sem confirmação'}</small></li>`).join('');
     const proximity=r.proximity?.available?r.proximity:null;
     const scale=(kind,label,score,caption)=>`<div class="dms-turning-proximity-item dms-turning-proximity-${kind}">
       <div class="dms-turning-proximity-heading"><span>${esc(label)}</span><strong>${score}<small>/100</small></strong></div>
       <div class="dms-turning-proximity-track" role="meter" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${score}" aria-valuetext="${esc(caption)}"><span style="width:${score}%"></span></div>
       <small>${esc(caption)}</small></div>`;
-    const scalesMarkup=proximity?`<div class="dms-turning-proximity" aria-label="Escalas experimentais de confluência">
-      ${scale('bottom','Proximidade de fundo',proximity.bottom,proximity.bottomLabel)}
-      ${scale('top','Proximidade de topo',proximity.top,proximity.topLabel)}
-      <p>Escalas heurísticas de confluência, não probabilidades de fundo/topo. ${proximity.observed}/5 famílias observadas. ${proximity.correlationObserved?'COR1M disponível como contexto':'COR1M indisponível; sem pontos de correlação'}.</p>
-    </div>`:'<p class="dms-turning-proximity-missing">Escalas 0–100 indisponíveis: cobertura insuficiente ou dados antigos.</p>';
-    return `<section class="dms-turning" aria-label="Possíveis inversões de mercado, investigação experimental">
-      <span>INVERSÕES · EXPERIMENTAL</span><strong>${esc(r.label)}</strong>
-      ${scalesMarkup}
-      <p><strong>Capitulação (contexto separado):</strong> ${r.capitulation?.available?
-        `${esc(r.capitulation.label)} · VIX percentil ${Math.round(r.capitulation.vixPercentile)}/100 (126 sessões) · recuo SPY ${r.capitulation.spyDrawdown126.toFixed(1)}% desde máximo 126 sessões. Não é probabilidade nem fundo confirmado.`:
-        esc(r.capitulation?.reason||'indisponível')}.</p>
-      <p>${esc(r.priceStructure.label)} (estrutura técnica descritiva). ${r.direction?`${count} de ${r.available} critérios observados convergem.`:`Fundo ${r.bottom} · topo ${r.top} de ${r.available} critérios observados.`} Contagem de evidências, não probabilidade nem sinal de investimento.</p>
-      <button type="button" class="dms-turning-toggle" data-dms-turning-toggle aria-expanded="${S.turningExpanded?'true':'false'}" aria-controls="dmsTurningEvidence">${S.turningExpanded?'Ocultar evidências':'Ver VIX, VVIX, RSI e evidências'} <span aria-hidden="true">${S.turningExpanded?'−':'+'}</span></button>
-      <div class="dms-turning-evidence" id="dmsTurningEvidence"${S.turningExpanded?'':' hidden'}><ul>${rows}</ul><p><strong>Crédito (contexto, sem voto):</strong> ${esc(S.data?.turningInputs?.creditContext?.value||'HYG/LQD indisponível')}. ${esc(r.nyseBreadth.value)}${r.nyseBreadth.sourceUrl?` · <a href="${esc(r.nyseBreadth.sourceUrl)}" target="_blank" rel="noopener noreferrer">Fonte NYSE ↗</a>`:''}. Última sessão fechada ${esc(r.asOf)}. COR1M: ${esc(r.correlation.value)}. O COR1M só pode acrescentar até 5 pontos dentro da família VIX, se houver evidência de alívio após tensão ou contágio em alta; não soma um voto independente. VVIX ajusta o contexto do VIX, sem voto adicional. A linha A−D NYSE substitui a proxy dos seis mercados apenas com dados auditáveis; não soma um voto. HYG/LQD é uma proxy de preços, não um spread de crédito. Limiar heurístico sem validação prospetiva; VIX e VVIX não preveem direção.</p></div>
+    const scalesMarkup=proximity?`<div class="dms-turning-proximity" aria-label="Indicadores heurísticos de confirmação">
+      ${scale('bottom','Recuperação técnica',proximity.bottom,proximity.bottomLabel)}
+      ${scale('top','Fragilidade técnica',proximity.top,proximity.topLabel)}
+    </div><p>Escalas heurísticas de sinais já observados, não probabilidades nem estimativas de distância a um mínimo ou máximo. ${proximity.observed}/5 famílias disponíveis. ${proximity.correlationObserved?'COR1M observado.':'COR1M sem fonte comparável.'}</p>`:
+      '<p>Confluência técnica indisponível por falta de cobertura ou frescura.</p>';
+    const support=[];
+    if(cap?.available){
+      support.push(`VIX ${cap.vix.toFixed(1)} · percentil ${Math.round(cap.vixPercentile)}/100`);
+      support.push(`S&P 500 ${cap.spyDrawdown126.toFixed(1)}% desde máximo de 126 sessões`);
+      if(cap.qqqDrawdown126!==null) support.push(`Nasdaq 100 ${cap.qqqDrawdown126.toFixed(1)}% desde máximo de 126 sessões`);
+    }
+    const visibleSupport=support.slice(0,2).map(x=>`<span>${esc(x)}</span>`).join('');
+    const detailedSupport=[
+      cap?.spyDailyRsi14!=null?`RSI diário 14 (SPY) ${cap.spyDailyRsi14.toFixed(1)}`:null,
+      cap?.qqqDrawdown126!=null?`QQQ ${cap.qqqDrawdown126.toFixed(1)}%/126 sessões`:null,
+      cap?.vixChange5Pct!=null?`VIX ${cap.vixChange5Pct>=0?'+':''}${cap.vixChange5Pct.toFixed(1)}%/5 sessões`:null,
+      cap?.vvixCurrent!=null?`VVIX ${cap.vvixCurrent.toFixed(1)}`:null,
+      cap?.creditEasing!=null?`HYG/LQD ${cap.creditEasing?'a aliviar':'sem alívio confirmado'}`:null
+    ].filter(Boolean).map(x=>`<li>${esc(x)}</li>`).join('');
+    return `<section class="dms-turning" aria-label="Contexto de stress e sinais de possível inversão">
+      <span>INVERSÕES · EXPERIMENTAL</span><strong>${esc(stress)}</strong>
+      <div class="dms-turning-summary">${visibleSupport}</div>
+      <p class="dms-turning-caveat">${esc(r.priceStructure.label)}. Fundo ainda não confirmado; horizonte de 5–20 sessões em investigação.</p>
+      <button type="button" class="dms-turning-toggle" data-dms-turning-toggle aria-expanded="${S.turningExpanded?'true':'false'}" aria-controls="dmsTurningEvidence">${S.turningExpanded?'Ocultar análise':'Ver análise e indicadores'} <span aria-hidden="true">${S.turningExpanded?'−':'+'}</span></button>
+      <div class="dms-turning-evidence" id="dmsTurningEvidence"${S.turningExpanded?'':' hidden'}>
+        ${scalesMarkup}
+        <p><strong>Stress e momentum:</strong> observações contemporâneas, sem inferir probabilidades.</p>
+        <ul class="dms-turning-extra">${detailedSupport}</ul>
+        <p>Confirmadores de estrutura e breadth: ${r.bottom}/${r.available} pistas de recuperação e ${r.top}/${r.available} de fragilidade. ${esc(r.nyseBreadth.value)}. ${r.nyseBreadth.sourceUrl?`<a href="${esc(r.nyseBreadth.sourceUrl)}" target="_blank" rel="noopener noreferrer">NYSE</a>`:''}</p>
+        <ul>${factors}</ul>
+        <p><strong>Crédito:</strong> ${esc(S.data?.turningInputs?.creditContext?.value||'Sem dados')}. COR1M: ${esc(r.correlation.value)}. HYG/LQD é apenas proxy de preços. Dados até ${esc(r.asOf)}. Pontuações não calibradas nem utilizáveis como sinais automáticos.</p>
+      </div>
     </section>`;
   }
 
@@ -761,19 +793,24 @@
     </section>`;
   }
 
+  let lastMarkup='';
   function render(){
     ensureStyles();
     const mount=mountPoint();
     if(!mount) return false;
     const html=cardMarkup();
+    const existing=document.getElementById(CARD_ID);
+    // Four parallel feeds can settle in succession. Do not rebuild the entire
+    // dashboard card or dispatch an update when its HTML is unchanged.
+    if(existing&&mount.dashboard.contains(existing)&&html===lastMarkup) return true;
     const shell=document.createElement('div');
     shell.innerHTML=html;
     const next=shell.firstElementChild;
     if(!next) return false;
-    const existing=document.getElementById(CARD_ID);
     if(existing) existing.replaceWith(next);
     else if(mount.anchor) mount.anchor.insertAdjacentElement('afterend',next);
     else mount.dashboard.prepend(next);
+    lastMarkup=html;
     try { window.dispatchEvent(new CustomEvent('vestra:dashboard-signal-updated', { detail: { source: 'market-sentiment' } })); } catch (_) {}
     return true;
   }
@@ -790,18 +827,19 @@
     try{localStorage.setItem(CACHE_KEY,JSON.stringify({ts:Date.now(),data}));}catch{}
   }
 
-  async function fetchWithTimeout(url){
+  async function fetchWithTimeout(url,timeoutMs=FETCH_TIMEOUT_MS){
     const controller=typeof AbortController==='function'?new AbortController():null;
     let timer=null;
     try{
       const request=fetch(url,{cache:'no-store',...(controller?{signal:controller.signal}:{})});
-      const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{try{controller?.abort();}catch{} reject(new Error('timeout'));},FETCH_TIMEOUT_MS);});
+      const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{try{controller?.abort();}catch{} reject(new Error('timeout'));},timeoutMs);});
       return await Promise.race([request,timeout]);
     }finally{if(timer!==null) clearTimeout(timer);}
   }
 
   async function fetchDetail(base,ticker){
-    const response=await fetchWithTimeout(`${base}/market?ticker=${encodeURIComponent(ticker)}`);
+    const response=await fetchWithTimeout(`${base}/market?ticker=${encodeURIComponent(ticker)}`,
+      ticker===CORRELATION_TICKER?CORRELATION_TIMEOUT_MS:FETCH_TIMEOUT_MS);
     if(!response.ok) throw new Error(`market ${ticker} ${response.status}`);
     const data=await response.json();
     if(data?.error) throw new Error(data.error);
@@ -879,7 +917,7 @@
   else boot();
 
   window.VestraDashboardMarketSentiment=Object.freeze({
-    version:'1.13',
+    version:'1.14',
     computeSnapshot,
     turningPointInputs,
     turningPointReading,
