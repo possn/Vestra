@@ -169,7 +169,7 @@ def freeze_matured_outcomes(archives,spy,outcome_archive,generated_at):
         # Exclusive creation protects against accidental same-run overwrite.
         try:
             with target.open("x",encoding="utf-8") as out:
-                out.write(json.dumps(frozen,indent=2,ensure_ascii=False,allow_nan=False)+"\\n")
+                out.write(json.dumps(frozen,indent=2,ensure_ascii=False,allow_nan=False)+"\n")
         except FileExistsError:
             pass
 
