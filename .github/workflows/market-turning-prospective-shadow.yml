@@ -1,0 +1,58 @@
+name: Market turning prospective shadow (no live signals)
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Following completed US cash session, Tue-Sat UTC. No weekend interpolation.
+    - cron: '15 7 * * 2-6'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/market_turning_prospective_shadow.py'
+      - 'tests/test_market_turning_prospective_shadow.py'
+      - '.github/workflows/market-turning-prospective-shadow.yml'
+permissions:
+  contents: write
+  pull-requests: read
+concurrency:
+  group: market-turning-prospective-shadow
+  cancel-in-progress: false
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install historical data dependencies
+        run: pip install 'yfinance>=0.2.65' pandas
+      - name: Verify append-only and maturity guard
+        run: python tests/test_market_turning_prospective_shadow.py
+      - name: Freeze research-only dated forecast and assess previously matured observations
+        run: python scripts/market_turning_prospective_shadow.py
+      - name: Attach frozen evidence to workflow
+        uses: actions/upload-artifact@v7
+        with:
+          name: turning-prospective-frozen-shadow
+          path: |
+            data/market-turning-prospective/
+            data/market-turning-prospective-outcomes.json
+          if-no-files-found: error
+      - name: Check automated main publish window
+        id: publish_window
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/defer_main_publish_if_code_pr.py --scanner-grace-minutes 85
+      - name: Publish immutable prospective research only
+        if: steps.publish_window.outputs.defer != 'true'
+        run: |
+          git config user.name "vestra-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/market-turning-prospective/ data/market-turning-prospective-outcomes.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Arquivo prospetivo de inversões (investigação sem probabilidades)"
+            bash scripts/publish_with_retry.sh origin main
+          fi
