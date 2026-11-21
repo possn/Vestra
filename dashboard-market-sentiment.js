@@ -22,6 +22,7 @@
   ];
   const VIX_TICKER='^VIX';
   const VVIX_TICKER='^VVIX'; // Optional volatility-of-volatility context, not a sixth vote.
+  const CORRELATION_TICKER='^COR1M'; // Optional Cboe 1-month implied correlation; never fabricated if absent.
   const CREDIT_TICKERS=['HYG','LQD']; // Optional tradable credit proxies, not a credit spread.
 
   const S={loading:false,data:null,error:'',scheduled:false,expanded:false,turningExpanded:false,aaiiExpanded:false,aaii:null,cnn:null,nyse:null};
@@ -216,6 +217,72 @@
       value:`HYG/LQD ${change5>=0?'+':''}${change5.toFixed(1)}%/5s · ${change20>=0?'+':''}${change20.toFixed(1)}%/20s · ${easing?'stress a aliviar':worsening?'stress a agravar':'sem confirmação'}`};
   }
 
+  // COR1M is an index implied-correlation level, NOT a realized-correlation
+  // measure and not itself a timing direction. 126 as-of completed sessions
+  // give a within-regime percentile; prices on a different as-of date fail
+  // closed instead of carrying an old value forward.
+  function impliedCorrelationContext(detail,anchor,asOf=new Date()){
+    const rows=completedHistory(detail,asOf).filter(row=>row.date<=anchor);
+    if(rows.length<126||rows.at(-1)?.date!==anchor)
+      return {observed:false,value:'COR1M sem 126 sessões comparáveis'};
+    const recent=rows.slice(-126);
+    const values=recent.map(x=>x.close);
+    if(values.some(v=>!Number.isFinite(v)||v<0||v>100))
+      return {observed:false,value:'COR1M inválido'};
+    const current=values.at(-1),previous5=values.at(-6);
+    if(!previous5||previous5<=0)
+      return {observed:false,value:'COR1M sem base comparável'};
+    const percentile=100*values.filter(v=>v<=current).length/values.length;
+    const change5Pct=100*(current/previous5-1);
+    const peak10=Math.max(...values.slice(-10));
+    // An elevated but still rising COR1M indicates contagion risk; only
+    // cooling after stress qualifies as *context* supporting a bottom.
+    const bottomRelief=percentile>=75&&current<=peak10*.93&&change5Pct<=-7;
+    const topFragility=percentile>=85&&change5Pct>=10;
+    return {observed:true,date:anchor,current,percentile,change5Pct,
+      bottomRelief,topFragility,
+      value:`COR1M ${current.toFixed(1)} · percentil ${Math.round(percentile)}/100 (126s) · ${change5Pct>=0?'+':''}${change5Pct.toFixed(1)}%/5s`,
+      methodology:'asof_completed_relative_percentile_no_directional_probability'};
+  }
+
+  // A bounded explanatory confluence scale, NOT a probability. Each family
+  // receives a fixed maximum weight; COR1M can add only five points within
+  // the already existing volatility family and never creates a sixth vote.
+  function turningProximityScales(factors,correlation,asOf,now=new Date()){
+    const familyWeights=[25,20,20,20,15]; // volatility, weekly RSI, SPY, breadth, sentiment
+    if(!Array.isArray(factors)||factors.length!==familyWeights.length)
+      return {available:false,reason:'Indicadores incompletos'};
+    const dateMs=Date.parse(String(asOf||'')+'T23:59:59Z');
+    const age=(now.getTime()-dateMs)/86400000;
+    const observed=factors.filter(f=>typeof f?.bottom==='boolean'&&typeof f?.top==='boolean').length;
+    if(observed<4||!Number.isFinite(age)||age< -1||age>5)
+      return {available:false,reason:'Cobertura insuficiente ou observações antigas',observed};
+    const vol=factors[0];
+    const corr=correlation?.observed===true&&correlation.date===asOf?correlation:null;
+    const one=(direction)=>{
+      let total=0;
+      for(let i=0;i<familyWeights.length;i++){
+        const factor=factors[i];
+        if(factor?.[direction]!==true) continue;
+        if(i===0){
+          total+=20;
+          if(corr&&(direction==='bottom'?corr.bottomRelief:corr.topFragility)===true)
+            total+=5;
+        }else total+=familyWeights[i];
+      }
+      return Math.round(clamp(total));
+    };
+    const bottom=one('bottom'),top=one('top');
+    const label=score=>score>=70?'Confluência elevada':score>=50?'Atenção acrescida':
+      score>=25?'Sinais iniciais':'Confluência fraca';
+    return {available:true,bottom,top,bottomLabel:label(bottom),topLabel:label(top),
+      observed,possible:5,correlationObserved:!!corr,
+      priceBottomConfirmed:factors[2]?.bottom===true,
+      priceTopConfirmed:factors[2]?.top===true,
+      methodology:'fixed_weight_heuristic_not_probability_not_backtested',
+      weightFamilies:familyWeights,correlationMaxAdjustment:5};
+  }
+
   function turningPointInputs(details,asOf=new Date()){
     const spy=completedHistory(details.SPY,asOf);
     const vix=completedHistory(details[VIX_TICKER],asOf);
@@ -223,6 +290,7 @@
     if(!anchor||!vix.some(row=>row.date===anchor)) return null;
     const index=vix.findIndex(row=>row.date===anchor);
     const alignedVix=vix.slice(0,index+1);
+    const correlation=impliedCorrelationContext(details[CORRELATION_TICKER],anchor,asOf);
     const vvix=completedHistory(details[VVIX_TICKER],asOf);
     const vvixIndex=vvix.findIndex(row=>row.date===anchor);
     const vvixRecent=vvixIndex>=125?vvix.slice(vvixIndex-125,vvixIndex+1):[];
@@ -277,7 +345,9 @@
     factors.push({name:'Participação · 6 mercados proxy',value:`${coverage}/6 mercados comparáveis`,
       bottom:coverage>=5?recovering>=4:null,
       top:coverage>=5?deteriorating>=4:null});
-    return {date:anchor,factors,spyDaily:spy.slice(-90),creditContext:creditStressContext(details,anchor,asOf),vvixContext:vvixContext?{
+    return {date:anchor,factors,spyDaily:spy.slice(-90),
+      impliedCorrelation:correlation,
+      creditContext:creditStressContext(details,anchor,asOf),vvixContext:vvixContext?{
       observed:true,risingStress:vvixContext.risingStress,cooling:vvixContext.cooling,
       current:vvixContext.current}: {observed:false},
       method:'experimental_unvalidated_not_probability'};
@@ -346,6 +416,8 @@
     const direction=usable&&bottom>=3&&bottom>top&&factors[2]?.bottom===true?'bottom':
       usable&&top>=3&&top>bottom&&factors[2]?.top===true?'top':null;
     return {direction,bottom,top,available,factors,nyseBreadth:breadth,asOf:base.date,
+      correlation:base.impliedCorrelation||{observed:false,value:'COR1M indisponível'},
+      proximity:turningProximityScales(factors,base.impliedCorrelation,base.date,asOf),
       priceStructure:turningPriceStructure(base.spyDaily),
       label:!usable?'Evidência incompleta ou antiga':direction==='bottom'?'Possível fundo em formação':direction==='top'?'Possível topo em formação':'Sem confluência de inversão',
       unvalidated:true};
@@ -384,11 +456,22 @@
     if(!r) return '<section class="dms-turning"><span>INVERSÕES · EXPERIMENTAL</span><strong>Leitura indisponível</strong><p>Faltam históricos completos do SPY e do VIX.</p></section>';
     const rows=r.factors.map(f=>`<li><span>${esc(f.name)}</span><b>${esc(f.value)}</b><small>${f.bottom===null?'Sem evidência':f.bottom?'Pista de fundo':f.top?'Pista de topo':'Não confirma'}</small></li>`).join('');
     const count=r.direction==='top'?r.top:r.bottom;
+    const proximity=r.proximity?.available?r.proximity:null;
+    const scale=(kind,label,score,caption)=>`<div class="dms-turning-proximity-item dms-turning-proximity-${kind}">
+      <div class="dms-turning-proximity-heading"><span>${esc(label)}</span><strong>${score}<small>/100</small></strong></div>
+      <div class="dms-turning-proximity-track" role="meter" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${score}" aria-valuetext="${esc(caption)}"><span style="width:${score}%"></span></div>
+      <small>${esc(caption)}</small></div>`;
+    const scalesMarkup=proximity?`<div class="dms-turning-proximity" aria-label="Escalas experimentais de confluência">
+      ${scale('bottom','Proximidade de fundo',proximity.bottom,proximity.bottomLabel)}
+      ${scale('top','Proximidade de topo',proximity.top,proximity.topLabel)}
+      <p>Escalas heurísticas de confluência, não probabilidades de fundo/topo. ${proximity.observed}/5 famílias observadas. ${proximity.correlationObserved?'COR1M disponível como contexto':'COR1M indisponível; sem pontos de correlação'}.</p>
+    </div>`:'<p class="dms-turning-proximity-missing">Escalas 0–100 indisponíveis: cobertura insuficiente ou dados antigos.</p>';
     return `<section class="dms-turning" aria-label="Possíveis inversões de mercado, investigação experimental">
       <span>INVERSÕES · EXPERIMENTAL</span><strong>${esc(r.label)}</strong>
+      ${scalesMarkup}
       <p>${esc(r.priceStructure.label)} (estrutura técnica descritiva). ${r.direction?`${count} de ${r.available} critérios observados convergem.`:`Fundo ${r.bottom} · topo ${r.top} de ${r.available} critérios observados.`} Contagem de evidências, não probabilidade nem sinal de investimento.</p>
       <button type="button" class="dms-turning-toggle" data-dms-turning-toggle aria-expanded="${S.turningExpanded?'true':'false'}" aria-controls="dmsTurningEvidence">${S.turningExpanded?'Ocultar evidências':'Ver VIX, VVIX, RSI e evidências'} <span aria-hidden="true">${S.turningExpanded?'−':'+'}</span></button>
-      <div class="dms-turning-evidence" id="dmsTurningEvidence"${S.turningExpanded?'':' hidden'}><ul>${rows}</ul><p><strong>Crédito (contexto, sem voto):</strong> ${esc(S.data?.turningInputs?.creditContext?.value||'HYG/LQD indisponível')}. ${esc(r.nyseBreadth.value)}${r.nyseBreadth.sourceUrl?` · <a href="${esc(r.nyseBreadth.sourceUrl)}" target="_blank" rel="noopener noreferrer">Fonte NYSE ↗</a>`:''}. Última sessão fechada ${esc(r.asOf)}. VVIX ajusta o contexto do VIX, sem voto adicional. A linha A−D NYSE substitui a proxy dos seis mercados apenas com dados auditáveis; não soma um voto. HYG/LQD é uma proxy de preços, não um spread de crédito. Limiar heurístico sem validação prospetiva; VIX e VVIX não preveem direção.</p></div>
+      <div class="dms-turning-evidence" id="dmsTurningEvidence"${S.turningExpanded?'':' hidden'}><ul>${rows}</ul><p><strong>Crédito (contexto, sem voto):</strong> ${esc(S.data?.turningInputs?.creditContext?.value||'HYG/LQD indisponível')}. ${esc(r.nyseBreadth.value)}${r.nyseBreadth.sourceUrl?` · <a href="${esc(r.nyseBreadth.sourceUrl)}" target="_blank" rel="noopener noreferrer">Fonte NYSE ↗</a>`:''}. Última sessão fechada ${esc(r.asOf)}. COR1M: ${esc(r.correlation.value)}. O COR1M só pode acrescentar até 5 pontos dentro da família VIX, se houver evidência de alívio após tensão ou contágio em alta; não soma um voto independente. VVIX ajusta o contexto do VIX, sem voto adicional. A linha A−D NYSE substitui a proxy dos seis mercados apenas com dados auditáveis; não soma um voto. HYG/LQD é uma proxy de preços, não um spread de crédito. Limiar heurístico sem validação prospetiva; VIX e VVIX não preveem direção.</p></div>
     </section>`;
   }
 
@@ -707,7 +790,7 @@
     if(!base){S.data=null;S.error='';render();return;}
     S.loading=true;S.error='';render();
     try{
-      const tickers=[...RISK_ASSETS.map(x=>x.ticker),VIX_TICKER,VVIX_TICKER,...CREDIT_TICKERS];
+      const tickers=[...RISK_ASSETS.map(x=>x.ticker),VIX_TICKER,VVIX_TICKER,CORRELATION_TICKER,...CREDIT_TICKERS];
       const settled=await Promise.allSettled(tickers.map(t=>fetchDetail(base,t)));
       const details={};
       settled.forEach((row,i)=>{if(row.status==='fulfilled') details[tickers[i]]=row.value;});
@@ -772,6 +855,8 @@
     computeSnapshot,
     turningPointInputs,
     turningPointReading,
+    turningProximityScales,
+    impliedCorrelationContext,
     nyseBreadthFactor,
     creditStressContext,
     weeklyRsi14,
