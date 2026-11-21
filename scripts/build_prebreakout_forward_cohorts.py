@@ -284,6 +284,145 @@ def cohorts(archive:Path)->list[dict]:
                     "snapshot":data}
     return [selected[k] for k in sorted(selected,key=lambda key:(selected[key]["published_at"],key))]
 
+def research_anchor_cases(archive:Path, limit:int=25)->list[dict]:
+    """First immutable, point-in-time partial-pattern observations, separately
+    from qualified signal cohorts. Select at most 25 latest bases for bounded
+    independent follow-up; never claim this is the whole observed universe.
+    """
+    snapshots=[]
+    for path in archive.glob("*/slots/*-slot*.json"):
+        try:
+            data=json.loads(path.read_text(encoding="utf-8"))
+            stamp=datetime.fromisoformat(str(data["generated_at"]).replace("Z","+00:00"))
+            if stamp.tzinfo is None or data.get("schema")!="vestra_prebreakout_v1":
+                continue
+            stamp=stamp.astimezone(timezone.utc)
+            slot=data.get("scan_slot_utc")
+            if type(slot) is not int or slot!=stamp.hour//6:
+                continue
+            if path.name!=f"{stamp.date().isoformat()}-slot{slot}.json":
+                continue
+            source=data.get("research_observations")
+            if not isinstance(source,dict) or source.get("point_in_time_capture_not_historical_reconstruction") is not True:
+                continue
+            if not isinstance(source.get("rows"),list):
+                continue
+            snapshots.append((stamp,path.name,source["rows"]))
+        except (OSError,ValueError,TypeError,KeyError):
+            continue
+    distinct={}
+    for stamp,_,rows in sorted(snapshots,key=lambda x:(x[0],x[1])):
+        for row in rows:
+            if not isinstance(row,dict) or row.get("evaluable") is not True:
+                continue
+            geometry=row.get("geometry_shadow")
+            lineage=row.get("research_prebreakout_lineage")
+            anchor=row.get("asof_base_price_anchor")
+            if not all(isinstance(x,dict) for x in (geometry,lineage,anchor)):
+                continue
+            if not (geometry.get("research_only_not_eligibility") is True
+                    and (geometry.get("base_width_pass") is True
+                         or geometry.get("contractions_pass") is True)
+                    and lineage.get("unbroken_prebreakout_position") is True
+                    and anchor.get("schema")=="vestra_prebreakout_asof_base_anchor_v1"
+                    and anchor.get("historical_adjustment_factor_verified") is False
+                    and anchor.get("research_only_no_eligibility_or_score_effect") is True
+                    and anchor.get("window_bars")==40 and anchor.get("reference_bars")==39):
+                continue
+            ticker=str(row.get("ticker") or "").strip().upper()
+            if not ticker or len(ticker)>20:
+                continue
+            fingerprint=anchor.get("closed_bar_snapshot_sha256")
+            if not isinstance(fingerprint,str) or len(fingerprint)!=64 or any(c not in "0123456789abcdef" for c in fingerprint):
+                continue
+            try:
+                session=date.fromisoformat(anchor["session"])
+                base_start=date.fromisoformat(anchor["base_start_session"])
+                close=float(anchor["adjusted_close"])
+                pivot=float(anchor["adjusted_pivot_high"])
+                high=float(anchor["observed_last_high"])
+            except (ValueError,TypeError,KeyError,OverflowError):
+                continue
+            if (not base_start<=session<=stamp.date() or
+                    (session-base_start).days>100 or
+                    row.get("last_session")!=session.isoformat() or
+                    not all(math.isfinite(x) and x>0 for x in (close,pivot,high))):
+                continue
+            key=(ticker,base_start.isoformat())
+            if key not in distinct:
+                distinct[key]={"ticker":ticker,"session":session.isoformat(),
+                    "base_start_session":base_start.isoformat(),
+                    "published_at":stamp.isoformat(),"close":close,"pivot":pivot,
+                    "fingerprint":fingerprint}
+    return sorted(distinct.values(),key=lambda x:(x["published_at"],x["ticker"]))[-limit:]
+
+
+def research_anchor_forward_audit(archive:Path,event_prices:dict|None,
+                                  benchmark_bars:list[dict],limit:int=25)->dict:
+    """Research-only delayed-entry observations; no eligibility promotion or
+    hit rates. Historical price revisions are explicit unverifiable outcomes.
+    """
+    chosen=research_anchor_cases(archive,limit)
+    benchmark_dates=sorted(set(row.get("date") for row in benchmark_bars
+        if isinstance(row,dict) and isinstance(row.get("date"),str)))
+    report={"method":"first_archived_unbroken_partial_geometry_base_bounded_25",
+            "research_only":True,"not_qualified_signal_cohorts":True,
+            "sample_limit":limit,"selected_bases":len(chosen),
+            "forward_entry":"close_of_next_completed_benchmark_session",
+            "no_adjustment_factor_inferred":True,
+            "no_probability_or_ranking_effect":True,"records":[],"status_counts":{}}
+    for case in chosen:
+        outcome={"ticker":case["ticker"],"observed_session":case["session"],
+                 "published_at":case["published_at"],
+                 "original_anchor_fingerprint":case["fingerprint"],
+                 "forward_return_pct":{"5":None,"10":None,"20":None}}
+        observed=(event_prices or {}).get(case["ticker"])
+        if not isinstance(observed,list):
+            outcome["status"]="independent_ohlcv_unavailable"
+        else:
+            bars=sorted((r for r in observed if isinstance(r,dict) and
+                         isinstance(r.get("date"),str)),key=lambda r:r["date"])
+            dates=[r["date"] for r in bars]
+            try:
+                i=dates.index(case["session"])
+                if i<39 or dates[i-39]!=case["base_start_session"]:
+                    outcome["status"]="historical_base_window_unverifiable"
+                else:
+                    sample=bars[i-39:i+1]
+                    prices=[float(x["close"]) for x in sample]
+                    highs=[float(x["high"]) for x in sample]
+                    if (not all(math.isfinite(v) and v>0 for v in prices+highs)
+                        or not math.isclose(prices[-1],case["close"],rel_tol=0.0001)
+                        or not math.isclose(max(highs[:-1]),case["pivot"],rel_tol=0.0001)):
+                        outcome["status"]="adjusted_price_basis_changed_or_conflicted"
+                    else:
+                        outcome["status"]="verified_pending"
+                        if case["session"] in benchmark_dates:
+                            k=benchmark_dates.index(case["session"])
+                            future=[d for d in benchmark_dates[k+1:]]
+                            index={r["date"]:r for r in bars}
+                            for h in (5,10,20):
+                                if len(future)>h and future[0] in index and future[h] in index:
+                                    entry=float(index[future[0]]["close"])
+                                    exit_price=float(index[future[h]]["close"])
+                                    if all(math.isfinite(v) and v>0 for v in (entry,exit_price)):
+                                        outcome["forward_return_pct"][str(h)]=round(
+                                            (exit_price/entry-1)*100,4)
+                            if outcome["forward_return_pct"]["5"] is not None:
+                                outcome["status"]="verified_with_matured_forward_observation"
+                        else:
+                            outcome["status"]="benchmark_session_not_aligned"
+            except (ValueError,TypeError,KeyError,OverflowError):
+                outcome["status"]="historical_base_window_unverifiable"
+        report["records"].append(outcome)
+        state=outcome["status"]
+        report["status_counts"][state]=report["status_counts"].get(state,0)+1
+    report["matured_by_horizon"]={str(h):sum(
+        r["forward_return_pct"][str(h)] is not None for r in report["records"])
+        for h in (5,10,20)}
+    return report
+
+
 def structural_shadow_evidence(selected:dict, event_prices:dict|None)->dict:
     """Prospective shadow-vs-outcome counts, never a fitted probability.
 
@@ -763,6 +902,8 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
         "cohort_policy":"first_immutable_publication_per_ticker_stage_and_verified_base_start",
         "historical_only":True,"cohort_count":len(cases),
         "anchor_provenance_audit":anchor_provenance,
+        "research_anchor_forward_audit":research_anchor_forward_audit(
+            archive,event_prices,benchmark_bars),
         "base_identity_coverage":{"anchored":sum(case["base_start_date"] is not None for case in cases),
                                   "legacy_unanchored":sum(case["base_start_date"] is None for case in cases)},
         "base_maturity_evidence":maturity_event_evidence(events,cases),
