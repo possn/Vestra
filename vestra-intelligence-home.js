@@ -862,7 +862,7 @@
   function syncDailyBrief(host) {
     const update = (key, value) => {
       const node = host.querySelector('[data-vi-brief="'+key+'"]');
-      if (node) node.textContent = value;
+      if (node && node.textContent !== value) node.textContent = value;
     };
     const barometer = document.getElementById('vestraMarketSentimentCard');
     const score = barometer?.querySelector('.dms-score')?.textContent?.trim();
@@ -896,7 +896,7 @@
   function syncCanonicalCards(host) {
     const set = (key, value) => {
       const node = host.querySelector('[data-vi-canonical-'+key+']');
-      if (node) node.textContent = value;
+      if (node && node.textContent !== value) node.textContent = value;
     };
     // Strictly mirror already-rendered sources; never synthesize observations.
     const sentiment = document.getElementById('vestraMarketSentimentCard');
@@ -934,14 +934,22 @@
       }).filter(item => item.fallback);
       if (!texts.length) {
         if (list.dataset.publishedFeed === 'true' || list.dataset.publishedEvents === 'true') return;
+        if (list.dataset.canonicalSignature === 'placeholder:'+fallback) return;
         list.replaceChildren();
         const placeholder = document.createElement('p');
         // Keep the honest no-data state in the same compact editorial type scale.
         placeholder.className = 'vi-editorial-title';
         placeholder.textContent = fallback;
         list.append(placeholder);
+        list.dataset.canonicalSignature = 'placeholder:'+fallback;
         return;
       }
+      // Preserve existing nodes when the canonical source text is unchanged.
+      // This avoids multiple layout/paint cycles when sentiment/news/events
+      // feeds settle or foreground events fire in quick succession.
+      const signature=JSON.stringify(texts);
+      if (list.dataset.canonicalSignature===signature) return;
+      list.dataset.canonicalSignature=signature;
       // Cloned text only: no new article links, financial values, images or metadata fabricated.
       list.replaceChildren(...texts.map((item, idx) => {
         const card = document.createElement('div');
@@ -1096,10 +1104,22 @@
       }
       syncVerifiedPriorities(host);
     });
+    // Consolidate repeated dashboard feed events into a single visual frame.
+    // Never delay navigation or change the canonical financial calculations.
+    let pendingDashboardSync=false;
+    const syncDashboardReadings=()=>{
+      if(pendingDashboardSync) return;
+      pendingDashboardSync=true;
+      requestAnimationFrame(()=>{
+        pendingDashboardSync=false;
+        if(!host.isConnected) return;
+        syncExistingBarometer(host);syncDailyBrief(host);syncCanonicalCards(host);
+      });
+    };
     window.addEventListener('vestra:dashboard-signal-updated', event => {
-      if (event?.detail?.source === 'market-sentiment') { syncExistingBarometer(host); syncDailyBrief(host); syncCanonicalCards(host); }
+      if(event?.detail?.source==='market-sentiment') syncDashboardReadings();
     });
-    window.addEventListener('vestra:weekly-data-refreshed', () => { syncDailyBrief(host); syncCanonicalCards(host); });
+    window.addEventListener('vestra:weekly-data-refreshed', syncDashboardReadings);
     window.addEventListener('focus', () => { refreshLivePulse(host); syncDailyBrief(host); syncWealthHero(host); syncCanonicalCards(host); void loadPublishedNews(host); });
     // The underlying modules hydrate asynchronously; retry a bounded number of times.
     [1200, 3500, 6500].forEach(delay => setTimeout(() => { syncDailyBrief(host); syncWealthHero(host); }, delay));
