@@ -15,6 +15,7 @@ WRITERS = {
     "smallcap-prebreakout-research.yml",
     "refresh-prebreakout-forward-evidence.yml",
     "market-turning-feature-research.yml",
+    "market-turning-prospective-shadow.yml",
     "refresh-cnn-fear-greed.yml",
     "sec-fund-identity.yml",
     "update-aaii-sentiment.yml",

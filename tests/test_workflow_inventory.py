@@ -23,6 +23,7 @@ ACTIVE_WORKFLOWS = {
     'smallcap-publication-health.yml',
     'refresh-prebreakout-forward-evidence.yml',
     'market-turning-feature-research.yml',
+    'market-turning-prospective-shadow.yml',
     'refresh-cnn-fear-greed.yml',
     'runtime-js-syntax.yml',
     'vestra-guarded-pr-integration.yml',

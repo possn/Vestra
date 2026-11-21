@@ -61,7 +61,7 @@ class FinancialHomeSyncContract(unittest.TestCase):
 
     def test_iphone_gets_new_versioned_runtime_urls(self):
         self.assertRegex(INDEX, r'app\.js\?v=[^"]+rev=20261109-quote-refresh-truth')
-        self.assertRegex(INDEX, r'vestra-intelligence-home\.js\?v=[^"]+rev=20261109-financial-sync')
+        self.assertRegex(INDEX, r'vestra-intelligence-home\.js\?v=[^"]+rev=20261121-canonical-visibility')
 
 
 if __name__ == "__main__":
