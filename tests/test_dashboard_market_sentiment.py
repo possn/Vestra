@@ -52,6 +52,16 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn('turningPointReading(S.data?.turningInputs,S.cnn,S.aaii,new Date(),S.nyse)', JS)
         self.assertIn('Contagem de evidências, não probabilidade nem sinal de investimento', JS)
         self.assertIn('VIX e VVIX não preveem direção', JS)
+        self.assertIn("const CORRELATION_TICKER='^COR1M'", JS)
+        self.assertIn("function impliedCorrelationContext", JS)
+        self.assertIn("function turningProximityScales", JS)
+        self.assertIn("COR1M indisponível; sem pontos de correlação", JS)
+        self.assertIn("Escalas heurísticas de confluência, não probabilidades", JS)
+        self.assertIn(".dms-turning-proximity", CSS)
+        self.assertIn('role="meter"', JS)
+        self.assertIn("node tests/runtime_turning_correlation_proximity.js",
+                      (ROOT / ".github/workflows/architecture-invariants.yml").read_text(encoding="utf-8"))
+
         self.assertIn("const VVIX_TICKER='^VVIX'", JS)
         self.assertIn('vvixContext?.risingStress!==true', JS)
         self.assertIn('VVIX ajusta o contexto do VIX, sem voto adicional', JS)
