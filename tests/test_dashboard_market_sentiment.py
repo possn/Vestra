@@ -12,7 +12,7 @@ SW = (ROOT / "sw.js").read_text(encoding="utf-8")
 class DashboardMarketSentimentTests(unittest.TestCase):
     def test_runtime_is_reachable_without_blocking_market_load(self):
         self.assertIn("ensureDashboardMarketSentiment", LOADER)
-        self.assertIn("dashboard-market-sentiment.js?v=2.0-turning-tap", LOADER)
+        self.assertIn("dashboard-market-sentiment.js?v=2.1-correlation-scales", LOADER)
         tail = LOADER[LOADER.index("// Dashboard/mobile companions remain eager"):]
         self.assertIn("ensureDashboardMarketSentiment();", tail)
         self.assertIn("requestIdleCallback", JS)
@@ -44,7 +44,7 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn("Ver como é calculado", JS)
         self.assertIn("dms-detail", JS)
         self.assertIn(".dms-detail[hidden]", CSS)
-        self.assertIn("version:'1.12'", JS)
+        self.assertIn("version:'1.13'", JS)
 
     def test_turning_point_exploration_is_integrated_without_new_dashboard_card(self):
         self.assertIn('INVERSÕES · EXPERIMENTAL', JS)
@@ -62,9 +62,9 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn('S.turningExpanded=!S.turningExpanded;render()', JS)
         self.assertIn('.dms-turning-evidence[hidden]{display:none}', CSS)
         self.assertIn('min-height:44px', CSS)
-        self.assertIn('vestra-cache-v281', SW)
+        self.assertIn('vestra-cache-v282', SW)
         self.assertIn('id="vestraDashboardMarketSentimentStyle"', HTML)
-        self.assertIn('dashboard-market-sentiment.css?v=1.9-static-head', HTML)
+        self.assertIn('dashboard-market-sentiment.css?v=2.0-dual-turning', HTML)
 
     def test_aaii_retail_sentiment_is_integrated_without_a_second_dashboard_card(self):
         data = (ROOT / "data" / "aaii-sentiment.json").read_text(encoding="utf-8")
