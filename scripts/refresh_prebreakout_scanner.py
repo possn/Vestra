@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 INDEX=ROOT/"data"/"stocks-index.json"
 OUTPUT=ROOT/"data"/"prebreakout-signals.json"
-SCAN_BUDGET_PER_SLOT=300
+SCAN_BUDGET_PER_SLOT=400
 SCANNER_SLOTS_PER_DAY=4
 
 def daily_coverage_capacity(eligible: int)->dict:
@@ -655,7 +655,7 @@ def candidates(stocks: list[dict], when: date, slot: int = 0, watch: list[str]|N
             continue
         universe[ticker]=max(cap,universe.get(ticker,0))
     ordered=sorted(universe,key=lambda t:(-universe[t],t))
-    # Four 300-name slots reach up to 1,200 distinct names daily; verify observed\n    # coverage rather than assuming all provider calls succeed.\n    # A daily-bar scanner gains no fresh evidence by rereading fixed anchors
+    # Four 400-name slots can cover up to 1,600 requests daily; verify observed\n    # coverage rather than assuming all provider calls succeed.\n    # A daily-bar scanner gains no fresh evidence by rereading fixed anchors
     # on all four slots. Rotate the complete eligible universe instead.
     if not 0<=slot<=3:raise ValueError("invalid six-hour scan slot")
     if not ordered:return []

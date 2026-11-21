@@ -359,9 +359,18 @@ class RotationPlanAuditTests(unittest.TestCase):
         plan=mod.rotation_plan_audit(stocks,date(2026,10,28),["T0001","T0002"])
         self.assertEqual(plan["status"],"planned_not_observed")
         self.assertTrue(plan["not_actual_ohlcv_coverage"])
-        self.assertEqual(plan["planned_requests"],1200)
-        self.assertEqual(plan["planned_distinct"]+plan["planned_repeats"],1200)
+        self.assertEqual(plan["planned_requests"],1600)
+        self.assertEqual(plan["planned_distinct"]+plan["planned_repeats"],1600)
         self.assertLessEqual(plan["planned_distinct"],1183)
+    def test_four_slots_can_plan_full_current_1524_name_universe(self):
+        stocks=[{"ticker":f"T{i:04d}","quote_type":"EQUITY",
+                 "market_cap":10_000_000_000-i} for i in range(1524)]
+        plan=mod.rotation_plan_audit(stocks,date(2026,11,21))
+        self.assertEqual(plan["planned_requests"],1600)
+        self.assertEqual(plan["planned_distinct"],1524)
+        self.assertEqual(plan["planned_distinct_pct"],100.0)
+        self.assertTrue(plan["not_actual_ohlcv_coverage"])
+        self.assertEqual(mod.daily_coverage_capacity(1524)["max_daily_coverage_pct"],100.0)
     def test_empty_universe_does_not_invent_coverage(self):
         plan=mod.rotation_plan_audit([],date(2026,10,28))
         self.assertIsNone(plan["planned_distinct_pct"])
@@ -381,10 +390,10 @@ class UnseenFirstRotationTests(unittest.TestCase):
         self.assertTrue(unseen)
         picked=mod.candidates(stocks,day,slot=3,
                               recently_verified=set(baseline))
-        self.assertEqual(len(picked),300)
-        self.assertEqual(len(set(picked)),300)
+        self.assertEqual(len(picked),400)
+        self.assertEqual(len(set(picked)),400)
         self.assertTrue(unseen.issubset(set(picked)))
-        self.assertEqual(len(set(picked)&set(baseline)),300-len(unseen))
+        self.assertEqual(len(set(picked)&set(baseline)),400-len(unseen))
 
     def test_reserved_watchlist_is_preserved_even_when_already_verified(self):
         stocks=self.stocks()
@@ -393,8 +402,8 @@ class UnseenFirstRotationTests(unittest.TestCase):
         selected=mod.candidates(stocks,date(2026,11,10),slot=2,watch=watch,
                                 recently_verified=set(baseline))
         self.assertEqual(selected[:2],watch)
-        self.assertEqual(len(selected),300)
-        self.assertEqual(len(set(selected)),300)
+        self.assertEqual(len(selected),400)
+        self.assertEqual(len(set(selected)),400)
 
     def test_empty_history_keeps_existing_rotation_and_plan(self):
         stocks=self.stocks()
@@ -415,7 +424,7 @@ class DailyCoverageCapacityTests(unittest.TestCase):
         self.assertEqual(mod.daily_coverage_capacity(200)["max_daily_coverage_pct"],100.0)
         self.assertIsNone(mod.daily_coverage_capacity(0)["max_daily_coverage_pct"])
         with self.assertRaises(ValueError):mod.daily_coverage_capacity(-1)
-        self.assertEqual(mod.SCAN_BUDGET_PER_SLOT,300)
+        self.assertEqual(mod.SCAN_BUDGET_PER_SLOT,400)
         self.assertEqual(mod.SCANNER_SLOTS_PER_DAY,4)
 
 
@@ -769,10 +778,11 @@ class PrebreakoutDataTests(unittest.TestCase):
                 for i in range(700)]
         day=date(2026,10,14)
         scans=[mod.candidates(stocks,day,slot) for slot in range(4)]
-        self.assertTrue(all(len(scan)==300 for scan in scans))
+        self.assertTrue(all(len(scan)==400 for scan in scans))
         self.assertEqual(len(set().union(*(set(scan) for scan in scans))),700)
-        for i in range(3):
-            self.assertTrue(set(scans[i]).isdisjoint(scans[i+1]))
+        # The 700-name toy universe is smaller than two 400-name slots;
+        # overlapping later slots are inevitable, but each slot is unique.
+        self.assertTrue(all(len(set(scan))==len(scan) for scan in scans))
         with self.assertRaises(ValueError):mod.candidates(stocks,day,4)
 
     def test_watchlist_rechecks_old_signals_without_expanding_scan_budget(self):
