@@ -42,7 +42,7 @@
     const link=document.createElement('link');
     link.id=STYLE_ID;
     link.rel='stylesheet';
-    link.href='dashboard-market-sentiment.css?v=2.0-dual-turning';
+    link.href='dashboard-market-sentiment.css?v=2.1-editorial-stress';
     document.head.appendChild(link);
   }
 
