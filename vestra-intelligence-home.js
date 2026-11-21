@@ -1067,7 +1067,29 @@
     const historyDisclosure = document.getElementById('v2-history-disclosure');
     if (historyDisclosure) historyDisclosure.open = false;
     const returnButton = document.getElementById('btnReturnIntelligence');
+    // Canonical modules may be rendered inside collapsed Dashboard chapters.
+    // Lift the requested module to a visible direct child for drilldown,
+    // then restore the original position on return. No clones/observers.
+    const liftedCanonical = new Map();
+    const restoreCanonical = () => {
+      for (const [id, marker] of liftedCanonical) {
+        const node = document.getElementById(id);
+        if (marker.isConnected && node) marker.replaceWith(node);
+        else marker.remove();
+      }
+      liftedCanonical.clear();
+    };
+    const revealCanonical = (id) => {
+      const node = document.getElementById(id);
+      if (!node || liftedCanonical.has(id)) return node;
+      const marker = document.createComment('vestra-canonical-origin:'+id);
+      node.before(marker);
+      view.append(node);
+      liftedCanonical.set(id,marker);
+      return node;
+    };
     if (returnButton) returnButton.addEventListener('click', () => {
+      restoreCanonical();
       host.dataset.legacyOpen = 'false';
       if (returnButton?.parentElement) returnButton.parentElement.style.removeProperty('display');
       if (typeof window.setView === 'function') window.setView('dashboard');
@@ -1154,7 +1176,7 @@
         host.dataset.legacyOpen = 'true';
         if (returnButton?.parentElement) returnButton.parentElement.style.setProperty('display','block','important');
         const scrollToSection = () => {
-          const destination = document.getElementById(targetId);
+          const destination = revealCanonical(targetId);
           if (destination) destination.scrollIntoView({behavior:'smooth',block:'start'});
         };
         requestAnimationFrame(() => requestAnimationFrame(scrollToSection));
