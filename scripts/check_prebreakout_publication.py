@@ -69,7 +69,12 @@ def assess_freshness(feed:dict, now:datetime, max_age_hours:float=8)->dict:
         audit=feed["scan_quality_audit"]
         coverage=feed["coverage_audit_24h"]
         capacity=feed["daily_capacity_ceiling"]
-        expected=min(1200,feed["eligible_universe"])
+        # Slot capacity changed from 300 to 400 with PR #2014 (21 Nov 2026).
+        # Preserve historical 300-slot archives rather than retroactively
+        # invalidating genuine earlier publication evidence.
+        capacity_cutover=datetime.fromisoformat("2026-11-21T10:46:00+00:00")
+        budget_per_slot=400 if generated>=capacity_cutover else 300
+        expected=min(4*budget_per_slot,feed["eligible_universe"])
         if (not isinstance(slot,dict) or not isinstance(audit,dict) or
             not isinstance(capacity,dict) or
             capacity.get("max_distinct_daily")!=expected or

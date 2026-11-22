@@ -71,6 +71,24 @@ class GateFunnelContract(unittest.TestCase):
   self.assertEqual(report["not_observed_rows"],2)
   now=datetime(2026,11,9,15,tzinfo=timezone.utc)
   self.assertEqual(mod.assess_freshness(feed,now)["status"],"healthy")
+ def test_post_capacity_upgrade_accepts_400_slot_budget_but_rejects_old_ceiling(self):
+  feed=self.feed()
+  feed["generated_at"]="2026-11-21T14:17:00+00:00"
+  feed["eligible_universe"]=1524
+  feed["daily_capacity_ceiling"]={"max_distinct_daily":1524}
+  feed["coverage_audit_24h"]["coverage_pct"]=19.69
+  feed["scan_quality_audit"]["observed_24h_coverage_pct"]=19.69
+  for row in feed["coverage_observations_24h"]:
+   row["verified_at"]=feed["generated_at"]
+  now=datetime(2026,11,21,15,tzinfo=timezone.utc)
+  self.assertEqual(mod.assess_freshness(feed,now)["status"],"healthy")
+  feed["daily_capacity_ceiling"]["max_distinct_daily"]=1200
+  self.assertEqual(mod.assess_freshness(feed,now)["reason"],"inconsistent_new_telemetry")
+  feed["generated_at"]="2026-11-21T09:17:00+00:00"
+  for row in feed["coverage_observations_24h"]:
+   row["verified_at"]=feed["generated_at"]
+  feed["daily_capacity_ceiling"]["max_distinct_daily"]=1200
+  self.assertEqual(mod.assess_freshness(feed,datetime(2026,11,21,10,tzinfo=timezone.utc))["status"],"healthy")
  def test_modern_coverage_requires_explicit_current_universe_provenance(self):
   now=datetime(2026,11,9,15,tzinfo=timezone.utc)
   for field in ("current_eligible_verified_distinct","outside_current_universe_distinct",
