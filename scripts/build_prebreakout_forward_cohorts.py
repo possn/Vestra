@@ -368,14 +368,16 @@ def research_anchor_forward_audit(archive:Path,event_prices:dict|None,
     report={"method":"first_archived_unbroken_partial_geometry_base_bounded_25",
             "research_only":True,"not_qualified_signal_cohorts":True,
             "sample_limit":limit,"selected_bases":len(chosen),
-            "forward_entry":"close_of_next_completed_benchmark_session",
+            "forward_entry":"close_of_first_completed_benchmark_session_after_publication_and_signal",
+            "complete_asset_bars_required_for_every_forward_session":True,
             "no_adjustment_factor_inferred":True,
             "no_probability_or_ranking_effect":True,"records":[],"status_counts":{}}
     for case in chosen:
         outcome={"ticker":case["ticker"],"observed_session":case["session"],
                  "published_at":case["published_at"],
                  "original_anchor_fingerprint":case["fingerprint"],
-                 "forward_return_pct":{"5":None,"10":None,"20":None}}
+                 "forward_return_pct":{"5":None,"10":None,"20":None},
+                 "entry_session":None,"all_intermediate_sessions_required":True}
         observed=(event_prices or {}).get(case["ticker"])
         if not isinstance(observed,list):
             outcome["status"]="independent_ohlcv_unavailable"
@@ -397,21 +399,31 @@ def research_anchor_forward_audit(archive:Path,event_prices:dict|None,
                         outcome["status"]="adjusted_price_basis_changed_or_conflicted"
                     else:
                         outcome["status"]="verified_pending"
-                        if case["session"] in benchmark_dates:
-                            k=benchmark_dates.index(case["session"])
-                            future=[d for d in benchmark_dates[k+1:]]
-                            index={r["date"]:r for r in bars}
-                            for h in (5,10,20):
-                                if len(future)>h and future[0] in index and future[h] in index:
-                                    entry=float(index[future[0]]["close"])
-                                    exit_price=float(index[future[h]]["close"])
-                                    if all(math.isfinite(v) and v>0 for v in (entry,exit_price)):
-                                        outcome["forward_return_pct"][str(h)]=round(
-                                            (exit_price/entry-1)*100,4)
-                            if outcome["forward_return_pct"]["5"] is not None:
-                                outcome["status"]="verified_with_matured_forward_observation"
-                        else:
-                            outcome["status"]="benchmark_session_not_aligned"
+                        # The scan may be published days after the signal bar.
+                        # Never observe a forward entry before actual publication.
+                        published_day=datetime.fromisoformat(
+                            case["published_at"].replace("Z","+00:00")
+                        ).astimezone(timezone.utc).date().isoformat()
+                        first_eligible=max(case["session"],published_day)
+                        future=[d for d in benchmark_dates if d>first_eligible]
+                        index={r["date"]:r for r in bars}
+                        if future:
+                            outcome["entry_session"]=future[0]
+                        for h in (5,10,20):
+                            window=future[:h+1]
+                            # A missing intermediate asset session cannot be
+                            # silently skipped or treated as complete evidence.
+                            if len(window)!=h+1 or any(d not in index for d in window):
+                                continue
+                            entry=float(index[window[0]]["close"])
+                            exit_price=float(index[window[-1]]["close"])
+                            if all(math.isfinite(v) and v>0 for v in (entry,exit_price)):
+                                outcome["forward_return_pct"][str(h)]=round(
+                                    (exit_price/entry-1)*100,4)
+                        if outcome["forward_return_pct"]["5"] is not None:
+                            outcome["status"]="verified_with_matured_forward_observation"
+                        elif len(future)>5 and any(d not in index for d in future[:6]):
+                            outcome["status"]="forward_sessions_missing"
             except (ValueError,TypeError,KeyError,OverflowError):
                 outcome["status"]="historical_base_window_unverifiable"
         report["records"].append(outcome)
