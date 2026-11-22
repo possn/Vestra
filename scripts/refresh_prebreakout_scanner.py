@@ -1254,6 +1254,7 @@ def main():
                     "geometry_shadow":trace.get("geometry_shadow"),
                     "research_prebreakout_lineage":trace.get("research_prebreakout_lineage"),
                     "swing_geometry_shadow":trace.get("swing_geometry_shadow"),
+                    "geometry_phase_shadow":trace.get("geometry_phase_shadow"),
                     "technical_evidence_shadow":trace.get("technical_evidence_shadow"),
                     "ma_failed_checks":trace.get("moving_average_failed_checks",[]),
                     "no_future_outcome_at_capture":True})

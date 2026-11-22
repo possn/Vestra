@@ -9,7 +9,11 @@ def row(ticker, first, base, vcp, intact, *, evaluable=True):
             "geometry_shadow": {"base_width_pass": base, "contractions_pass": vcp},
             "research_prebreakout_lineage": {"unbroken_prebreakout_position": intact},
             "ma_failed_checks": ["price_above_ma50"] if first == "moving_average_structure" else [],
-            "technical_evidence_shadow": {"close_position20": 0.12, "relative_strength_to_index": None}}
+            "technical_evidence_shadow": {"close_position20": 0.12, "relative_strength_to_index": None},
+            "swing_geometry_shadow": {"status": "measured", "all_geometry_pass": bool(base and vcp and intact)},
+            "geometry_phase_shadow": {"phase_offsets_sessions": list(range(11)),
+                "both_pass_count": 2 if base and vcp else 0,
+                "canonical_both_pass": bool(base and vcp)}}
 
 def feed(rows):
     return {"schema": "vestra_prebreakout_v1", "generated_at": "2026-11-21T14:20:00+00:00",
@@ -33,6 +37,32 @@ class PairedGateAuditTests(unittest.TestCase):
         self.assertEqual(report["sample_not_recommendations"][0]["ticker"], "A")
         self.assertIsNone(report["calibrated_probability"])
         self.assertFalse(report["forecast_performance_validated"])
+
+    def test_alternative_geometry_same_population_and_phase_stability(self):
+        rows = [row("A", "moving_average_structure", True, True, True),
+                row("B", "moving_average_structure", True, False, True),
+                row("C", "passed_structural_gates", True, True, True)]
+        rows[1]["swing_geometry_shadow"]["all_geometry_pass"] = True
+        rows[1]["geometry_phase_shadow"]["both_pass_count"] = 3
+        alternative = summarize(feed(rows))["alternative_geometry_comparison"]
+        count = alternative["counts"]
+        self.assertEqual(count["swing_comparable"], 3)
+        self.assertEqual(count["both_fixed_and_swing_pass"], 2)
+        self.assertEqual(count["swing_only_pass"], 1)
+        self.assertEqual(count["alternate_phase_only"], 1)
+        self.assertEqual(count["fixed_pass_phase_robust"], 2)
+        self.assertTrue(alternative["no_outcome_or_precision_claim"])
+
+    def test_missing_alternatives_are_unknown_not_negative(self):
+        rows = [row("A", "moving_average_structure", True, True, True),
+                row("B", "moving_average_structure", True, False, True)]
+        del rows[1]["swing_geometry_shadow"]
+        rows[1]["geometry_phase_shadow"]["canonical_both_pass"] = True
+        comparison = summarize(feed(rows))["alternative_geometry_comparison"]
+        self.assertEqual(comparison["counts"]["swing_comparable"], 1)
+        self.assertEqual(comparison["missing_or_unverifiable"]["swing"], 1)
+        self.assertEqual(comparison["counts"]["phase_comparable"], 1)
+        self.assertEqual(comparison["missing_or_unverifiable"]["phase"], 1)
 
     def test_missing_evidence_is_unknown_not_negative(self):
         rows = [row("A", "moving_average_structure", True, True, True),
