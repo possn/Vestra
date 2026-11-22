@@ -55,6 +55,18 @@ class NegativeControlTests(unittest.TestCase):
             self.assertEqual(cell["not_confirmed_matured"], 0)
             self.assertEqual(cell["unknown_reasons"], {"price_basis_unverified": 1})
 
+    def test_first_valid_capture_cannot_be_replaced_by_later_stronger_setup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            # Initial observation had no safe unbroken-pivot position.
+            make_slot(path, "CHANGED", "base_width", False, False, False)
+            # Later observed improvements cannot retroactively enter this cohort.
+            make_slot(path, "CHANGED", "moving_average_structure", True, True, True,
+                      day="2026-11-19")
+            selection = archived_cases(path)
+            self.assertEqual(sum(map(len, selection["groups"].values())), 0)
+            self.assertEqual(selection["available_unique_first_observations"], {})
+
     def test_rejects_invalid_budgets(self):
         with tempfile.TemporaryDirectory() as directory:
             with self.assertRaises(ValueError):
