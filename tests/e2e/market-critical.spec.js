@@ -49,7 +49,7 @@ test('iPhone/WebKit: pesquisa -> dossier -> métricas -> tabs -> fechar -> reabr
   // Freshness health distinguishes the published reference build from live quote
   // state. A clean browser profile can legitimately start in reference-only mode
   // until the first live quote refresh has been persisted.
-  await expect(healthSummary).toContainText(/Dados de referência atualizados|Atualização pendente|Cotações (?:atualizadas|antigas|parciais)|Atenção às cotações|Estado das cotações indisponível/);
+  await expect(healthSummary).toContainText(/Dados de referência atualizados|Referência por atualizar|Atualização pendente|Cotações (?:atualizadas|antigas|parciais)|Atenção às cotações|Estado das cotações indisponível/);
   await expect(healthSummary).not.toContainText('Dados ·');
   await healthSummary.click();
   await expect(health).toContainText('Universo verificado');
