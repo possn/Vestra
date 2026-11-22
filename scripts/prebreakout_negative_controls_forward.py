@@ -19,6 +19,7 @@ def archived_cases(archive: Path, per_group: int = 16) -> dict:
     if type(per_group) is not int or not 1 <= per_group <= 100:
         raise ValueError("invalid per-group download budget")
     first = {}
+    first_seen = set()
     rejected = Counter()
     for path in sorted(archive.glob("*/slots/*-slot*.json")):
         try:
@@ -47,7 +48,7 @@ def archived_cases(archive: Path, per_group: int = 16) -> dict:
                 rejected["invalid_or_duplicate_ticker_in_slot"] += 1
                 continue
             seen.add(ticker)
-            if ticker in first or row.get("evaluable") is not True:
+            if ticker in first_seen or row.get("evaluable") is not True:
                 continue
             anchor = row.get("asof_base_price_anchor")
             geometry = row.get("geometry_shadow")
@@ -67,6 +68,9 @@ def archived_cases(archive: Path, per_group: int = 16) -> dict:
             if any(type(x) is not bool for x in (base, vcp, unbroken)):
                 rejected["unverifiable_geometry"] += 1
                 continue
+            # Freeze first valid captured episode, including out-of-scope rows.
+            # Do not select an issuer only after its pattern improves later.
+            first_seen.add(ticker)
             first_rejection = row.get("first_rejection")
             if not isinstance(first_rejection, str):
                 continue
