@@ -34,6 +34,8 @@ def summarize(feed: dict) -> dict:
     counts = Counter()
     ma_checks = Counter()
     samples = []
+    alternative = Counter()
+    alternative_missing = Counter()
     for row in rows:
         if not isinstance(row, dict):
             raise ValueError("malformed research row")
@@ -67,6 +69,36 @@ def summarize(feed: dict) -> dict:
         counts["geometry_both_rejected_ma"] += int(base and vcp and rejected_ma)
         counts["geometry_both_unbroken_rejected_ma"] += int(base and vcp and intact and rejected_ma)
         counts["strict_structural_pass"] += int(first == "passed_structural_gates")
+        # Independent swing geometry and shifted-window stability are measured
+        # on this exact ticker and session, never on a different population.
+        swing = row.get("swing_geometry_shadow")
+        phase = row.get("geometry_phase_shadow")
+        if (isinstance(swing, dict) and swing.get("status") == "measured"
+                and type(swing.get("all_geometry_pass")) is bool):
+            swing_pass = swing["all_geometry_pass"]
+            alternative["swing_comparable"] += 1
+            alternative["swing_pass"] += int(swing_pass)
+            alternative["fixed_pass_on_swing_sample"] += int(base and vcp and intact)
+            alternative["both_fixed_and_swing_pass"] += int(base and vcp and intact and swing_pass)
+            alternative["swing_only_pass"] += int(swing_pass and not (base and vcp and intact))
+        else:
+            alternative_missing["swing"] += 1
+        if (isinstance(phase, dict)
+                and phase.get("phase_offsets_sessions") == list(range(11))
+                and type(phase.get("both_pass_count")) is int
+                and 0 <= phase["both_pass_count"] <= 11
+                and type(phase.get("canonical_both_pass")) is bool
+                and phase["canonical_both_pass"] == (base and vcp)):
+            robust = phase["both_pass_count"] >= 2
+            alternative["phase_comparable"] += 1
+            alternative["phase_any_pass"] += int(phase["both_pass_count"] > 0)
+            alternative["phase_two_or_more_pass"] += int(robust)
+            alternative["fixed_pass_on_phase_sample"] += int(base and vcp)
+            alternative["fixed_pass_phase_robust"] += int(base and vcp and robust)
+            alternative["alternate_phase_only"] += int(not (base and vcp) and phase["both_pass_count"] > 0)
+        else:
+            alternative_missing["phase"] += 1
+
         if rejected_ma:
             for item in row.get("ma_failed_checks", []):
                 if isinstance(item, str) and item:
@@ -96,6 +128,14 @@ def summarize(feed: dict) -> dict:
         "attempted": len(rows),
         "counts": dict(sorted(counts.items())),
         "overlapping_ma_failed_checks": dict(sorted(ma_checks.items())),
+        "alternative_geometry_comparison": {
+            "method": "same_ticker_same_slot_complete_case_only",
+            "counts": dict(sorted(alternative.items())),
+            "missing_or_unverifiable": dict(sorted(alternative_missing.items())),
+            "swing_geometry_is_independent_not_a_live_signal": True,
+            "phase_stability_requires_2_of_11_lags": True,
+            "no_outcome_or_precision_claim": True,
+        },
         "research_only_not_signal": True,
         "forecast_performance_validated": False,
         "calibrated_probability": None,
