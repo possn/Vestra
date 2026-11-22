@@ -27,7 +27,7 @@ class PairedGateAuditTests(unittest.TestCase):
         c = report["counts"]
         self.assertEqual(c["paired_evaluable"], 4)
         self.assertEqual(c["both_geometry_pass"], 2)
-        self.assertEqual(c["both_geometry_unbroken_rejected_ma"], 1)
+        self.assertEqual(c["geometry_both_unbroken_rejected_ma"], 1)
         self.assertEqual(c["strict_structural_pass"], 1)
         self.assertEqual(report["overlapping_ma_failed_checks"]["price_above_ma50"], 2)
         self.assertEqual(report["sample_not_recommendations"][0]["ticker"], "A")
