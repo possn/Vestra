@@ -12,6 +12,7 @@ import math
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from build_prebreakout_forward_cohorts import cohorts, build, research_anchor_cases
+from prebreakout_negative_controls_forward import archived_cases, compare as compare_negative_controls
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -67,8 +68,10 @@ def gather(archive:Path, downloader, now=None):
     # cohorts. These names remain a separate observational study, never
     # additional published signals or a claim of whole-universe coverage.
     research=research_anchor_cases(archive,limit=25)
+    controls=archived_cases(archive,per_group=16)
+    control_tickers={case["ticker"] for group in controls["groups"].values() for case in group}
     tickers=sorted(set(c["ticker"] for c in items)
-                   |set(c["ticker"] for c in research)|{"SPY"})
+                   |set(c["ticker"] for c in research)|control_tickers|{"SPY"})
     prices={}; event_prices={}; failures={}
     recovered_after_retry=[]
     for ticker in tickers:
@@ -89,11 +92,14 @@ def gather(archive:Path, downloader, now=None):
     if "SPY" not in prices:
         raise ValueError("benchmark SPY adjusted closes unavailable")
     results=build(archive,prices,prices["SPY"],event_prices=event_prices)
+    results["negative_controls_forward"]=compare_negative_controls(archive,event_prices,per_group=16)
     results["price_metadata"]={"provider":"yahoo_finance","auto_adjust":True,
         "completed_before_utc_date":today.isoformat(),"benchmark":"SPY",
         "downloaded":len(prices),"complete_ohlcv":len(event_prices),"failed":failures,
         "research_anchor_tickers_requested":len(set(c["ticker"] for c in research)),
         "research_subset_limit":25,
+        "negative_control_tickers_requested":len(control_tickers),
+        "negative_control_budget_max":48,
         "recovered_after_single_retry":sorted(recovered_after_retry),
         "retry_policy":"at_most_two_same_source_requests_only_on_download_or_close_failure"}
     return results
