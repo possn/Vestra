@@ -23,7 +23,7 @@ GROUPS = (
 HORIZONS = (5, 10, 20, 60)
 
 
-def select(archive: Path, per_group: int = 12) -> dict:
+def select(archive: Path, per_group: int = 32) -> dict:
     if type(per_group) is not int or not 1 <= per_group <= 100:
         raise ValueError("invalid predeclared research cohort budget")
     first = {}
