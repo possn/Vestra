@@ -1,3 +1,4 @@
+import hashlib
 import json
 import sys
 import tempfile
@@ -93,6 +94,29 @@ class IndependentMAForwardTests(unittest.TestCase):
             self.assertEqual(selected["instrumented_slots_observed"], 1)
             self.assertEqual(compare(selected, {})["evidence_readiness"],
                              "awaiting_complete_anchored_observation")
+
+    def test_cohort_capacity_uses_precommitted_hash_tiebreak_not_alphabetical(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            tickers = [f"T{i:03d}" for i in range(40)]
+            write_slot(root, "2026-11-23",
+                       [captured_row(t, False, False, False) for t in tickers])
+            write_slot(root, "2026-11-24",
+                       [captured_row("LATER", False, False, False)])
+            selected = select(root, per_group=32)
+            group = selected["groups"]["geometry_fail_ma_fail"]
+            actual = [c["ticker"] for c in group]
+            def hash_key(t):
+                return hashlib.sha256(
+                    ("vestra-ma-vcp-2026-v1:" + t).encode("utf-8")
+                ).hexdigest()
+            expected = sorted(tickers, key=lambda t: (hash_key(t), t))[:32]
+            self.assertEqual(actual, expected)
+            self.assertNotEqual(actual, tickers[:32])
+            self.assertNotIn("LATER", actual)
+            self.assertEqual(selected["eligible_unique_first_observations"]
+                             ["geometry_fail_ma_fail"], 41)
+            self.assertTrue(selected["deterministic_sample_not_randomized"])
 
     def test_missing_legacy_shadow_is_unknown_not_reconstructed(self):
         with tempfile.TemporaryDirectory() as td:

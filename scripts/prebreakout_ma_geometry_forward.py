@@ -8,6 +8,7 @@ Missing/incomplete price evidence remains unknown, not an unsuccessful signal.
 from __future__ import annotations
 from collections import Counter
 from datetime import datetime, timezone
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -119,7 +120,15 @@ def select(archive: Path, per_group: int = 32) -> dict:
                 "signalClose": close, "resistance": pivot,
             }
     groups = {name: [] for name in GROUPS}
-    for case in sorted(first.values(), key=lambda x: (x["observed_at"], x["ticker"])):
+    # Precommitted, result-independent SHA-256 ordering within one immutable
+    # capture prevents the first 32 alphabetical symbols dominating a group.
+    # Publication time remains primary: later captures never displace earlier
+    # accepted observations. This is a deterministic sample, NOT randomization.
+    def same_slot_priority(case):
+        key = ("vestra-ma-vcp-2026-v1:" + case["ticker"]).encode("utf-8")
+        return hashlib.sha256(key).hexdigest()
+
+    for case in sorted(first.values(), key=lambda x: (x["observed_at"], same_slot_priority(x), x["ticker"])):
         if len(groups[case["group"]]) < per_group:
             groups[case["group"]].append(case)
     return {
@@ -134,6 +143,8 @@ def select(archive: Path, per_group: int = 32) -> dict:
         "eligible_unique_first_observations": dict(sorted(Counter(x["group"] for x in first.values()).items())),
         "excluded_reasons": dict(sorted(excluded.items())),
         "selection_policy": "first_complete_prospective_ma_shadow_and_asof_anchor_per_ticker",
+        "within_publication_selection_order": "sha256_vestra_ma_vcp_2026_v1_ticker_not_alphabetical",
+        "deterministic_sample_not_randomized": True,
         "per_group_budget": per_group,
         "not_all_stocks_or_all_history": True,
     }
