@@ -1,0 +1,64 @@
+{
+  "schema": "vestra_prebreakout_paired_gate_audit_v1",
+  "observed_at": "2026-11-23T04:11:53.412057+00:00",
+  "scope": "same_slot_same_ticker_as_observed_not_out_of_sample",
+  "eligible_universe": 1586,
+  "attempted": 400,
+  "counts": {
+    "base_width_pass": 48,
+    "both_geometry_below_unbroken_pivot": 1,
+    "both_geometry_pass": 1,
+    "evaluable": 394,
+    "geometry_both_rejected_ma": 1,
+    "geometry_both_unbroken_rejected_ma": 1,
+    "ma_first_rejection": 319,
+    "not_evaluable": 6,
+    "paired_evaluable": 394,
+    "sequential_contractions_pass": 10,
+    "strict_structural_pass": 0
+  },
+  "overlapping_ma_failed_checks": {
+    "ma150_above_ma200": 157,
+    "ma150_rising_10": 169,
+    "ma200_rising_10": 154,
+    "ma50_above_ma150": 198,
+    "ma50_rising_10": 185,
+    "price_above_ma50": 221
+  },
+  "alternative_geometry_comparison": {
+    "method": "same_ticker_same_slot_complete_case_only",
+    "counts": {
+      "alternate_phase_only": 6,
+      "both_fixed_and_swing_pass": 0,
+      "fixed_pass_on_phase_sample": 1,
+      "fixed_pass_on_swing_sample": 1,
+      "fixed_pass_phase_robust": 1,
+      "phase_any_pass": 7,
+      "phase_comparable": 394,
+      "phase_two_or_more_pass": 7,
+      "swing_comparable": 394,
+      "swing_only_pass": 1,
+      "swing_pass": 1
+    },
+    "missing_or_unverifiable": {},
+    "swing_geometry_is_independent_not_a_live_signal": true,
+    "phase_stability_requires_2_of_11_lags": true,
+    "no_outcome_or_precision_claim": true
+  },
+  "research_only_not_signal": true,
+  "forecast_performance_validated": false,
+  "calibrated_probability": null,
+  "sample_not_recommendations": [
+    {
+      "ticker": "A",
+      "first_rejection": "moving_average_structure",
+      "ma_failed_checks": [
+        "price_above_ma50"
+      ],
+      "close_position20": 0.072,
+      "relative_strength_observed": false,
+      "research_only": true
+    }
+  ],
+  "interpretation": "Structural comparison only; no forward returns, no changed gates or rank."
+}
