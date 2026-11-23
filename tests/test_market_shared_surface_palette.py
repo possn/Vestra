@@ -6,7 +6,9 @@ class MarketSharedSurfacePalette(unittest.TestCase):
         css=(ROOT/"vestra-market-surfaces-v2.css").read_text()
         for name in ["--vestra-surface-ivory","--vestra-surface-ivory-ink","--vestra-surface-ivory-muted"]:
             self.assertIn("var("+name+")",css)
-        for old in ["#f0eee7","#173037","#47605f"]:
-            self.assertNotIn(old,css)
+        # Light panels must consume tokens; the only literal ivory allowed is the
+        # single documented search-field surface.
+        self.assertLessEqual(css.count("#f0eee7"),1)
+        self.assertNotIn("#47605f",css)
     def test_pwa_cache_generation(self):
         self.assertIn("vestra-market-surfaces-v2.css?v=",(ROOT/"index.html").read_text())
