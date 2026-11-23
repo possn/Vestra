@@ -118,6 +118,9 @@ def select(archive: Path, per_group: int = 32) -> dict:
                 "ticker": ticker, "group": group,
                 "observed_at": stamp.isoformat(), "signal_session": session,
                 "signalClose": close, "resistance": pivot,
+                # Frozen at the first point-in-time observation; never
+                # reconstructed from later adjusted historical prices.
+                "unbroken_at_capture": unbroken,
             }
     groups = {name: [] for name in GROUPS}
     # Precommitted, result-independent SHA-256 ordering within one immutable
@@ -166,6 +169,14 @@ def compare(selected: dict, event_prices: dict | None) -> dict:
         cases = selected["groups"][name]
         bucket = {
             "selected_tickers": len(cases),
+            "baseline_integrity": {
+                "unbroken_prebreakout_at_capture": sum(
+                    case["unbroken_at_capture"] is True for case in cases),
+                "already_broken_or_outside_pivot_at_capture": sum(
+                    case["unbroken_at_capture"] is False for case in cases),
+                "not_suitable_as_prebreakout_control_if_already_broken": True,
+                "fixed_point_in_time_membership_unchanged": True,
+            },
             "by_horizon": {
                 str(h): {"confirmed_matured": 0, "not_confirmed_matured": 0,
                          "unknown_pending_or_unverified": 0, "unknown_reasons": {}}
@@ -185,7 +196,13 @@ def compare(selected: dict, event_prices: dict | None) -> dict:
             bars = (event_prices or {}).get(case["ticker"])
             for horizon in HORIZONS:
                 cell = bucket["by_horizon"][str(horizon)]
-                if not isinstance(bars, list):
+                # An already-broken or out-of-pivot instrument is not
+                # eligible to measure prediction *before* breakout, even
+                # when it belongs to a frozen geometry-fail research arm.
+                # Keep the original selected cohort but abstain in metrics.
+                if case["unbroken_at_capture"] is False:
+                    outcome = {"status": "already_broken_or_outside_pivot_at_capture"}
+                elif not isinstance(bars, list):
                     outcome = {"status": "independent_ohlcv_unavailable"}
                 else:
                     try:

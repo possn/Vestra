@@ -142,6 +142,48 @@ class IndependentMAForwardTests(unittest.TestCase):
             self.assertIsNone(results["calibrated_probability"])
             self.assertEqual(list(HORIZONS), [5, 10, 20, 60])
 
+    def test_already_broken_baseline_is_unknown_not_future_prebreakout_success(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            write_slot(root, "2026-11-23", [
+                captured_row("BROKEN", True, False, False, intact=False),
+                captured_row("UNBROKEN", True, False, False, intact=True),
+            ])
+            selected = select(root)
+            group = selected["groups"]["geometry_fail_ma_pass"]
+            self.assertEqual(len(group), 2)
+            self.assertEqual({x["ticker"]: x["unbroken_at_capture"] for x in group},
+                             {"BROKEN": False, "UNBROKEN": True})
+            report = compare(selected, {})
+            arm = report["groups"]["geometry_fail_ma_pass"]
+            self.assertEqual(arm["selected_tickers"], 2)
+            self.assertEqual(arm["baseline_integrity"]["unbroken_prebreakout_at_capture"], 1)
+            self.assertEqual(arm["baseline_integrity"]["already_broken_or_outside_pivot_at_capture"], 1)
+            for horizon in HORIZONS:
+                cell = arm["by_horizon"][str(horizon)]
+                self.assertEqual(cell["confirmed_matured"], 0)
+                self.assertEqual(cell["not_confirmed_matured"], 0)
+                self.assertEqual(cell["unknown_pending_or_unverified"], 2)
+                self.assertEqual(cell["unknown_reasons"],
+                                 {"already_broken_or_outside_pivot_at_capture": 1,
+                                  "independent_ohlcv_unavailable": 1})
+            self.assertIsNone(report["calibrated_probability"])
+
+    def test_baseline_identity_is_immutable_even_if_subsequent_capture_changes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            write_slot(root, "2026-11-23",
+                       [captured_row("A", False, False, False, intact=False)])
+            write_slot(root, "2026-11-24",
+                       [captured_row("A", True, True, True, intact=True)])
+            selected = select(root)
+            case = selected["groups"]["geometry_fail_ma_fail"][0]
+            self.assertFalse(case["unbroken_at_capture"])
+            self.assertEqual(selected["groups"]["geometry_pass_ma_pass"], [])
+            self.assertEqual(compare(selected, {})["groups"]["geometry_fail_ma_fail"]
+                             ["by_horizon"]["5"]["unknown_reasons"],
+                             {"already_broken_or_outside_pivot_at_capture": 1})
+
     def test_future_or_corrupt_anchor_cannot_enter_arm(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

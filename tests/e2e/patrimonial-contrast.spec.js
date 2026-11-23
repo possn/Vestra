@@ -97,7 +97,10 @@ test('iPhone/WebKit: generated health and maturity content keeps light-card cont
   // Reveal only the authentic financial card DOM owners for this contrast fixture;
   // do not alter their computed ink, background or financial calculations.
   await page.evaluate(() => {
-    for(const selector of ['#v2-tools-chapter','#debtRatioCard','#maturityAlertsCard']){
+    // Both real content owners may be hidden when no financial records exist.
+    // Reveal the authentic fixture hosts without changing text ink or card CSS.
+    for(const selector of ['#v2-tools-chapter','#debtRatioCard','#maturityAlertsCard',
+                           '#debtRatioContent','#maturityAlertsContent']){
       const el=document.querySelector(selector);
       if(el)el.style.setProperty('display','block','important');
     }
