@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '25 23 * * 1-5'
   workflow_dispatch: {}
+  # Github-token commits made by the scanner do not trigger downstream push
+  # workflows. workflow_run observes completion without fabricating data.
+  workflow_run:
+    workflows: ['Refresh prebreakout scanner']
+    types: [completed]
+    branches: [main]
   push:
     branches: [main]
     paths:
@@ -23,6 +29,8 @@ concurrency:
 
 jobs:
   evaluate:
+    # Ignore failed scanner runs; scheduled/manual/code pushes remain valid.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 18
     steps:

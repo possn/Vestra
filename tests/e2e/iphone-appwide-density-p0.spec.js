@@ -201,7 +201,25 @@ test('iPhone Home: visible factual pulse of CNN, AAII and coverage has no horizo
    await expect(pulse.locator('[data-vi-pulse-aaii]')).toHaveText('—');
    await expect(pulse.locator('[data-vi-pulse-aaii-age]')).toContainText('não validada');
  }
- await expect(pulse.locator('[data-vi-pulse-coverage]')).not.toHaveText('—');
+ // Coverage must fail closed when the published integrity audit is old.
+ // Never require a numeric value from a stale or unavailable source.
+ const guard=await page.evaluate(async()=>{try{
+  const r=await fetch('./data/coverage_guard.json');
+  return r.ok?await r.json():null;
+ }catch(_){return null}});
+ const guardStamp=Date.parse(guard?.generated_at);
+ const guardCount=Number(guard?.rows_checked);
+ const guardFresh=guard?.ok===true && Number.isFinite(guardStamp) &&
+  guardStamp<=Date.now() && Date.now()-guardStamp<48*3600000 &&
+  Number.isInteger(guardCount) && guardCount>0 &&
+  Number(guard?.violation_count)===0;
+ if(guardFresh){
+  await expect(pulse.locator('[data-vi-pulse-coverage]')).not.toHaveText('—');
+  await expect(pulse.locator('[data-vi-pulse-coverage-age]')).toContainText('0 violações');
+ }else{
+  await expect(pulse.locator('[data-vi-pulse-coverage]')).toHaveText('—');
+  await expect(pulse.locator('[data-vi-pulse-coverage-age]')).toContainText('sem confirmação recente');
+ }
  const bounds=await pulse.evaluate(el=>{
   const r=el.getBoundingClientRect();
   return {right:r.right,width:r.width,viewport:document.documentElement.clientWidth,

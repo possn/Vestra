@@ -36,7 +36,14 @@ def summarize(feed: dict) -> dict:
     samples = []
     alternative = Counter()
     alternative_missing = Counter()
-    independent_ma_geometry = Counter()
+    independent_ma_geometry = Counter({
+        "geometry_pass_ma_pass": 0,
+        "geometry_pass_ma_fail": 0,
+        "geometry_fail_ma_pass": 0,
+        "geometry_fail_ma_fail": 0,
+        "paired_rows": 0,
+        "missing_or_conflicting_ma_capture": 0,
+    })
     for row in rows:
         if not isinstance(row, dict):
             raise ValueError("malformed research row")
@@ -139,6 +146,14 @@ def summarize(feed: dict) -> dict:
         raise ValueError("research rows do not reconcile with canonical gate funnel")
     if counts["ma_first_rejection"] > funnel.get("first_rejection_counts", {}).get("moving_average_structure", -1):
         raise ValueError("paired MA rejected count exceeds canonical funnel")
+    matrix_keys = ("geometry_pass_ma_pass", "geometry_pass_ma_fail",
+                   "geometry_fail_ma_pass", "geometry_fail_ma_fail")
+    if sum(independent_ma_geometry[k] for k in matrix_keys) != independent_ma_geometry["paired_rows"]:
+        raise ValueError("independent MA/geometry matrix not reconciled")
+    if (independent_ma_geometry["paired_rows"]
+            + independent_ma_geometry["missing_or_conflicting_ma_capture"]
+            != counts["paired_evaluable"]):
+        raise ValueError("independent MA/geometry denominator mismatch")
     return {
         "schema": "vestra_prebreakout_paired_gate_audit_v1",
         "observed_at": feed["generated_at"],
@@ -149,6 +164,9 @@ def summarize(feed: dict) -> dict:
         "overlapping_ma_failed_checks": dict(sorted(ma_checks.items())),
         "independent_ma_geometry_matrix": {
             "counts": dict(sorted(independent_ma_geometry.items())),
+            "paired_coverage_of_evaluable": (
+                round(independent_ma_geometry["paired_rows"] / counts["evaluable"], 4)
+                if counts["evaluable"] else None),
             "scope": "same_ticker_same_slot_completed_bars_only",
             "missing_captures_not_assumed_to_fail": True,
             "descriptive_not_an_ablation_or_forward_validation": True,
