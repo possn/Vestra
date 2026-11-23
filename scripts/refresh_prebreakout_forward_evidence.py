@@ -71,7 +71,7 @@ def gather(archive:Path, downloader, now=None):
     research=research_anchor_cases(archive,limit=25)
     controls=archived_cases(archive,per_group=16)
     control_tickers={case["ticker"] for group in controls["groups"].values() for case in group}
-    ma_geometry=select_ma_geometry(archive,per_group=12)
+    ma_geometry=select_ma_geometry(archive,per_group=32)
     ma_geometry_tickers={case["ticker"] for group in ma_geometry["groups"].values() for case in group}
     tickers=sorted(set(c["ticker"] for c in items)
                    |set(c["ticker"] for c in research)|control_tickers|ma_geometry_tickers|{"SPY"})
@@ -105,7 +105,7 @@ def gather(archive:Path, downloader, now=None):
         "negative_control_tickers_requested":len(control_tickers),
         "negative_control_budget_max":48,
         "ma_geometry_tickers_requested":len(ma_geometry_tickers),
-        "ma_geometry_budget_max":48,
+        "ma_geometry_budget_max":128,
         "recovered_after_single_retry":sorted(recovered_after_retry),
         "retry_policy":"at_most_two_same_source_requests_only_on_download_or_close_failure"}
     return results
