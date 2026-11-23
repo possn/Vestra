@@ -9,6 +9,11 @@ def row(ticker, first, base, vcp, intact, *, evaluable=True):
             "geometry_shadow": {"base_width_pass": base, "contractions_pass": vcp},
             "research_prebreakout_lineage": {"unbroken_prebreakout_position": intact},
             "ma_failed_checks": ["price_above_ma50"] if first == "moving_average_structure" else [],
+            "ma_structure_shadow": {"status": "measured",
+                "price_order_pass": first != "moving_average_structure",
+                "three_slopes_rising": True,
+                "all_pass": first != "moving_average_structure",
+                "research_only_no_eligibility_or_score_effect": True},
             "technical_evidence_shadow": {"close_position20": 0.12, "relative_strength_to_index": None},
             "swing_geometry_shadow": {"status": "measured", "all_geometry_pass": bool(base and vcp and intact)},
             "geometry_phase_shadow": {"phase_offsets_sessions": list(range(11)),
@@ -37,6 +42,30 @@ class PairedGateAuditTests(unittest.TestCase):
         self.assertEqual(report["sample_not_recommendations"][0]["ticker"], "A")
         self.assertIsNone(report["calibrated_probability"])
         self.assertFalse(report["forecast_performance_validated"])
+
+    def test_independent_ma_geometry_matrix_is_paired_not_first_rejection(self):
+        rows = [row("A", "moving_average_structure", True, True, True),
+                row("B", "moving_average_structure", True, False, True),
+                row("C", "sequential_vcp_contractions", True, False, True),
+                row("D", "passed_structural_gates", True, True, True)]
+        matrix = summarize(feed(rows))["independent_ma_geometry_matrix"]
+        self.assertEqual(matrix["counts"]["paired_rows"], 4)
+        self.assertEqual(matrix["counts"]["geometry_pass_ma_fail"], 1)
+        self.assertEqual(matrix["counts"]["geometry_pass_ma_pass"], 1)
+        self.assertEqual(matrix["counts"]["geometry_fail_ma_fail"], 1)
+        self.assertEqual(matrix["counts"]["geometry_fail_ma_pass"], 1)
+        self.assertTrue(matrix["descriptive_not_an_ablation_or_forward_validation"])
+
+    def test_missing_and_conflicting_ma_capture_is_not_counted_as_failure(self):
+        rows = [row("A", "moving_average_structure", True, True, True),
+                row("B", "passed_structural_gates", True, True, True),
+                row("C", "base_width", False, False, True)]
+        del rows[0]["ma_structure_shadow"]
+        rows[1]["ma_structure_shadow"]["all_pass"] = False
+        matrix = summarize(feed(rows))["independent_ma_geometry_matrix"]["counts"]
+        self.assertEqual(matrix["paired_rows"], 1)
+        self.assertEqual(matrix["geometry_fail_ma_pass"], 1)
+        self.assertEqual(matrix["missing_or_conflicting_ma_capture"], 2)
 
     def test_alternative_geometry_same_population_and_phase_stability(self):
         rows = [row("A", "moving_average_structure", True, True, True),

@@ -325,6 +325,15 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     m50=sma(values,end,50);m150=sma(values,end,150);m200=sma(values,end,200)
     slopes=[m50-sma(values,end-10,50),m150-sma(values,end-10,150),m200-sma(values,end-10,200)]
     ma_structure=(values[-1]>m50>m150>m200 if strict_quality else values[-1]>m150 and m50>m200)
+    if audit is not None:
+        # Measure MA and base geometry on the same observed bars, independently
+        # of which gate happens to fail first. This is descriptive only.
+        audit["ma_structure_shadow"]={
+            "status":"measured",
+            "price_order_pass":bool(ma_structure),
+            "three_slopes_rising":bool(all(x>0 for x in slopes)),
+            "all_pass":bool(ma_structure and all(x>0 for x in slopes)),
+            "research_only_no_eligibility_or_score_effect":True}
     if not (ma_structure and all(x>0 for x in slopes)):
         # Research-only: report *overlapping* reasons for this first failing gate.
         # Do not turn these diagnostics into relaxed eligibility or a prediction.
@@ -1283,6 +1292,7 @@ def main():
                     "first_rejection":first,
                     "trend_phase":trace.get("trend_phase"),
                     "geometry_shadow":trace.get("geometry_shadow"),
+                    "ma_structure_shadow":trace.get("ma_structure_shadow"),
                     "research_prebreakout_lineage":trace.get("research_prebreakout_lineage"),
                     "swing_geometry_shadow":trace.get("swing_geometry_shadow"),
                     "geometry_phase_shadow":trace.get("geometry_phase_shadow"),
