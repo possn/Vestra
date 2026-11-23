@@ -8,6 +8,8 @@ on:
     branches: [main]
     paths:
       - 'scripts/refresh_prebreakout_forward_evidence.py'
+      - 'scripts/prebreakout_ma_geometry_forward.py'
+      - 'tests/test_prebreakout_ma_geometry_forward.py'
       - 'tests/test_prebreakout_forward_publish_freshness.py'
       - '.github/workflows/refresh-prebreakout-forward-evidence.yml'
 
@@ -39,6 +41,7 @@ jobs:
           python tests/test_build_prebreakout_forward_cohorts.py
           python tests/test_prebreakout_research_anchor_timing.py
           python tests/test_prebreakout_negative_controls_forward.py
+          python tests/test_prebreakout_ma_geometry_forward.py
           python tests/test_refresh_prebreakout_forward_evidence.py
           python tests/test_prebreakout_forward_publish_freshness.py
           python tests/test_audit_prebreakout_scan_cadence.py
