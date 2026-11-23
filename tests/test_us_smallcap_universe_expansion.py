@@ -13,7 +13,15 @@ for module in ("pandas", "requests", "yfinance"):
             __import__(module)
         except ImportError:
             sys.modules[module] = types.ModuleType(module)
-import universe
+import importlib.util
+# Other test modules replace sys.modules["universe"] with lightweight stubs;
+# load the real module from its file so this suite is independent of test order.
+_spec = importlib.util.spec_from_file_location(
+    "universe_real_for_smallcap_tests",
+    Path(__file__).resolve().parents[1] / "scripts" / "universe.py")
+universe = importlib.util.module_from_spec(_spec)
+sys.modules[_spec.name] = universe  # dataclasses resolve their module by name
+_spec.loader.exec_module(universe)
 
 
 class SmallcapUniverseExpansionTests(unittest.TestCase):
