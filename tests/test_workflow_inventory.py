@@ -8,6 +8,7 @@ ACTIVE_WORKFLOWS = {
     'discovery-dividend-candidates.yml',
     'bootstrap-earnings-archive.yml',
     'architecture-invariants.yml',
+    'unit-suite.yml',
     'browser-e2e.yml',
     'capital-risk-regression.yml',
     'crypto-production-smoke.yml',

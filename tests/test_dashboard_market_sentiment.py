@@ -75,7 +75,7 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn('S.turningExpanded=!S.turningExpanded;render()', JS)
         self.assertIn('.dms-turning-evidence[hidden]{display:none}', CSS)
         self.assertIn('min-height:44px', CSS)
-        self.assertIn('vestra-cache-v284', SW)
+        self.assertIn('vestra-cache-v285', SW)
         self.assertIn('id="vestraDashboardMarketSentimentStyle"', HTML)
         self.assertIn('dashboard-market-sentiment.css?v=2.1-editorial-stress', HTML)
 

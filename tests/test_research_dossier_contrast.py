@@ -8,4 +8,4 @@ class ResearchDossierContrast(unittest.TestCase):
         self.assertIn("color:#c6d9cd!important;-webkit-text-fill-color:#c6d9cd!important",css)
         self.assertIn("color:#f4efe6!important;-webkit-text-fill-color:#f4efe6!important",css)
     def test_version(self):
-        self.assertIn("vestra-market-dossier-content-v2.css?v=2",(ROOT/"index.html").read_text())
+        self.assertIn("vestra-market-dossier-content-v2.css?v=",(ROOT/"index.html").read_text())

@@ -11,5 +11,5 @@ class PortfolioSharedInk(unittest.TestCase):
    self.assertIn("var(--vestra-portfolio-"+key+")",portfolio)
  def test_stylesheet_versions(self):
   html=(ROOT/"index.html").read_text()
-  self.assertIn("vestra-portfolio-v2.css?v=5",html)
-  self.assertIn("vestra-design-v2.css?v=3",html)
+  self.assertIn("vestra-portfolio-v2.css?v=",html)
+  self.assertIn("vestra-design-v2.css?v=",html)

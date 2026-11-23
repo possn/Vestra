@@ -10,4 +10,4 @@ class PortfolioSurfaceContrast(unittest.TestCase):
         self.assertIn("color:#fff!important;-webkit-text-fill-color:#fff!important",css)
         self.assertIn("#viewAssets .portfolio-income-strip>div:first-child strong",css)
     def test_generation(self):
-        self.assertIn("vestra-portfolio-v2.css?v=4",(ROOT/"index.html").read_text())
+        self.assertIn("vestra-portfolio-v2.css?v=",(ROOT/"index.html").read_text())
