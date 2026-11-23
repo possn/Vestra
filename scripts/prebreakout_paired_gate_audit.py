@@ -36,6 +36,7 @@ def summarize(feed: dict) -> dict:
     samples = []
     alternative = Counter()
     alternative_missing = Counter()
+    independent_ma_geometry = Counter()
     for row in rows:
         if not isinstance(row, dict):
             raise ValueError("malformed research row")
@@ -69,6 +70,24 @@ def summarize(feed: dict) -> dict:
         counts["geometry_both_rejected_ma"] += int(base and vcp and rejected_ma)
         counts["geometry_both_unbroken_rejected_ma"] += int(base and vcp and intact and rejected_ma)
         counts["strict_structural_pass"] += int(first == "passed_structural_gates")
+        # First-failing-gate counts cannot quantify the independent effect of
+        # a moving-average gate. A prospective paired 2x2 captures the exact
+        # same ticker/session without changing public eligibility.
+        ma = row.get("ma_structure_shadow")
+        if (isinstance(ma, dict) and ma.get("status") == "measured"
+                and ma.get("research_only_no_eligibility_or_score_effect") is True
+                and all(type(ma.get(k)) is bool for k in
+                        ("all_pass", "price_order_pass", "three_slopes_rising"))
+                and ma["all_pass"] == (ma["price_order_pass"] and ma["three_slopes_rising"])
+                and not (rejected_ma and ma["all_pass"])
+                and not (first == "passed_structural_gates" and not ma["all_pass"])):
+            geom_pass = base and vcp and intact
+            independent_ma_geometry["paired_rows"] += 1
+            key = ("geometry_pass_" if geom_pass else "geometry_fail_") + (
+                "ma_pass" if ma["all_pass"] else "ma_fail")
+            independent_ma_geometry[key] += 1
+        else:
+            independent_ma_geometry["missing_or_conflicting_ma_capture"] += 1
         # Independent swing geometry and shifted-window stability are measured
         # on this exact ticker and session, never on a different population.
         swing = row.get("swing_geometry_shadow")
@@ -128,6 +147,13 @@ def summarize(feed: dict) -> dict:
         "attempted": len(rows),
         "counts": dict(sorted(counts.items())),
         "overlapping_ma_failed_checks": dict(sorted(ma_checks.items())),
+        "independent_ma_geometry_matrix": {
+            "counts": dict(sorted(independent_ma_geometry.items())),
+            "scope": "same_ticker_same_slot_completed_bars_only",
+            "missing_captures_not_assumed_to_fail": True,
+            "descriptive_not_an_ablation_or_forward_validation": True,
+            "no_signal_or_ranking_effect": True,
+        },
         "alternative_geometry_comparison": {
             "method": "same_ticker_same_slot_complete_case_only",
             "counts": dict(sorted(alternative.items())),
