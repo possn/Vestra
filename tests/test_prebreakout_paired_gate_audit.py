@@ -82,6 +82,27 @@ class PairedGateAuditTests(unittest.TestCase):
         self.assertEqual(count["fixed_pass_phase_robust"], 2)
         self.assertTrue(alternative["no_outcome_or_precision_claim"])
 
+    def test_all_four_matrix_cells_present_even_with_zero_passes(self):
+        rows = [row("A", "moving_average_structure", False, False, False),
+                row("B", "moving_average_structure", False, False, True)]
+        matrix = summarize(feed(rows))["independent_ma_geometry_matrix"]
+        cells = matrix["counts"]
+        self.assertEqual(cells["geometry_pass_ma_pass"], 0)
+        self.assertEqual(cells["geometry_pass_ma_fail"], 0)
+        self.assertEqual(cells["geometry_fail_ma_pass"], 0)
+        self.assertEqual(cells["geometry_fail_ma_fail"], 2)
+        self.assertEqual(cells["paired_rows"], 2)
+        self.assertEqual(matrix["paired_coverage_of_evaluable"], 1.0)
+
+    def test_matrix_missing_shadow_kept_separate_and_coverage_explicit(self):
+        rows = [row("A", "moving_average_structure", False, False, True),
+                row("B", "moving_average_structure", False, False, True)]
+        del rows[1]["ma_structure_shadow"]
+        matrix = summarize(feed(rows))["independent_ma_geometry_matrix"]
+        self.assertEqual(matrix["counts"]["paired_rows"], 1)
+        self.assertEqual(matrix["counts"]["missing_or_conflicting_ma_capture"], 1)
+        self.assertEqual(matrix["paired_coverage_of_evaluable"], 0.5)
+
     def test_missing_alternatives_are_unknown_not_negative(self):
         rows = [row("A", "moving_average_structure", True, True, True),
                 row("B", "moving_average_structure", True, False, True)]
