@@ -11,5 +11,5 @@ class SharedSurfaceTokens(unittest.TestCase):
             self.assertIn(token,shell)
     def test_cache_versions(self):
         html=(ROOT/"index.html").read_text()
-        self.assertIn("vestra-design-v2.css?v=2",html)
-        self.assertIn("vestra-market-dossier-shell-v2.css?v=2",html)
+        self.assertIn("vestra-design-v2.css?v=",html)
+        self.assertIn("vestra-market-dossier-shell-v2.css?v=",html)

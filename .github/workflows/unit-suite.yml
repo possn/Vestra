@@ -1,0 +1,37 @@
+name: Unit suite (full)
+
+# Runs the whole Python unit suite, not a hand-picked subset. Tests listed in
+# tests/known_stale_tests.txt pin superseded implementation details (exact hex
+# colours, old code shapes) and are deselected until they are rewritten; the
+# list must only shrink. Any new failure fails this job.
+on:
+  workflow_dispatch: {}
+  pull_request:
+    paths: ['tests/**', 'scripts/**', '*.js', '*.css', 'index.html', 'sw.js', '.github/workflows/unit-suite.yml']
+  push:
+    branches: [main]
+    paths: ['tests/**', 'scripts/**', '*.js', '*.css', 'index.html', 'sw.js', '.github/workflows/unit-suite.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unit-suite-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check pytest numpy pandas 'requests>=2.31,<3'
+      - name: Run full unit suite
+        run: |
+          args=()
+          while IFS= read -r t; do [ -n "$t" ] && args+=(--deselect "$t"); done < tests/known_stale_tests.txt
+          python -m pytest -q --ignore=tests/e2e tests "${args[@]}"

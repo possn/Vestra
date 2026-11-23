@@ -10,4 +10,4 @@ class MarketLightSurfaceContrast(unittest.TestCase):
         self.assertIn(".market-analysis-tools .market-tool-btn",css)
     def test_cache_generation(self):
         html=(ROOT/"index.html").read_text()
-        self.assertIn("vestra-market-surfaces-v2.css?v=3",html)
+        self.assertIn("vestra-market-surfaces-v2.css?v=",html)

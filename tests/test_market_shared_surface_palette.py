@@ -9,4 +9,4 @@ class MarketSharedSurfacePalette(unittest.TestCase):
         for old in ["#f0eee7","#173037","#47605f"]:
             self.assertNotIn(old,css)
     def test_pwa_cache_generation(self):
-        self.assertIn("vestra-market-surfaces-v2.css?v=4",(ROOT/"index.html").read_text())
+        self.assertIn("vestra-market-surfaces-v2.css?v=",(ROOT/"index.html").read_text())

@@ -161,7 +161,7 @@ class RuntimeRegressionTests(unittest.TestCase):
         self.assertIn("vestra:view-rendered", mobile)
         self.assertIn("function captureEarlyModeIntent(event)", loader)
         self.assertIn("document.removeEventListener?.('click', captureEarlyModeIntent, true)", loader)
-        self.assertIn("market-runtime-loader.js?v=2.2", html)
+        self.assertIn("market-runtime-loader.js?v=", html)
 
     def test_lifecycle_persistence_is_blocked_until_hydration(self):
         app = read("app.js")

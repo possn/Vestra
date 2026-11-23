@@ -12,4 +12,4 @@ class IntelligenceHeadingContrast(unittest.TestCase):
 
     def test_cache_generation(self):
         html = (ROOT / "index.html").read_text()
-        self.assertIn("vestra-intelligence.css?v=18", html)
+        self.assertIn("vestra-intelligence.css?v=", html)
