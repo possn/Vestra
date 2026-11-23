@@ -5,8 +5,7 @@ Uses minimal Yahoo-shaped frames: historical architecture CI has no pandas.
 import importlib.util
 from pathlib import Path
 from unittest.mock import Mock
-
-import pytest
+import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location(
@@ -53,8 +52,12 @@ class MultiFrame:
 def test_all_nan_return_is_retried_then_marked_unobserved():
     provider = Mock()
     provider.download.return_value = Frame([float("nan"), float("nan")])
-    with pytest.raises(RuntimeError, match="provider_batch_without_usable_close"):
+    try:
         scanner.fetch_ohlcv_batch(provider, ["AAA"])
+    except RuntimeError as exc:
+        assert "provider_batch_without_usable_close" in str(exc)
+    else:
+        raise AssertionError("a provider-wide all-NaN response must fail closed")
     assert provider.download.call_count == 2
 
 
