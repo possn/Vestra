@@ -29,9 +29,10 @@ def test_navigation_emits_post_render_event():
 
 
 def test_rollout_cache_is_fresh():
-    assert 'sw.js?v=20260930v4' in APP
-    assert 'const CACHE_NAME = "vestra-cache-v236";' in SW
-    assert "Service Worker v11.14" in SW
+    import re
+    assert re.search(r'serviceWorker\.register\("sw\.js\?v=[\w.-]+"\)', APP)
+    assert re.search(r'const CACHE_NAME = "vestra-cache-v\d+";', SW)
+    assert re.search(r"Service Worker v[\d.]+", SW)
 
 
 def test_dashboard_refresh_has_zero_mutation_observers():

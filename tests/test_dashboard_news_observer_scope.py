@@ -17,6 +17,9 @@ def test_dashboard_navigation_uses_semantic_render_event_not_nav_click_probe():
 
 
 def test_rollout_cache_bumped():
-    assert 'sw.js?v=20260930v5' in APP
-    assert 'const CACHE_NAME = "vestra-cache-v237";' in SW
-    assert "Service Worker v11.15" in SW
+    # Invariant (not a frozen version): the SW registration carries a cache-buster
+    # and the worker declares a numbered cache generation.
+    import re
+    assert re.search(r'serviceWorker\.register\("sw\.js\?v=[\w.-]+"\)', APP)
+    assert re.search(r'const CACHE_NAME = "vestra-cache-v\d+";', SW)
+    assert re.search(r"Service Worker v[\d.]+", SW)

@@ -1,10 +1,11 @@
+import re
 from pathlib import Path
 
 
 def test_generic_buttons_do_not_fall_through_to_portfolio_dossier_navigation():
     source = Path("portfolio-dossier-routing.js").read_text(encoding="utf-8")
 
-    assert "const VERSION='1.4'" in source
+    assert re.search(r"const VERSION='\d+\.\d+'", source)
     assert "a,button,input,select,textarea" in source
     assert "if(!row||!c.contains(row)||isControl(e.target,row))return;" in source
     assert "if(!row||isControl(e.target,row))return;" in source

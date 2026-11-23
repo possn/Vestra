@@ -17,11 +17,15 @@ def test_etf_score_is_separate_from_equity_score_contract():
 
 def test_market_loader_enriches_before_first_render():
     src = (ROOT / "market-static-universe.js").read_text(encoding="utf-8")
-    enrich = src.index("window.VestraEtfIntelligence?.enrichStocks(stocks)")
+    # Current contract: the stock universe renders immediately; ETF enrichment
+    # is non-blocking and announces itself so the Market view re-renders.
     ready = src.index("beforeReady();")
     render = src.index("onReady();")
-    assert enrich < ready < render
-    assert "market-etf-intelligence.js?v=1.2" in src
+    enrich = src.index("window.VestraEtfIntelligence?.enrichStocks(stocks)")
+    assert ready < render < enrich
+    assert "vestra:market-etf-ready" in src
+    assert "vestra:market-etf-ready" in (ROOT / "market.js").read_text(encoding="utf-8")
+    assert re.search(r"market-etf-intelligence\.js\?v=[\w.-]+", src)
 
 
 def test_fund_rows_use_etf_score_and_show_pending_coverage():

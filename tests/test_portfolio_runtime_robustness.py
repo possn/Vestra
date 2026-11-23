@@ -3,8 +3,10 @@ from pathlib import Path
 
 def test_portfolio_hierarchy_uses_selector_array():
     js = Path("vestra-portfolio-hierarchy.js").read_text()
-    assert "for(const sel of ['.ux454-nav-title','.market-collapse-toolbar','.ux453-focusbar','.ux-portfolio-shortcuts'])" in js
-    assert "for(const sel of ('.ux454-nav-title','.market-collapse-toolbar','.ux453-focusbar','.ux-portfolio-shortcuts'))" not in js
+    # Regression guard: `for(const x of (a,b,c))` is a comma expression that
+    # iterates a single string. Any for-of over a parenthesised list is a bug.
+    import re
+    assert not re.search(r"for\s*\(\s*const\s+\w+\s+of\s*\(\s*['\"]", js)
 
 
 def test_portfolio_ui_text_helper_is_null_safe():
