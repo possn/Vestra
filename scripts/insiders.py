@@ -479,6 +479,71 @@ def insider_activity(ticker: str, days: int = 365, max_detail_filings: int = 12)
     }
 
 
+def insider_from_cache(ticker: str, cik_map: dict | None = None, asof: dt.date | None = None,
+                       cache: dict | None = None) -> dict | None:
+    """Offline lower-bound view of Form 4 activity from issuer-verified cached filings.
+
+    The immutable accession cache only knows filings that an earlier refresh
+    fetched, so it cannot prove completeness: absent filings may exist. This
+    therefore NEVER reports zero activity (returns None when the issuer has no
+    cached transactions) and never publishes a net value or an "ok" status.
+    Reported counts/values are minimums of real, verified open-market trades.
+    """
+    if "." in ticker:
+        return None
+    cik = (cik_map if cik_map is not None else _load_ticker_cik_map()).get(ticker.upper())
+    if not cik:
+        return None
+    rows = cache if cache is not None else _load_filing_cache()
+    today = asof or dt.date.today()
+    cutoff30, cutoff365 = today - dt.timedelta(days=30), today - dt.timedelta(days=365)
+
+    def day(value):
+        try:
+            return dt.date.fromisoformat(value or "")
+        except Exception:
+            return None
+
+    filings, transactions = [], []
+    for row in rows.values():
+        if not _same_cik(row.get("issuer_cik"), cik):
+            continue
+        filings.append(row)
+        for tx in row.get("transactions") or []:
+            if isinstance(tx, dict) and tx.get("type") in ("buy", "sell") and day(tx.get("date")):
+                copied = dict(tx)
+                copied["ticker"] = ticker
+                transactions.append(copied)
+    if not transactions:
+        return None
+    transactions.sort(key=lambda x: x["date"], reverse=True)
+    tx30 = [x for x in transactions if day(x["date"]) >= cutoff30 and day(x["date"]) <= today]
+    tx365 = [x for x in transactions if day(x["date"]) >= cutoff365 and day(x["date"]) <= today]
+
+    def total(items, side):
+        vals = [x["value"] for x in items if x["type"] == side and x.get("value") is not None]
+        return sum(vals)
+
+    def count(items, side):
+        return sum(1 for x in items if x["type"] == side)
+
+    return {
+        "status": "partial",
+        "reason": "cached_filings_lower_bound_not_rechecked",
+        "form4_count_30d": sum(1 for r in filings if (day(r.get("filing_date")) or dt.date.min) >= cutoff30),
+        "buy_count_30d": count(tx30, "buy"), "sell_count_30d": count(tx30, "sell"),
+        "buy_value_30d": total(tx30, "buy"), "sell_value_30d": total(tx30, "sell"),
+        "net_value_30d": None,
+        "transactions": tx30[:12],
+        "form4_count_365d": sum(1 for r in filings if (day(r.get("filing_date")) or dt.date.min) >= cutoff365),
+        "buy_count_365d": count(tx365, "buy"), "sell_count_365d": count(tx365, "sell"),
+        "buy_value_365d": total(tx365, "buy"), "sell_value_365d": total(tx365, "sell"),
+        "net_value_365d": None,
+        "transactions_365d": tx365[:40],
+        "detail_filings_parsed": None,
+    }
+
+
 def annotate(tickers: list[str], pause: float = 0.0) -> dict[str, dict]:
     _load_filing_cache()
     cik_map = _load_ticker_cik_map()

@@ -40,7 +40,7 @@ from audit_sector_relative_coverage import report as sector_coverage_report
 from analyst import fetch_many as fetch_analyst_many
 import history as history_mod
 import valuation_history as valuation_history_mod
-from insiders import annotate as annotate_insiders
+from insiders import annotate as annotate_insiders, insider_from_cache, _load_ticker_cik_map as _load_insider_cik_map
 from insider_prices import fetch_many as fetch_insider_prices, fetch_daily_returns
 from congress import fetch_congress_for_universe
 from metals import build_metals_payload
@@ -445,7 +445,12 @@ def main():
         congress_future = pool.submit(_timed_pipeline_task, "congress", fetch_congress_for_universe, us_tickers)
         analyst_map = analyst_future.result()
         insider_map = insider_future.result()
-        insider_map.update({ticker: {"status": "unknown", "reason": "not_observed_in_bounded_refresh"}
+        # Tickers outside today's bounded refresh keep verified minimum activity
+        # from the immutable issuer-checked Form 4 cache (status "partial", no
+        # net value, never a zero); with no cached trade they stay unknown.
+        _cik_map = _load_insider_cik_map() if insider_not_observed else {}
+        insider_map.update({ticker: (insider_from_cache(ticker, cik_map=_cik_map)
+                                     or {"status": "unknown", "reason": "not_observed_in_bounded_refresh"})
                             for ticker in insider_not_observed})
         congress_map = congress_future.result()
     _stage_done("post_score_intelligence", _stage)

@@ -75,3 +75,62 @@ class InsiderBoundedRefreshTests(unittest.TestCase):
 
 if __name__=="__main__":
     unittest.main()
+
+
+class InsiderCacheLowerBoundTests(unittest.TestCase):
+    def _cache(self):
+        def tx(day, side, value, cik="0000000123"):
+            return {"date": day, "type": side, "value": value, "issuer_cik": cik}
+        return {
+            "123:a": {"issuer_cik": "0000000123", "filing_date": "2026-11-15",
+                      "transactions": [tx("2026-11-12", "buy", 1000.0), tx("2026-11-12", "sell", 400.0)]},
+            "123:b": {"issuer_cik": "0000000123", "filing_date": "2026-08-01",
+                      "transactions": [tx("2026-07-30", "buy", 5000.0)]},
+            "999:c": {"issuer_cik": "0000000999", "filing_date": "2026-11-15",
+                      "transactions": [tx("2026-11-14", "buy", 9e9, cik="0000000999")]},
+        }
+
+    def _load(self):
+        import sys
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import insiders
+        return insiders
+
+    def test_partial_lower_bound_windows_and_issuer_isolation(self):
+        ins = self._load()
+        out = ins.insider_from_cache("AAA", cik_map={"AAA": "0000000123"},
+                                     asof=date(2026, 11, 23), cache=self._cache())
+        self.assertEqual(out["status"], "partial")
+        self.assertEqual((out["buy_count_30d"], out["sell_count_30d"]), (1, 1))
+        self.assertEqual(out["buy_value_30d"], 1000.0)          # other issuer excluded
+        self.assertEqual(out["buy_count_365d"], 2)
+        self.assertEqual(out["buy_value_365d"], 6000.0)
+        self.assertIsNone(out["net_value_30d"])                # never a net on incomplete data
+        self.assertIsNone(out["net_value_365d"])
+
+    def test_old_trades_leave_30d_window_but_stay_in_365d(self):
+        ins = self._load()
+        out = ins.insider_from_cache("AAA", cik_map={"AAA": "0000000123"},
+                                     asof=date(2026, 12, 20), cache=self._cache())
+        self.assertEqual(out["buy_count_30d"], 0)
+        self.assertEqual(out["buy_count_365d"], 2)
+
+    def test_no_cached_trades_or_non_us_is_none_never_zero(self):
+        ins = self._load()
+        self.assertIsNone(ins.insider_from_cache("ZZZ", cik_map={"ZZZ": "0000000555"},
+                                                 asof=date(2026, 11, 23), cache=self._cache()))
+        self.assertIsNone(ins.insider_from_cache("ABC.L", cik_map={"ABC.L": "0000000123"},
+                                                 asof=date(2026, 11, 23), cache=self._cache()))
+        self.assertIsNone(ins.insider_from_cache("AAA", cik_map={}, cache=self._cache()))
+
+    def test_run_wires_cache_fallback_before_unknown(self):
+        self.assertIn("insider_from_cache(ticker, cik_map=_cik_map)", RUN)
+        self.assertIn('"status": "unknown", "reason": "not_observed_in_bounded_refresh"', RUN)
+
+
+class InsiderPartialUiGuardTests(unittest.TestCase):
+    def test_dossier_never_nets_a_verified_lower_bound(self):
+        market = (ROOT / "market.js").read_text(encoding="utf-8")
+        self.assertIn("const lowerBound=txt(s.insider_status)==='partial';", market)
+        self.assertIn("? null\n      : hasCompleteValue", market)
+        self.assertIn("Mínimo verificado: ", market)
