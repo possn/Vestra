@@ -28,6 +28,9 @@ def select(archive: Path, per_group: int = 32) -> dict:
         raise ValueError("invalid predeclared research cohort budget")
     first = {}
     excluded = Counter()
+    instrumented_slots = 0
+    instrumented_evaluable_rows = 0
+    latest_instrumented_capture = None
     for path in sorted(archive.glob("*/slots/*-slot*.json")):
         try:
             snapshot = json.loads(path.read_text(encoding="utf-8"))
@@ -45,6 +48,16 @@ def select(archive: Path, per_group: int = 32) -> dict:
                 continue
         except (OSError, ValueError, KeyError, AttributeError, TypeError):
             continue
+        # This provenance is checked on the *original immutable scan*, never
+        # inferred from a later build or a reconstructed price series.
+        slot_instrumented_rows = sum(
+            isinstance(row, dict) and row.get("evaluable") is True
+            and isinstance(row.get("ma_structure_shadow"), dict)
+            for row in block["rows"])
+        if slot_instrumented_rows:
+            instrumented_slots += 1
+            instrumented_evaluable_rows += slot_instrumented_rows
+            latest_instrumented_capture = stamp.isoformat()
         seen_in_slot = set()
         for row in block["rows"]:
             if not isinstance(row, dict):
@@ -110,6 +123,13 @@ def select(archive: Path, per_group: int = 32) -> dict:
         if len(groups[case["group"]]) < per_group:
             groups[case["group"]].append(case)
     return {
+        "instrumented_slots_observed": instrumented_slots,
+        "instrumented_evaluable_rows_observed": instrumented_evaluable_rows,
+        "latest_instrumented_capture": latest_instrumented_capture,
+        "capture_readiness": (
+            "awaiting_first_instrumented_scan" if not instrumented_slots
+            else "awaiting_complete_anchored_observation" if not first
+            else "captured_prospective_groups"),
         "groups": groups,
         "eligible_unique_first_observations": dict(sorted(Counter(x["group"] for x in first.values()).items())),
         "excluded_reasons": dict(sorted(excluded.items())),
@@ -178,4 +198,15 @@ def compare(selected: dict, event_prices: dict | None) -> dict:
             )
             cell["probability_calibrated"] = False
         result["groups"][name] = bucket
+    captured = sum(bucket["selected_tickers"] for bucket in result["groups"].values())
+    matured_at_5 = sum(bucket["by_horizon"]["5"]["matured_evaluable"]
+                       for bucket in result["groups"].values())
+    if captured == 0:
+        result["evidence_readiness"] = result["selection"]["capture_readiness"]
+    elif matured_at_5 == 0:
+        result["evidence_readiness"] = "captured_awaiting_first_matured_outcome"
+    else:
+        result["evidence_readiness"] = "maturing_observations_not_calibrated"
+    result["matured_5_session_evaluable"] = matured_at_5
+    result["selected_tickers_total"] = captured
     return result

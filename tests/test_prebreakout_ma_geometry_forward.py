@@ -60,6 +60,40 @@ class IndependentMAForwardTests(unittest.TestCase):
             self.assertEqual(selected["groups"]["geometry_pass_ma_fail"][0]["ticker"], "B")
             self.assertEqual(selected["groups"]["geometry_pass_ma_pass"][0]["ticker"], "A")
 
+    def test_reports_capture_readiness_before_and_after_first_instrumented_slot(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            empty = select(root)
+            self.assertEqual(empty["capture_readiness"], "awaiting_first_instrumented_scan")
+            self.assertEqual(empty["instrumented_slots_observed"], 0)
+            self.assertEqual(compare(empty, {})["evidence_readiness"],
+                             "awaiting_first_instrumented_scan")
+            write_slot(root, "2026-11-23", [captured_row("A", True, False, False)])
+            captured = select(root)
+            self.assertEqual(captured["instrumented_slots_observed"], 1)
+            self.assertEqual(captured["instrumented_evaluable_rows_observed"], 1)
+            self.assertEqual(captured["capture_readiness"], "captured_prospective_groups")
+            self.assertEqual(captured["latest_instrumented_capture"],
+                             "2026-11-23T08:20:00+00:00")
+            report = compare(captured, {})
+            self.assertEqual(report["evidence_readiness"],
+                             "captured_awaiting_first_matured_outcome")
+            self.assertEqual(report["selected_tickers_total"], 1)
+            self.assertEqual(report["matured_5_session_evaluable"], 0)
+
+    def test_instrumented_but_invalid_anchor_is_not_confused_with_missing_schema(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            invalid = captured_row("A", True, False, False)
+            invalid["asof_base_price_anchor"]["session"] = "2026-11-25"
+            write_slot(root, "2026-11-23", [invalid])
+            selected = select(root)
+            self.assertEqual(selected["capture_readiness"],
+                             "awaiting_complete_anchored_observation")
+            self.assertEqual(selected["instrumented_slots_observed"], 1)
+            self.assertEqual(compare(selected, {})["evidence_readiness"],
+                             "awaiting_complete_anchored_observation")
+
     def test_missing_legacy_shadow_is_unknown_not_reconstructed(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
