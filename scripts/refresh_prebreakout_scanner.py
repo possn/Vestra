@@ -1053,13 +1053,44 @@ def safe_quote_currency(provider, ticker):
         return None
 
 
+def batch_has_no_usable_close(data, group):
+    """Detect a provider-wide empty/NaN response, not missing individual tickers.
+
+    A successful HTTP/download return does not mean Yahoo supplied valid
+    OHLCV. Check every requested ticker before accepting the batch; never
+    impute or discard partially missing ticker histories here.
+    """
+    if data is None or getattr(data, "empty", True):
+        return True
+    for ticker in group:
+        try:
+            frame = single_ticker_ohlcv_frame(data, ticker)
+            closes = frame["Close"]
+            for value in closes:
+                try:
+                    if not isinstance(value, bool) and math.isfinite(float(value)) and float(value) > 0:
+                        return False
+                except (TypeError, ValueError, OverflowError):
+                    continue
+        except (KeyError, TypeError, ValueError, AttributeError):
+            continue
+    return True
+
+
 def fetch_ohlcv_batch(provider, group):
-    """One bounded retry on exceptions; no silent fallback to unverified bars."""
+    """Retry provider-wide empty/NaN data as well as raised exceptions.
+
+    After two failures mark the *batch unobserved*, never a technical rejection.
+    Individual malformed histories remain subject to strict scan_bars checks.
+    """
     failures=[]
     for attempt in range(2):
         try:
             data=provider.download(group,period="18mo",interval="1d",group_by="ticker",
                                    auto_adjust=True,threads=False,progress=False,timeout=25)
+            if batch_has_no_usable_close(data, group):
+                failures.append("provider_batch_without_usable_close")
+                continue
             return data,len(failures)
         except Exception as exc:
             failures.append(type(exc).__name__)
