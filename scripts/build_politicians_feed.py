@@ -476,6 +476,71 @@ def build_members(trades: list[dict]) -> list[dict]:
     return sorted(by_name.values(), key=lambda x: (-x["count"], x["name"]))
 
 
+LEGISLATORS_URL = "https://unitedstates.github.io/congress-legislators/legislators-current.json"
+_HONORIFICS = {"hon", "mr", "mrs", "ms", "dr", "sen", "rep", "jr", "sr", "ii", "iii", "iv"}
+
+
+def _name_tokens(value) -> list[str]:
+    cleaned = "".join(c.lower() if c.isalnum() else " " for c in str(value or ""))
+    return [t for t in cleaned.split() if t not in _HONORIFICS]
+
+
+def fetch_legislators() -> list[dict]:
+    """Current members of Congress (public domain, congress-legislators project).
+
+    Party is public-record metadata the disclosure providers omit. Failures are
+    non-fatal: the feed is published without party rather than blocked."""
+    try:
+        r = requests.get(LEGISLATORS_URL, headers=HEADERS, timeout=TIMEOUT)
+        r.raise_for_status()
+        rows = r.json()
+        return rows if isinstance(rows, list) else []
+    except Exception as exc:
+        log.warning("legislator party metadata unavailable (%s); party left blank", exc)
+        return []
+
+
+def enrich_party(members: list[dict], legislators: list[dict]) -> list[dict]:
+    """Fill party/state only for a UNIQUE legislator match; never guess or overwrite.
+
+    Match = same chamber, last name as a contiguous token run in the disclosed
+    name, at least one given/nickname/official-name token in common, and the
+    same state when the disclosure carries one."""
+    index = []
+    for leg in legislators:
+        term = (leg.get("terms") or [{}])[-1]
+        nm = leg.get("name") or {}
+        party = text(term.get("party"))
+        chamber = {"sen": "Senate", "rep": "House"}.get(text(term.get("type")))
+        last = _name_tokens(nm.get("last"))
+        if not (party and chamber and last):
+            continue
+        given = set(_name_tokens(" ".join(text(nm.get(k)) for k in ("first", "middle", "nickname", "official_full"))))
+        given -= set(last)
+        index.append({"party": party, "chamber": chamber, "state": text(term.get("state")).upper(),
+                      "last": last, "given": given})
+
+    def has_run(tokens: list[str], run: list[str]) -> bool:
+        n = len(run)
+        return any(tokens[i:i + n] == run for i in range(len(tokens) - n + 1))
+
+    for member in members:
+        if text(member.get("party")):
+            continue
+        tokens = _name_tokens(member.get("name"))
+        state = text(member.get("state")).upper()
+        hits = [c for c in index
+                if c["chamber"] == member.get("chamber")
+                and (not state or c["state"] == state)
+                and has_run(tokens, c["last"])
+                and (c["given"] & set(tokens))]
+        if len(hits) == 1:
+            member["party"] = hits[0]["party"]
+            if not state:
+                member["state"] = hits[0]["state"]
+    return members
+
+
 def choose_provider() -> tuple[list[dict], dict]:
     errors: list[str] = []
     providers = (
@@ -507,7 +572,11 @@ def main() -> None:
             log.warning("no fresh politicians provider (%s); preserving previous snapshot", exc)
             return
         raise
-    members = build_members(trades)
+    members = enrich_party(build_members(trades), fetch_legislators())
+    party_by_member = {m["name"]: m["party"] for m in members if m.get("party")}
+    for trade in trades:
+        if not text(trade.get("party")) and party_by_member.get(trade.get("member", "").strip()):
+            trade["party"] = party_by_member[trade["member"].strip()]
     provider = text(meta.get("provider")) or "Congress disclosure provider"
     coverage = meta.get("coverage_chambers") or sorted({x.get("chamber") for x in trades if x.get("chamber")})
     payload = {
