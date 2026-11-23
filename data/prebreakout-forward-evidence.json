@@ -1670,20 +1670,6 @@
     "no_probability_or_ranking_effect": true,
     "records": [
       {
-        "ticker": "PRU.L",
-        "observed_session": "2026-11-20",
-        "published_at": "2026-11-23T04:11:53.412057+00:00",
-        "original_anchor_fingerprint": "effd0f5f397ba9cd09fdcbf8bb97eda09579aebfa7d9784d37aba04f95edeb7c",
-        "forward_return_pct": {
-          "5": null,
-          "10": null,
-          "20": null
-        },
-        "entry_session": null,
-        "all_intermediate_sessions_required": true,
-        "status": "verified_pending"
-      },
-      {
         "ticker": "PUB.PA",
         "observed_session": "2026-11-20",
         "published_at": "2026-11-23T04:11:53.412057+00:00",
@@ -2018,6 +2004,20 @@
         "entry_session": null,
         "all_intermediate_sessions_required": true,
         "status": "independent_ohlcv_unavailable"
+      },
+      {
+        "ticker": "BWB",
+        "observed_session": "2026-11-20",
+        "published_at": "2026-11-23T15:03:35.474593+00:00",
+        "original_anchor_fingerprint": "7562c907c8b0da6c4d5bfcf46e538a7372ca06dee316ad6c8f53b23529d20805",
+        "forward_return_pct": {
+          "5": null,
+          "10": null,
+          "20": null
+        },
+        "entry_session": null,
+        "all_intermediate_sessions_required": true,
+        "status": "verified_pending"
       }
     ],
     "status_counts": {
@@ -6444,12 +6444,12 @@
     },
     "selection": {
       "available_unique_first_observations": {
-        "geometry_negative_control": 133,
+        "geometry_negative_control": 140,
         "geometry_pass_ma_rejected": 1
       },
       "excluded_reasons": {
         "missing_capture": 3304,
-        "outside_predeclared_groups": 930
+        "outside_predeclared_groups": 1032
       },
       "selection_policy": "first_valid_original_publication_per_ticker_earliest_per_group",
       "per_group_budget": 16,
@@ -6515,135 +6515,163 @@
         }
       },
       "geometry_pass_ma_fail": {
-        "selected_tickers": 0,
+        "selected_tickers": 1,
         "by_horizon": {
           "5": {
             "confirmed_matured": 0,
             "not_confirmed_matured": 0,
-            "unknown_pending_or_unverified": 0,
-            "unknown_reasons": {},
+            "unknown_pending_or_unverified": 1,
+            "unknown_reasons": {
+              "pending": 1
+            },
             "matured_evaluable": 0,
-            "matured_coverage": null,
+            "matured_coverage": 0.0,
             "observed_confirmed_fraction_descriptive": null,
             "probability_calibrated": false
           },
           "10": {
             "confirmed_matured": 0,
             "not_confirmed_matured": 0,
-            "unknown_pending_or_unverified": 0,
-            "unknown_reasons": {},
+            "unknown_pending_or_unverified": 1,
+            "unknown_reasons": {
+              "pending": 1
+            },
             "matured_evaluable": 0,
-            "matured_coverage": null,
+            "matured_coverage": 0.0,
             "observed_confirmed_fraction_descriptive": null,
             "probability_calibrated": false
           },
           "20": {
             "confirmed_matured": 0,
             "not_confirmed_matured": 0,
-            "unknown_pending_or_unverified": 0,
-            "unknown_reasons": {},
+            "unknown_pending_or_unverified": 1,
+            "unknown_reasons": {
+              "pending": 1
+            },
             "matured_evaluable": 0,
-            "matured_coverage": null,
+            "matured_coverage": 0.0,
             "observed_confirmed_fraction_descriptive": null,
             "probability_calibrated": false
           },
           "60": {
             "confirmed_matured": 0,
             "not_confirmed_matured": 0,
-            "unknown_pending_or_unverified": 0,
-            "unknown_reasons": {},
+            "unknown_pending_or_unverified": 1,
+            "unknown_reasons": {
+              "pending": 1
+            },
             "matured_evaluable": 0,
-            "matured_coverage": null,
+            "matured_coverage": 0.0,
             "observed_confirmed_fraction_descriptive": null,
             "probability_calibrated": false
           }
         }
       },
       "geometry_fail_ma_pass": {
-        "selected_tickers": 0,
+        "selected_tickers": 32,
         "by_horizon": {
           "5": {
             "confirmed_matured": 0,
             "not_confirmed_matured": 0,
-            "unknown_pending_or_unverified": 0,
-            "unknown_reasons": {},
+            "unknown_pending_or_unverified": 32,
+            "unknown_reasons": {
+              "pending": 32
+            },
             "matured_evaluable": 0,
-            "matured_coverage": null,
+            "matured_coverage": 0.0,
             "observed_confirmed_fraction_descriptive": null,
             "probability_calibrated": false
           },
           "10": {
             "confirmed_matured": 0,
             "not_confirmed_matured": 0,
-            "unknown_pending_or_unverified": 0,
-            "unknown_reasons": {},
+            "unknown_pending_or_unverified": 32,
+            "unknown_reasons": {
+              "pending": 32
+            },
             "matured_evaluable": 0,
-            "matured_coverage": null,
+            "matured_coverage": 0.0,
             "observed_confirmed_fraction_descriptive": null,
             "probability_calibrated": false
           },
           "20": {
             "confirmed_matured": 0,
             "not_confirmed_matured": 0,
-            "unknown_pending_or_unverified": 0,
-            "unknown_reasons": {},
+            "unknown_pending_or_unverified": 32,
+            "unknown_reasons": {
+              "pending": 32
+            },
             "matured_evaluable": 0,
-            "matured_coverage": null,
+            "matured_coverage": 0.0,
             "observed_confirmed_fraction_descriptive": null,
             "probability_calibrated": false
           },
           "60": {
             "confirmed_matured": 0,
             "not_confirmed_matured": 0,
-            "unknown_pending_or_unverified": 0,
-            "unknown_reasons": {},
+            "unknown_pending_or_unverified": 32,
+            "unknown_reasons": {
+              "pending": 32
+            },
             "matured_evaluable": 0,
-            "matured_coverage": null,
+            "matured_coverage": 0.0,
             "observed_confirmed_fraction_descriptive": null,
             "probability_calibrated": false
           }
         }
       },
       "geometry_fail_ma_fail": {
-        "selected_tickers": 0,
+        "selected_tickers": 32,
         "by_horizon": {
           "5": {
             "confirmed_matured": 0,
             "not_confirmed_matured": 0,
-            "unknown_pending_or_unverified": 0,
-            "unknown_reasons": {},
+            "unknown_pending_or_unverified": 32,
+            "unknown_reasons": {
+              "pending": 31,
+              "independent_ohlcv_unavailable": 1
+            },
             "matured_evaluable": 0,
-            "matured_coverage": null,
+            "matured_coverage": 0.0,
             "observed_confirmed_fraction_descriptive": null,
             "probability_calibrated": false
           },
           "10": {
             "confirmed_matured": 0,
             "not_confirmed_matured": 0,
-            "unknown_pending_or_unverified": 0,
-            "unknown_reasons": {},
+            "unknown_pending_or_unverified": 32,
+            "unknown_reasons": {
+              "pending": 31,
+              "independent_ohlcv_unavailable": 1
+            },
             "matured_evaluable": 0,
-            "matured_coverage": null,
+            "matured_coverage": 0.0,
             "observed_confirmed_fraction_descriptive": null,
             "probability_calibrated": false
           },
           "20": {
             "confirmed_matured": 0,
             "not_confirmed_matured": 0,
-            "unknown_pending_or_unverified": 0,
-            "unknown_reasons": {},
+            "unknown_pending_or_unverified": 32,
+            "unknown_reasons": {
+              "pending": 31,
+              "independent_ohlcv_unavailable": 1
+            },
             "matured_evaluable": 0,
-            "matured_coverage": null,
+            "matured_coverage": 0.0,
             "observed_confirmed_fraction_descriptive": null,
             "probability_calibrated": false
           },
           "60": {
             "confirmed_matured": 0,
             "not_confirmed_matured": 0,
-            "unknown_pending_or_unverified": 0,
-            "unknown_reasons": {},
+            "unknown_pending_or_unverified": 32,
+            "unknown_reasons": {
+              "pending": 31,
+              "independent_ohlcv_unavailable": 1
+            },
             "matured_evaluable": 0,
-            "matured_coverage": null,
+            "matured_coverage": 0.0,
             "observed_confirmed_fraction_descriptive": null,
             "probability_calibrated": false
           }
@@ -6657,12 +6685,17 @@
       60
     ],
     "selection": {
-      "instrumented_slots_observed": 0,
-      "instrumented_evaluable_rows_observed": 0,
-      "latest_instrumented_capture": null,
-      "capture_readiness": "awaiting_first_instrumented_scan",
-      "eligible_unique_first_observations": {},
+      "instrumented_slots_observed": 1,
+      "instrumented_evaluable_rows_observed": 380,
+      "latest_instrumented_capture": "2026-11-23T15:03:35.474593+00:00",
+      "capture_readiness": "captured_prospective_groups",
+      "eligible_unique_first_observations": {
+        "geometry_fail_ma_fail": 340,
+        "geometry_fail_ma_pass": 38,
+        "geometry_pass_ma_fail": 1
+      },
       "excluded_reasons": {
+        "invalid_anchor_values": 1,
         "missing_matched_capture": 4375
       },
       "selection_policy": "first_complete_prospective_ma_shadow_and_asof_anchor_per_ticker",
@@ -6676,23 +6709,23 @@
     "groups_not_randomized_or_matched_on_market_regime": true,
     "independent_predictive_performance_validated": false,
     "calibrated_probability": null,
-    "evidence_readiness": "awaiting_first_instrumented_scan",
+    "evidence_readiness": "captured_awaiting_first_matured_outcome",
     "matured_5_session_evaluable": 0,
-    "selected_tickers_total": 0
+    "selected_tickers_total": 65
   },
   "price_metadata": {
     "provider": "yahoo_finance",
     "auto_adjust": true,
     "completed_before_utc_date": "2026-11-23",
     "benchmark": "SPY",
-    "downloaded": 58,
-    "complete_ohlcv": 55,
+    "downloaded": 113,
+    "complete_ohlcv": 109,
     "failed": {},
     "research_anchor_tickers_requested": 25,
     "research_subset_limit": 25,
     "negative_control_tickers_requested": 17,
     "negative_control_budget_max": 48,
-    "ma_geometry_tickers_requested": 0,
+    "ma_geometry_tickers_requested": 65,
     "ma_geometry_budget_max": 128,
     "recovered_after_single_retry": [],
     "retry_policy": "at_most_two_same_source_requests_only_on_download_or_close_failure"
