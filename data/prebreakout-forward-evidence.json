@@ -6471,6 +6471,12 @@
     "groups": {
       "geometry_pass_ma_pass": {
         "selected_tickers": 0,
+        "baseline_integrity": {
+          "unbroken_prebreakout_at_capture": 0,
+          "already_broken_or_outside_pivot_at_capture": 0,
+          "not_suitable_as_prebreakout_control_if_already_broken": true,
+          "fixed_point_in_time_membership_unchanged": true
+        },
         "by_horizon": {
           "5": {
             "confirmed_matured": 0,
@@ -6516,6 +6522,12 @@
       },
       "geometry_pass_ma_fail": {
         "selected_tickers": 1,
+        "baseline_integrity": {
+          "unbroken_prebreakout_at_capture": 1,
+          "already_broken_or_outside_pivot_at_capture": 0,
+          "not_suitable_as_prebreakout_control_if_already_broken": true,
+          "fixed_point_in_time_membership_unchanged": true
+        },
         "by_horizon": {
           "5": {
             "confirmed_matured": 0,
@@ -6569,13 +6581,20 @@
       },
       "geometry_fail_ma_pass": {
         "selected_tickers": 32,
+        "baseline_integrity": {
+          "unbroken_prebreakout_at_capture": 13,
+          "already_broken_or_outside_pivot_at_capture": 19,
+          "not_suitable_as_prebreakout_control_if_already_broken": true,
+          "fixed_point_in_time_membership_unchanged": true
+        },
         "by_horizon": {
           "5": {
             "confirmed_matured": 0,
             "not_confirmed_matured": 0,
             "unknown_pending_or_unverified": 32,
             "unknown_reasons": {
-              "pending": 32
+              "already_broken_or_outside_pivot_at_capture": 19,
+              "pending": 13
             },
             "matured_evaluable": 0,
             "matured_coverage": 0.0,
@@ -6587,7 +6606,8 @@
             "not_confirmed_matured": 0,
             "unknown_pending_or_unverified": 32,
             "unknown_reasons": {
-              "pending": 32
+              "already_broken_or_outside_pivot_at_capture": 19,
+              "pending": 13
             },
             "matured_evaluable": 0,
             "matured_coverage": 0.0,
@@ -6599,7 +6619,8 @@
             "not_confirmed_matured": 0,
             "unknown_pending_or_unverified": 32,
             "unknown_reasons": {
-              "pending": 32
+              "already_broken_or_outside_pivot_at_capture": 19,
+              "pending": 13
             },
             "matured_evaluable": 0,
             "matured_coverage": 0.0,
@@ -6611,7 +6632,8 @@
             "not_confirmed_matured": 0,
             "unknown_pending_or_unverified": 32,
             "unknown_reasons": {
-              "pending": 32
+              "already_broken_or_outside_pivot_at_capture": 19,
+              "pending": 13
             },
             "matured_evaluable": 0,
             "matured_coverage": 0.0,
@@ -6622,13 +6644,20 @@
       },
       "geometry_fail_ma_fail": {
         "selected_tickers": 32,
+        "baseline_integrity": {
+          "unbroken_prebreakout_at_capture": 7,
+          "already_broken_or_outside_pivot_at_capture": 25,
+          "not_suitable_as_prebreakout_control_if_already_broken": true,
+          "fixed_point_in_time_membership_unchanged": true
+        },
         "by_horizon": {
           "5": {
             "confirmed_matured": 0,
             "not_confirmed_matured": 0,
             "unknown_pending_or_unverified": 32,
             "unknown_reasons": {
-              "pending": 31,
+              "already_broken_or_outside_pivot_at_capture": 25,
+              "pending": 6,
               "independent_ohlcv_unavailable": 1
             },
             "matured_evaluable": 0,
@@ -6641,7 +6670,8 @@
             "not_confirmed_matured": 0,
             "unknown_pending_or_unverified": 32,
             "unknown_reasons": {
-              "pending": 31,
+              "already_broken_or_outside_pivot_at_capture": 25,
+              "pending": 6,
               "independent_ohlcv_unavailable": 1
             },
             "matured_evaluable": 0,
@@ -6654,7 +6684,8 @@
             "not_confirmed_matured": 0,
             "unknown_pending_or_unverified": 32,
             "unknown_reasons": {
-              "pending": 31,
+              "already_broken_or_outside_pivot_at_capture": 25,
+              "pending": 6,
               "independent_ohlcv_unavailable": 1
             },
             "matured_evaluable": 0,
@@ -6667,7 +6698,8 @@
             "not_confirmed_matured": 0,
             "unknown_pending_or_unverified": 32,
             "unknown_reasons": {
-              "pending": 31,
+              "already_broken_or_outside_pivot_at_capture": 25,
+              "pending": 6,
               "independent_ohlcv_unavailable": 1
             },
             "matured_evaluable": 0,
