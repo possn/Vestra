@@ -25,8 +25,10 @@ class RuntimeRegressionTests(unittest.TestCase):
         guard_name = "Validate score validation report contract"
         publish_name = "Publish validated market data"
         self.assertIn(guard_name, workflow)
-        self.assertIn("evaluate_report_freshness(report)", workflow)
-        self.assertIn('"composition_stability" not in model_pack', workflow)
+        # Freshness and model-pack composition checks live in the single
+        # canonical contract validator; the workflow must delegate to it.
+        self.assertIn("sf.validate_report_contract(report)", workflow)
+        self.assertIn('result["is_valid"]', workflow)
         self.assertLess(workflow.index(guard_name), workflow.index(publish_name))
 
     def test_chart_stabilization_is_coalesced(self):

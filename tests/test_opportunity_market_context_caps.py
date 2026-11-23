@@ -29,7 +29,7 @@ def strong_row(**overrides):
         "confidence_score": 90,
         "data_coverage_pct": 90,
         "critical_metric_coverage_pct": 90,
-        "score_reliability": "reliable",
+        "score_reliability": "robust",
         "risk_gate": "clear",
         "moat_score": 90,
         "capital_allocation_intelligence_score": 90,
