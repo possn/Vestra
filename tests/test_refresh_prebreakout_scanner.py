@@ -241,6 +241,19 @@ class StandaloneGapRecoveryTests(unittest.TestCase):
         self.assertTrue(trace["verified"])
 
 
+class _ProviderTestFrame:
+    """Small yfinance-like frame: no optional pandas dependency in architecture CI."""
+    def __init__(self, closes):
+        self._closes = closes
+        self.empty = not bool(closes)
+        self.columns = type("Columns", (), {"nlevels": 1})()
+
+    def __getitem__(self, key):
+        if key != "Close":
+            raise KeyError(key)
+        return self._closes
+
+
 class ProviderBatchRetryTests(unittest.TestCase):
     def test_calendar_proxy_batches_preserve_tickers_and_separate_suffixes(self):
         names=["A","B.PA","C","D.L","E.PA","F.L","G"]
@@ -257,9 +270,11 @@ class ProviderBatchRetryTests(unittest.TestCase):
             def download(self,group,**kwargs):
                 self.calls+=1
                 if self.calls==1: raise ConnectionError("transient")
-                return {"ok":True}
+                return _ProviderTestFrame([12.0])
         p=Provider()
-        self.assertEqual(mod.fetch_ohlcv_batch(p,["AAA"]),({"ok":True},1))
+        result,retries=mod.fetch_ohlcv_batch(p,["AAA"])
+        self.assertIsInstance(result,_ProviderTestFrame)
+        self.assertEqual(retries,1)
         self.assertEqual(p.calls,2)
     def test_persistent_failure_is_bounded_and_visible(self):
         class Broken:
@@ -276,9 +291,11 @@ class ProviderBatchRetryTests(unittest.TestCase):
             calls=0
             def download(self,group,**kwargs):
                 self.calls+=1
-                return []
+                return _ProviderTestFrame([12.0])
         p=Working()
-        self.assertEqual(mod.fetch_ohlcv_batch(p,["AAA"]),( [],0))
+        result,retries=mod.fetch_ohlcv_batch(p,["AAA"])
+        self.assertIsInstance(result,_ProviderTestFrame)
+        self.assertEqual(retries,0)
         self.assertEqual(p.calls,1)
 
 
