@@ -1,37 +1,40 @@
 {
   "schema": "vestra_prebreakout_paired_gate_audit_v1",
-  "observed_at": "2026-11-23T15:03:35.474593+00:00",
+  "observed_at": "2026-11-23T21:28:44.215146+00:00",
   "scope": "same_slot_same_ticker_as_observed_not_out_of_sample",
-  "eligible_universe": 1586,
+  "eligible_universe": 1616,
   "attempted": 400,
   "counts": {
-    "base_width_pass": 35,
-    "both_geometry_below_unbroken_pivot": 1,
-    "both_geometry_pass": 2,
-    "evaluable": 380,
-    "geometry_both_rejected_ma": 2,
-    "geometry_both_unbroken_rejected_ma": 1,
-    "ma_first_rejection": 342,
-    "not_evaluable": 20,
-    "paired_evaluable": 380,
-    "sequential_contractions_pass": 7,
+    "base_width_pass": 36,
+    "both_geometry_below_unbroken_pivot": 0,
+    "both_geometry_pass": 0,
+    "evaluable": 343,
+    "geometry_both_rejected_ma": 0,
+    "geometry_both_unbroken_rejected_ma": 0,
+    "ma_first_rejection": 283,
+    "not_evaluable": 57,
+    "paired_evaluable": 343,
+    "sequential_contractions_pass": 3,
     "strict_structural_pass": 0
   },
   "overlapping_ma_failed_checks": {
-    "ma150_above_ma200": 143,
-    "ma150_rising_10": 190,
-    "ma200_rising_10": 177,
-    "ma50_above_ma150": 216,
-    "ma50_rising_10": 245,
-    "price_above_ma50": 290
+    "ma150_above_ma200": 111,
+    "ma150_rising_10": 137,
+    "ma200_rising_10": 122,
+    "ma50_above_ma150": 175,
+    "ma50_rising_10": 169,
+    "price_above_ma50": 218
   },
   "independent_ma_geometry_matrix": {
     "counts": {
-      "geometry_fail_ma_fail": 341,
-      "geometry_fail_ma_pass": 38,
-      "geometry_pass_ma_fail": 1,
-      "paired_rows": 380
+      "geometry_fail_ma_fail": 283,
+      "geometry_fail_ma_pass": 60,
+      "geometry_pass_ma_fail": 0,
+      "geometry_pass_ma_pass": 0,
+      "missing_or_conflicting_ma_capture": 0,
+      "paired_rows": 343
     },
+    "paired_coverage_of_evaluable": 1.0,
     "scope": "same_ticker_same_slot_completed_bars_only",
     "missing_captures_not_assumed_to_fail": true,
     "descriptive_not_an_ablation_or_forward_validation": true,
@@ -40,17 +43,17 @@
   "alternative_geometry_comparison": {
     "method": "same_ticker_same_slot_complete_case_only",
     "counts": {
-      "alternate_phase_only": 3,
+      "alternate_phase_only": 5,
       "both_fixed_and_swing_pass": 0,
-      "fixed_pass_on_phase_sample": 2,
-      "fixed_pass_on_swing_sample": 1,
-      "fixed_pass_phase_robust": 1,
+      "fixed_pass_on_phase_sample": 0,
+      "fixed_pass_on_swing_sample": 0,
+      "fixed_pass_phase_robust": 0,
       "phase_any_pass": 5,
-      "phase_comparable": 380,
-      "phase_two_or_more_pass": 4,
-      "swing_comparable": 380,
-      "swing_only_pass": 1,
-      "swing_pass": 1
+      "phase_comparable": 343,
+      "phase_two_or_more_pass": 3,
+      "swing_comparable": 343,
+      "swing_only_pass": 0,
+      "swing_pass": 0
     },
     "missing_or_unverifiable": {},
     "swing_geometry_is_independent_not_a_live_signal": true,
@@ -60,17 +63,6 @@
   "research_only_not_signal": true,
   "forecast_performance_validated": false,
   "calibrated_probability": null,
-  "sample_not_recommendations": [
-    {
-      "ticker": "A",
-      "first_rejection": "moving_average_structure",
-      "ma_failed_checks": [
-        "price_above_ma50"
-      ],
-      "close_position20": 0.072,
-      "relative_strength_observed": false,
-      "research_only": true
-    }
-  ],
+  "sample_not_recommendations": [],
   "interpretation": "Structural comparison only; no forward returns, no changed gates or rank."
 }
