@@ -41,6 +41,15 @@ class ForwardPublishFreshnessTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             forward_publication_overdue({}, datetime.datetime(2026, 11, 8, tzinfo=UTC), 0)
 
+    def test_forward_refresh_follows_successful_main_scanner_workflow(self):
+        workflow = (ROOT / ".github/workflows/refresh-prebreakout-forward-evidence.yml").read_text()
+        self.assertIn("workflow_run:", workflow)
+        self.assertIn("workflows: ['Refresh prebreakout scanner']", workflow)
+        self.assertIn("types: [completed]", workflow)
+        self.assertIn("branches: [main]", workflow)
+        self.assertIn("github.event.workflow_run.conclusion == 'success'", workflow)
+        self.assertIn("ref: main", workflow)
+
     def test_workflow_snapshots_previous_file_before_evaluation_and_guards_publication(self):
         workflow = (ROOT / ".github/workflows/refresh-prebreakout-forward-evidence.yml").read_text()
         self.assertLess(workflow.index("git show HEAD:data/prebreakout-forward-evidence.json"),
