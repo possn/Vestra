@@ -44,6 +44,32 @@ def asof_activity_quality(row: dict) -> str:
     if volume <= 0:
         return "no_positive_volume_activity_at_capture"
     return "verified_nonflat_price_and_volume_at_capture"
+
+
+def asof_swing_concordance(row: dict) -> str:
+    """Independent confirmed-swing geometry, frozen at capture (research only)."""
+    swing = row.get("swing_geometry_shadow")
+    if not isinstance(swing, dict) or swing.get("status") != "measured":
+        return "swing_geometry_not_measured"
+    values = ("sequential_contraction_pass", "base_width_pass",
+              "below_pivot_pass", "latest_pullback_recent", "all_geometry_pass")
+    if any(type(swing.get(field)) is not bool for field in values):
+        return "swing_geometry_unverified"
+    if swing["all_geometry_pass"] != all(swing[field] for field in values[:-1]):
+        return "swing_geometry_conflicting_capture"
+    return ("swing_geometry_confirmed" if swing["all_geometry_pass"]
+            else "swing_geometry_not_confirmed")
+
+
+def asof_canonical_quality(row: dict) -> str:
+    """Do not equate independent MA x fixed-window research passes with live eligibility."""
+    reason = row.get("first_rejection")
+    if reason == "passed_structural_gates":
+        return "canonical_structural_gates_passed"
+    if isinstance(reason, str) and reason:
+        return "canonical_rejected_" + reason
+    return "canonical_gate_unverified"
+
 # Committed before the first eligible next-day scanner slot. Earlier cases
 # belong exclusively to the historical four-arm diagnostic (v1).
 AT_RISK_COHORT_START = "2026-11-24T02:00:00+00:00"
@@ -152,8 +178,11 @@ def select(archive: Path, per_group: int = 32, *, at_risk_only: bool = False) ->
                 # Frozen at the first point-in-time observation; never
                 # reconstructed from later adjusted historical prices.
                 "unbroken_at_capture": unbroken,
-                **({"activity_quality_at_capture": asof_activity_quality(row)}
-                   if at_risk_only else {}),
+                **({
+                    "activity_quality_at_capture": asof_activity_quality(row),
+                    "swing_concordance_at_capture": asof_swing_concordance(row),
+                    "canonical_quality_at_capture": asof_canonical_quality(row),
+                } if at_risk_only else {}),
             }
     groups = {name: [] for name in GROUPS}
     # Precommitted, result-independent SHA-256 ordering within one immutable
@@ -208,8 +237,19 @@ def compare(selected: dict, event_prices: dict | None) -> dict:
     for name in GROUPS:
         cases = selected["groups"][name]
         activity_counts = Counter(case.get("activity_quality_at_capture", "unmeasured") for case in cases)
+        swing_counts = Counter(case.get("swing_concordance_at_capture", "unmeasured") for case in cases)
+        canonical_counts = Counter(case.get("canonical_quality_at_capture", "unmeasured") for case in cases)
         bucket = {
             "selected_tickers": len(cases),
+            **({"cross_method_concordance_at_capture": {
+                "swing_geometry_counts": dict(sorted(swing_counts.items())),
+                "canonical_gate_counts": dict(sorted(canonical_counts.items())),
+                "swing_confirmed_and_canonical_passed": sum(
+                    case.get("swing_concordance_at_capture") == "swing_geometry_confirmed"
+                    and case.get("canonical_quality_at_capture") == "canonical_structural_gates_passed"
+                    for case in cases),
+                "research_only_descriptive_no_forward_signal_or_cohort_reassignment": True,
+            }} if selected.get("at_risk_baseline_only") is True else {}),
             **({"activity_quality_at_capture": {
                 "counts": dict(sorted(activity_counts.items())),
                 "independently_evaluable_baselines": activity_counts.get(
