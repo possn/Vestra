@@ -112,6 +112,49 @@ class FirstFailingGateAuditTests(unittest.TestCase):
                             for key in ("prior_width_pct","base_width_pct",
                                         "w1_pct","w2_pct","w3_pct")))
 
+    def test_zero_width_late_windows_cannot_qualify_as_vcp(self):
+        today=date(2026,11,24)
+        for final_spread in (0.0, 0.01):
+            bars=[]
+            for i in range(240):
+                age=239-i
+                spread=(15.0 if 60<=age<100 else
+                        10.0 if 40<=age<60 else
+                        0.0 if 20<=age<40 else final_spread)
+                bars.append({"date":(today-timedelta(days=age)).isoformat(),
+                             "close":100.0,"high":100.0+spread,
+                             "low":100.0-spread,"volume":1000.0})
+            trace={}
+            self.assertIsNone(mod.scan_bars("FLAT",bars,today,audit=trace))
+            geometry=trace["geometry_shadow"]
+            self.assertTrue(geometry["base_width_pass"])
+            self.assertFalse(geometry["contractions_pass"])
+            self.assertFalse(geometry["both_pass"])
+            self.assertFalse(geometry["all_contraction_windows_nonflat"])
+            self.assertEqual(geometry["w2_pct"],0)
+            self.assertFalse(trace["geometry_phase_shadow"]["canonical_both_pass"])
+            # Shifted windows can differ; their aggregate never changes the canonical gate.
+            self.assertLessEqual(trace["geometry_phase_shadow"]["both_pass_count"],11)
+
+    def test_nonzero_sequential_ranges_remain_vcp_research_evidence(self):
+        today=date(2026,11,24)
+        bars=[]
+        for i in range(240):
+            age=239-i
+            spread=(15.0 if 60<=age<100 else
+                    10.0 if 40<=age<60 else
+                    6.0 if 20<=age<40 else 3.0)
+            bars.append({"date":(today-timedelta(days=age)).isoformat(),
+                         "close":100.0,"high":100.0+spread,
+                         "low":100.0-spread,"volume":1000.0})
+        trace={}
+        self.assertIsNone(mod.scan_bars("RANGES",bars,today,audit=trace))
+        geometry=trace["geometry_shadow"]
+        self.assertTrue(geometry["contractions_pass"])
+        self.assertTrue(geometry["all_contraction_windows_nonflat"])
+        self.assertEqual(trace["geometry_phase_shadow"]["canonical_both_pass"],
+                         geometry["both_pass"])
+
     def test_short_history_is_data_unavailable_not_bad_setup(self):
         trace = {}
         self.assertIsNone(mod.scan_bars("SHORT", [], date(2026, 11, 8), audit=trace))
