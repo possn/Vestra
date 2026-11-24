@@ -1,0 +1,53 @@
+{
+  "schema": "vestra_turning_prospective_shadow_v1",
+  "model_version": "l2_stress_conditional_10s_v1_frozen_20261121",
+  "observation_date": "2026-11-23",
+  "created_at": "2026-11-24T18:56:00.421220+00:00",
+  "research_only": true,
+  "calibrated_probability": false,
+  "live_score_changed": false,
+  "eligible_horizon_sessions": 10,
+  "source": {
+    "provider": "yahoo_finance",
+    "retrieved_now_adjusted_history": true,
+    "original_daily_vintage_independently_verified": false,
+    "source_history_sha256": "68c736bfe248bfc292c57a2c9f87409253b1281766b4694ad463b9d974e661fa",
+    "spy_observed_close": 722.2899780273438
+  },
+  "features": {
+    "vix_percentile_126": 97.61904761904762,
+    "vix_1m_3m_ratio": 1.0439216015385646,
+    "rsi_daily_5": 46.01244711507168,
+    "rsi_weekly_14": 35.296606619417034,
+    "mfi_daily_14": 25.281788200171256,
+    "hyg_lqd_change_5_pct": -1.3579875197543
+  },
+  "feature_coverage": {
+    "observed": 6,
+    "total": 6,
+    "complete": true
+  },
+  "training": {
+    "embargo_sessions": 20,
+    "forward_outcome_maturity_sessions": 10,
+    "max_training_anchor_index": 5729
+  },
+  "sides": {
+    "bottom": {
+      "eligible_contemporaneously": true,
+      "eligible_condition": "past_126_spy_drawdown_ge_7pct",
+      "model_output_uncalibrated_not_for_live_display": 0.473096,
+      "conditional_train_prevalence": 0.417409,
+      "train_eligible_rows": 1011,
+      "reason": "research_forecast_frozen_no_future_outcome"
+    },
+    "top": {
+      "eligible_contemporaneously": false,
+      "eligible_condition": "past_126_spy_rally_ge_7pct",
+      "model_output_uncalibrated_not_for_live_display": null,
+      "conditional_train_prevalence": null,
+      "train_eligible_rows": 0,
+      "reason": "market_not_eligible"
+    }
+  }
+}
