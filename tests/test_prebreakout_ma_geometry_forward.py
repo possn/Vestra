@@ -14,6 +14,10 @@ def captured_row(ticker, ma, base, vcp, intact=True):
         "ticker": ticker, "evaluable": True, "last_session": "2026-11-22",
         "geometry_shadow": {"base_width_pass": base, "contractions_pass": vcp},
         "research_prebreakout_lineage": {"unbroken_prebreakout_position": intact},
+        "technical_evidence_shadow": {
+            "status": "measured", "atr14_pct": 2.1,
+            "volume9_to_prior40": 1.15,
+        },
         "ma_structure_shadow": {
             "status": "measured", "price_order_pass": ma,
             "three_slopes_rising": True, "all_pass": ma,
@@ -196,6 +200,48 @@ class IndependentMAForwardTests(unittest.TestCase):
             self.assertEqual(sum(len(x) for x in selected["groups"].values()), 0)
             self.assertEqual(selected["excluded_reasons"]["invalid_anchor_values"], 1)
             self.assertEqual(selected["excluded_reasons"]["invalid_ma_capture"], 1)
+
+    def test_flat_fake_vcp_and_missing_volume_abstain_without_reclassifying(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            flat = captured_row("FLAT", True, True, True, intact=True)
+            flat["technical_evidence_shadow"]["atr14_pct"] = 0
+            flat["technical_evidence_shadow"]["volume9_to_prior40"] = None
+            missing_volume = captured_row("NOVOL", True, True, True, intact=True)
+            missing_volume["technical_evidence_shadow"]["volume9_to_prior40"] = None
+            genuine = captured_row("VALID", True, True, True, intact=True)
+            write_slot(root, "2026-11-24", [flat, missing_volume, genuine])
+            v1 = select(root)
+            v2 = select(root, at_risk_only=True)
+            self.assertEqual(len(v1["groups"]["geometry_pass_ma_pass"]), 3)
+            self.assertEqual(len(v2["groups"]["geometry_pass_ma_pass"]), 3)
+            result = compare(v2, {})
+            bucket = result["groups"]["geometry_pass_ma_pass"]
+            self.assertEqual(bucket["selected_tickers"], 3)
+            self.assertEqual(bucket["activity_quality_at_capture"]
+                             ["independently_evaluable_baselines"], 1)
+            self.assertEqual(bucket["activity_quality_at_capture"]["counts"], {
+                "no_measurable_price_range_at_capture": 1,
+                "volume_activity_unverified_at_capture": 1,
+                "verified_nonflat_price_and_volume_at_capture": 1})
+            self.assertEqual(bucket["by_horizon"]["5"]["unknown_reasons"], {
+                "no_measurable_price_range_at_capture": 1,
+                "volume_activity_unverified_at_capture": 1,
+                "independent_ohlcv_unavailable": 1})
+            # Historical v1 remains methodologically unmodified.
+            self.assertNotIn("activity_quality_at_capture",
+                             compare(v1, {})["groups"]["geometry_pass_ma_pass"])
+
+    def test_zero_volume_is_not_technical_accumulation(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            row = captured_row("ZERO", True, True, True)
+            row["technical_evidence_shadow"]["volume9_to_prior40"] = 0
+            write_slot(root, "2026-11-24", [row])
+            report = compare(select(root, at_risk_only=True), {})
+            self.assertEqual(report["groups"]["geometry_pass_ma_pass"]
+                             ["by_horizon"]["10"]["unknown_reasons"],
+                             {"no_positive_volume_activity_at_capture": 1})
 
     def test_at_risk_v2_does_not_retrofit_v1_and_excludes_broken_baselines(self):
         with tempfile.TemporaryDirectory() as td:
