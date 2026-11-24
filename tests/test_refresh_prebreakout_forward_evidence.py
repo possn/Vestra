@@ -121,6 +121,8 @@ class ForwardPriceRefreshTests(unittest.TestCase):
                 "ticker":"AAA","evaluable":True,"last_session":"2026-11-23",
                 "geometry_shadow":{"base_width_pass":False,"contractions_pass":False},
                 "research_prebreakout_lineage":{"unbroken_prebreakout_position":True},
+                "technical_evidence_shadow":{"status":"measured",
+                    "atr14_pct":2.0,"volume9_to_prior40":1.1},
                 "ma_structure_shadow":{"status":"measured","all_pass":True,
                     "price_order_pass":True,"three_slopes_rising":True,
                     "research_only_no_eligibility_or_score_effect":True},
