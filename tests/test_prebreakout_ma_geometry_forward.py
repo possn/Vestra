@@ -220,6 +220,11 @@ class IndependentMAForwardTests(unittest.TestCase):
             self.assertEqual(new["groups"]["geometry_fail_ma_pass"][0]
                              ["unbroken_at_capture"], True)
             summary = compare(new, {})
+            self.assertEqual(summary["schema"],
+                             "vestra_prebreakout_ma_geometry_at_risk_forward_v2")
+            self.assertTrue(summary["baseline_prebreakout_required"])
+            self.assertEqual(compare(old, {})["schema"],
+                             "vestra_prebreakout_ma_geometry_forward_v1")
             self.assertEqual(summary["selected_tickers_total"], 2)
             self.assertEqual(summary["groups"]["geometry_fail_ma_pass"]
                              ["baseline_integrity"]["already_broken_or_outside_pivot_at_capture"], 0)
