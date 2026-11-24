@@ -239,7 +239,10 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     old_width=width(prior);w1=width(first);w2=width(second);w3=width(third)
     base_width=width(clean[-40:])
     base_width_ok=old_width>0 and base_width<=.22 and base_width<old_width*.8
-    vcp_ok=w1>0 and w2<=w1*.85 and w3<=w2*.85
+    # A zero-width window is not measured volatility contraction: a
+    # non-trading/frozen price cannot validate the second and third legs.
+    # Require all three independent 20-session spans to have real range.
+    vcp_ok=w1>0 and w2>0 and w3>0 and w2<=w1*.85 and w3<=w2*.85
     if audit is not None:
         audit["swing_geometry_shadow"]=swing_contraction_shadow(clean)
         audit["technical_evidence_shadow"]=technical_evidence_shadow(clean)
@@ -298,7 +301,8 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
             phase_w3=width(sample[-20:])
             phase_base_ok=(prior_phase>0 and phase_base<=.22
                            and phase_base<prior_phase*.8)
-            phase_vcp_ok=(phase_w1>0 and phase_w2<=phase_w1*.85
+            phase_vcp_ok=(phase_w1>0 and phase_w2>0 and phase_w3>0
+                          and phase_w2<=phase_w1*.85
                           and phase_w3<=phase_w2*.85)
             phase_passes.append((phase_base_ok,phase_vcp_ok))
         audit["geometry_phase_shadow"]={
@@ -319,6 +323,7 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
                                   "w1_pct":round(w1*100,3),
                                   "w2_pct":round(w2*100,3),
                                   "w3_pct":round(w3*100,3),
+                                  "all_contraction_windows_nonflat":bool(w1>0 and w2>0 and w3>0),
                                   "research_only_not_eligibility":True}
     end=len(clean)-1
     values=[b["close"] for b in clean]
