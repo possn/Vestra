@@ -22,6 +22,28 @@ GROUPS = (
     "geometry_fail_ma_fail",
 )
 HORIZONS = (5, 10, 20, 60)
+
+
+def asof_activity_quality(row: dict) -> str:
+    """Evidence gate only: measure activity from the original frozen scan.
+
+    Zero price range is not volatility contraction. Missing/zero volume is
+    not accumulation. No source data or later prices may repair this label.
+    """
+    technical = row.get("technical_evidence_shadow")
+    if not isinstance(technical, dict) or technical.get("status") != "measured":
+        return "technical_activity_not_measured_at_capture"
+    atr = technical.get("atr14_pct")
+    if type(atr) not in (int, float) or not math.isfinite(atr) or atr < 0:
+        return "technical_activity_not_measured_at_capture"
+    if atr == 0:
+        return "no_measurable_price_range_at_capture"
+    volume = technical.get("volume9_to_prior40")
+    if type(volume) not in (int, float) or not math.isfinite(volume):
+        return "volume_activity_unverified_at_capture"
+    if volume <= 0:
+        return "no_positive_volume_activity_at_capture"
+    return "verified_nonflat_price_and_volume_at_capture"
 # Committed before the first eligible next-day scanner slot. Earlier cases
 # belong exclusively to the historical four-arm diagnostic (v1).
 AT_RISK_COHORT_START = "2026-11-24T02:00:00+00:00"
@@ -130,6 +152,8 @@ def select(archive: Path, per_group: int = 32, *, at_risk_only: bool = False) ->
                 # Frozen at the first point-in-time observation; never
                 # reconstructed from later adjusted historical prices.
                 "unbroken_at_capture": unbroken,
+                **({"activity_quality_at_capture": asof_activity_quality(row)}
+                   if at_risk_only else {}),
             }
     groups = {name: [] for name in GROUPS}
     # Precommitted, result-independent SHA-256 ordering within one immutable
@@ -183,8 +207,15 @@ def compare(selected: dict, event_prices: dict | None) -> dict:
     }
     for name in GROUPS:
         cases = selected["groups"][name]
+        activity_counts = Counter(case.get("activity_quality_at_capture", "unmeasured") for case in cases)
         bucket = {
             "selected_tickers": len(cases),
+            **({"activity_quality_at_capture": {
+                "counts": dict(sorted(activity_counts.items())),
+                "independently_evaluable_baselines": activity_counts.get(
+                    "verified_nonflat_price_and_volume_at_capture", 0),
+                "no_posthoc_reassignment_or_replacement": True,
+            }} if selected.get("at_risk_baseline_only") is True else {}),
             "baseline_integrity": {
                 "unbroken_prebreakout_at_capture": sum(
                     case["unbroken_at_capture"] is True for case in cases),
@@ -218,6 +249,11 @@ def compare(selected: dict, event_prices: dict | None) -> dict:
                 # Keep the original selected cohort but abstain in metrics.
                 if case["unbroken_at_capture"] is False:
                     outcome = {"status": "already_broken_or_outside_pivot_at_capture"}
+                elif (selected.get("at_risk_baseline_only") is True
+                      and case.get("activity_quality_at_capture")
+                      != "verified_nonflat_price_and_volume_at_capture"):
+                    outcome = {"status": case.get("activity_quality_at_capture",
+                                              "technical_activity_not_measured_at_capture")}
                 elif not isinstance(bars, list):
                     outcome = {"status": "independent_ohlcv_unavailable"}
                 else:
