@@ -2,7 +2,8 @@ import json
 import sys
 import tempfile
 import unittest
-from datetime import datetime,timezone
+from datetime import datetime,timezone,timedelta
+from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
@@ -110,6 +111,66 @@ class ForwardPriceRefreshTests(unittest.TestCase):
                 return self.frame()
             with self.assertRaisesRegex(ValueError,"SPY"):gather(
                 archive,downloader,datetime(2026,10,17,tzinfo=timezone.utc))
+
+    def test_v2_scoped_same_provider_recovery_does_not_rewrite_legacy_ohlcv(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive=Path(tmp)
+            self.archive(archive)
+            folder=archive/"2026"/"slots"
+            observed={
+                "ticker":"AAA","evaluable":True,"last_session":"2026-11-23",
+                "geometry_shadow":{"base_width_pass":False,"contractions_pass":False},
+                "research_prebreakout_lineage":{"unbroken_prebreakout_position":True},
+                "ma_structure_shadow":{"status":"measured","all_pass":True,
+                    "price_order_pass":True,"three_slopes_rising":True,
+                    "research_only_no_eligibility_or_score_effect":True},
+                "asof_base_price_anchor":{
+                    "schema":"vestra_prebreakout_asof_base_anchor_v1",
+                    "session":"2026-11-23","adjusted_close":100.0,
+                    "adjusted_pivot_high":110.0,"window_bars":40,
+                    "reference_bars":39,
+                    "historical_adjustment_factor_verified":False,
+                    "research_only_no_eligibility_or_score_effect":True}
+            }
+            slot={"schema":"vestra_prebreakout_v1","scan_slot_utc":0,
+                  "generated_at":"2026-11-24T02:26:00Z",
+                  "research_observations":{
+                      "point_in_time_capture_not_historical_reconstruction":True,
+                      "rows":[observed]}}
+            (folder/"2026-11-24-slot0.json").write_text(json.dumps(slot))
+            class Frame:
+                empty=False
+                columns=("Close","High","Low","Volume")
+                def __init__(self,rows):self.rows=rows
+                def iterrows(self):return iter(self.rows)
+            base=datetime(2026,9,15)
+            history=[]
+            for offset in range(70):
+                dt=base+timedelta(days=offset)
+                if dt.weekday()<5:
+                    history.append((dt,{"Close":100.0,"High":102.0,
+                                         "Low":98.0,
+                                         "Volume":0.0 if offset==0 else 100.0}))
+            calls=[]
+            def downloader(ticker,**kwargs):
+                calls.append((ticker,kwargs["start"]))
+                rows=[x for x in history if x[0].date().isoformat()>=kwargs["start"]]
+                return Frame(rows if ticker=="AAA" else [
+                    (dt,dict(values,Volume=100.0)) for dt,values in rows])
+            result=gather(archive,downloader,datetime(2026,11,24,tzinfo=timezone.utc))
+            meta=result["price_metadata"]
+            self.assertEqual(meta["v2_scoped_same_provider_probe_attempted"],["AAA"])
+            self.assertEqual(meta["v2_scoped_complete_ohlcv_recovered"],["AAA"])
+            self.assertEqual(meta["v2_scoped_not_recovered"],{})
+            self.assertEqual([x for x in calls if x[0]=="AAA"],
+                             [("AAA","2026-07-17"),("AAA","2026-09-24")])
+            old=result["independent_ma_geometry_forward"]["groups"]["geometry_fail_ma_pass"]
+            new=result["independent_ma_geometry_at_risk_forward"]["groups"]["geometry_fail_ma_pass"]
+            self.assertEqual(old["by_horizon"]["5"]["unknown_reasons"],
+                             {"independent_ohlcv_unavailable":1})
+            self.assertEqual(new["by_horizon"]["5"]["unknown_reasons"],{"pending":1})
+            self.assertEqual(new["by_horizon"]["5"]["matured_evaluable"],0)
+            self.assertEqual(new["selected_tickers"],1)
 
     def test_invalid_prices_rejected(self):
         frame=self.frame()

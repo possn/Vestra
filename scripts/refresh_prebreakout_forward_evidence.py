@@ -98,10 +98,46 @@ def gather(archive:Path, downloader, now=None):
                 if attempt==2:failures[ticker]=type(exc).__name__
     if "SPY" not in prices:
         raise ValueError("benchmark SPY adjusted closes unavailable")
+
+    # A single invalid OLD daily bar can invalidate an entire long downloaded
+    # frame. For v2 ONLY, make one additional bounded, same-provider probe
+    # around the original frozen at-risk observation. It may rescue complete
+    # adjusted OHLCV without reclassifying the ticker or weakening the
+    # independent same-session pivot reconciliation in breakout_event().
+    # Never feed this shorter price series into legacy returns/cohorts.
+    v2_event_prices=dict(event_prices)
+    scoped_attempted=[]
+    scoped_recovered=[]
+    scoped_unknown={}
+    for ticker in sorted(at_risk_tickers-set(event_prices)):
+        cases=[case for group in at_risk["groups"].values()
+               for case in group if case["ticker"]==ticker]
+        if not cases:
+            continue
+        try:
+            anchor=min(datetime.fromisoformat(c["signal_session"]).date() for c in cases)
+            scoped_start=(anchor-timedelta(days=60)).isoformat()
+            scoped_attempted.append(ticker)
+            frame=downloader(ticker,start=scoped_start,end=end,auto_adjust=True,
+                             progress=False,threads=False,multi_level_index=False)
+            ohlcv=completed_ohlcv(frame,today)
+            if ohlcv is None:
+                scoped_unknown[ticker]="incomplete_adjusted_ohlcv"
+            else:
+                # This is a distinct research-only price input: breakout_event
+                # independently checks the archived close/pivot and requires
+                # 20 genuine prior valid volume bars for any confirmation.
+                v2_event_prices[ticker]=ohlcv
+                scoped_recovered.append(ticker)
+        except (ValueError,TypeError,KeyError,OverflowError,ConnectionError,TimeoutError) as exc:
+            scoped_unknown[ticker]=type(exc).__name__
+        except Exception as exc:
+            scoped_unknown[ticker]=type(exc).__name__
+
     results=build(archive,prices,prices["SPY"],event_prices=event_prices)
     results["negative_controls_forward"]=compare_negative_controls(archive,event_prices,per_group=16)
     results["independent_ma_geometry_forward"]=compare_ma_geometry(ma_geometry,event_prices)
-    results["independent_ma_geometry_at_risk_forward"]=compare_ma_geometry(at_risk,event_prices)
+    results["independent_ma_geometry_at_risk_forward"]=compare_ma_geometry(at_risk,v2_event_prices)
     results["price_metadata"]={"provider":"yahoo_finance","auto_adjust":True,
         "completed_before_utc_date":today.isoformat(),"benchmark":"SPY",
         "downloaded":len(prices),"complete_ohlcv":len(event_prices),"failed":failures,
@@ -112,6 +148,10 @@ def gather(archive:Path, downloader, now=None):
         "ma_geometry_tickers_requested":len(ma_geometry_tickers),
         "ma_geometry_at_risk_tickers_requested":len(at_risk_tickers),
         "ma_geometry_at_risk_budget_max":128,
+        "v2_scoped_same_provider_probe_attempted":scoped_attempted,
+        "v2_scoped_complete_ohlcv_recovered":scoped_recovered,
+        "v2_scoped_not_recovered":scoped_unknown,
+        "v2_scoped_probe_policy":"one additional same-source auto-adjusted 60-calendar-day pre-anchor request, v2 only; original pivot remains independently reconciled",
         "ma_geometry_budget_max":128,
         "recovered_after_single_retry":sorted(recovered_after_retry),
         "retry_policy":"at_most_two_same_source_requests_only_on_download_or_close_failure"}
