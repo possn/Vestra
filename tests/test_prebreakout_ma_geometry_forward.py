@@ -197,6 +197,44 @@ class IndependentMAForwardTests(unittest.TestCase):
             self.assertEqual(selected["excluded_reasons"]["invalid_anchor_values"], 1)
             self.assertEqual(selected["excluded_reasons"]["invalid_ma_capture"], 1)
 
+    def test_at_risk_v2_does_not_retrofit_v1_and_excludes_broken_baselines(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            write_slot(root, "2026-11-23", [
+                captured_row("OLD", False, False, False, intact=True)])
+            write_slot(root, "2026-11-24", [
+                captured_row("BROKEN", True, False, False, intact=False),
+                captured_row("VALID", True, False, False, intact=True),
+                captured_row("OLD", False, False, False, intact=True)])
+            old = select(root)
+            new = select(root, at_risk_only=True)
+            self.assertIn("OLD", {v["ticker"] for g in old["groups"].values() for v in g})
+            self.assertEqual(new["capture_readiness"], "captured_prospective_groups")
+            self.assertTrue(new["at_risk_baseline_only"])
+            self.assertEqual(new["not_before_instrumented_utc"],
+                             "2026-11-24T02:00:00+00:00")
+            self.assertEqual(new["excluded_reasons"]["already_broken_at_first_capture"], 1)
+            self.assertEqual(
+                {v["ticker"] for g in new["groups"].values() for v in g},
+                {"VALID", "OLD"})
+            self.assertEqual(new["groups"]["geometry_fail_ma_pass"][0]
+                             ["unbroken_at_capture"], True)
+            summary = compare(new, {})
+            self.assertEqual(summary["selected_tickers_total"], 2)
+            self.assertEqual(summary["groups"]["geometry_fail_ma_pass"]
+                             ["baseline_integrity"]["already_broken_or_outside_pivot_at_capture"], 0)
+
+    def test_at_risk_v2_does_not_replace_first_eligible_capture_later(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            write_slot(root, "2026-11-24",
+                       [captured_row("A", False, False, False, intact=True)])
+            write_slot(root, "2026-11-25",
+                       [captured_row("A", True, True, True, intact=True)])
+            new = select(root, at_risk_only=True)
+            self.assertEqual(new["groups"]["geometry_fail_ma_fail"][0]["ticker"], "A")
+            self.assertEqual(new["groups"]["geometry_pass_ma_pass"], [])
+
     def test_no_capture_arms_are_explicitly_empty(self):
         with tempfile.TemporaryDirectory() as td:
             selected = select(Path(td))
