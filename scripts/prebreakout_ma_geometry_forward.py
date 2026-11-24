@@ -168,7 +168,10 @@ def select(archive: Path, per_group: int = 32, *, at_risk_only: bool = False) ->
 
 def compare(selected: dict, event_prices: dict | None) -> dict:
     result = {
-        "schema": "vestra_prebreakout_ma_geometry_forward_v1",
+        "schema": ("vestra_prebreakout_ma_geometry_at_risk_forward_v2"
+                   if selected.get("at_risk_baseline_only") is True
+                   else "vestra_prebreakout_ma_geometry_forward_v1"),
+        "baseline_prebreakout_required": selected.get("at_risk_baseline_only") is True,
         "groups": {},
         "horizons_sessions": list(HORIZONS),
         "selection": {k: v for k, v in selected.items() if k != "groups"},
