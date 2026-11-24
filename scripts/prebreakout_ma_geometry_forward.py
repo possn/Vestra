@@ -22,13 +22,17 @@ GROUPS = (
     "geometry_fail_ma_fail",
 )
 HORIZONS = (5, 10, 20, 60)
+# Committed before the first eligible next-day scanner slot. Earlier cases
+# belong exclusively to the historical four-arm diagnostic (v1).
+AT_RISK_COHORT_START = "2026-11-24T02:00:00+00:00"
 
 
-def select(archive: Path, per_group: int = 32) -> dict:
+def select(archive: Path, per_group: int = 32, *, at_risk_only: bool = False) -> dict:
     if type(per_group) is not int or not 1 <= per_group <= 100:
         raise ValueError("invalid predeclared research cohort budget")
     first = {}
     excluded = Counter()
+    start_at = datetime.fromisoformat(AT_RISK_COHORT_START) if at_risk_only else None
     instrumented_slots = 0
     instrumented_evaluable_rows = 0
     latest_instrumented_capture = None
@@ -39,6 +43,8 @@ def select(archive: Path, per_group: int = 32) -> dict:
             if (stamp.tzinfo is None or snapshot.get("schema") != "vestra_prebreakout_v1"):
                 continue
             stamp = stamp.astimezone(timezone.utc)
+            if start_at is not None and stamp < start_at:
+                continue
             if (type(snapshot.get("scan_slot_utc")) is not int
                 or snapshot["scan_slot_utc"] != stamp.hour // 6
                 or path.name != f"{stamp.date().isoformat()}-slot{stamp.hour // 6}.json"):
@@ -91,6 +97,9 @@ def select(archive: Path, per_group: int = 32) -> dict:
                                   lineage.get("unbroken_prebreakout_position"))
             if any(type(v) is not bool for v in (base, vcp, unbroken)):
                 excluded["invalid_geometry_capture"] += 1
+                continue
+            if at_risk_only and not unbroken:
+                excluded["already_broken_at_first_capture"] += 1
                 continue
             if (anchor.get("schema") != "vestra_prebreakout_asof_base_anchor_v1"
                 or anchor.get("window_bars") != 40
@@ -145,7 +154,11 @@ def select(archive: Path, per_group: int = 32) -> dict:
         "groups": groups,
         "eligible_unique_first_observations": dict(sorted(Counter(x["group"] for x in first.values()).items())),
         "excluded_reasons": dict(sorted(excluded.items())),
-        "selection_policy": "first_complete_prospective_ma_shadow_and_asof_anchor_per_ticker",
+        "selection_policy": (
+            "first_at_risk_prospective_complete_ma_shadow_per_ticker_v2"
+            if at_risk_only else "first_complete_prospective_ma_shadow_and_asof_anchor_per_ticker"),
+        "at_risk_baseline_only": at_risk_only,
+        "not_before_instrumented_utc": AT_RISK_COHORT_START if at_risk_only else None,
         "within_publication_selection_order": "sha256_vestra_ma_vcp_2026_v1_ticker_not_alphabetical",
         "deterministic_sample_not_randomized": True,
         "per_group_budget": per_group,
@@ -155,7 +168,10 @@ def select(archive: Path, per_group: int = 32) -> dict:
 
 def compare(selected: dict, event_prices: dict | None) -> dict:
     result = {
-        "schema": "vestra_prebreakout_ma_geometry_forward_v1",
+        "schema": ("vestra_prebreakout_ma_geometry_at_risk_forward_v2"
+                   if selected.get("at_risk_baseline_only") is True
+                   else "vestra_prebreakout_ma_geometry_forward_v1"),
+        "baseline_prebreakout_required": selected.get("at_risk_baseline_only") is True,
         "groups": {},
         "horizons_sessions": list(HORIZONS),
         "selection": {k: v for k, v in selected.items() if k != "groups"},

@@ -72,9 +72,13 @@ def gather(archive:Path, downloader, now=None):
     controls=archived_cases(archive,per_group=16)
     control_tickers={case["ticker"] for group in controls["groups"].values() for case in group}
     ma_geometry=select_ma_geometry(archive,per_group=32)
+    # Distinct prospective v2: only snapshots after its precommitted start
+    # and only genuinely below unbroken resistance at initial observation.
+    at_risk=select_ma_geometry(archive,per_group=32,at_risk_only=True)
     ma_geometry_tickers={case["ticker"] for group in ma_geometry["groups"].values() for case in group}
+    at_risk_tickers={case["ticker"] for group in at_risk["groups"].values() for case in group}
     tickers=sorted(set(c["ticker"] for c in items)
-                   |set(c["ticker"] for c in research)|control_tickers|ma_geometry_tickers|{"SPY"})
+                   |set(c["ticker"] for c in research)|control_tickers|ma_geometry_tickers|at_risk_tickers|{"SPY"})
     prices={}; event_prices={}; failures={}
     recovered_after_retry=[]
     for ticker in tickers:
@@ -97,6 +101,7 @@ def gather(archive:Path, downloader, now=None):
     results=build(archive,prices,prices["SPY"],event_prices=event_prices)
     results["negative_controls_forward"]=compare_negative_controls(archive,event_prices,per_group=16)
     results["independent_ma_geometry_forward"]=compare_ma_geometry(ma_geometry,event_prices)
+    results["independent_ma_geometry_at_risk_forward"]=compare_ma_geometry(at_risk,event_prices)
     results["price_metadata"]={"provider":"yahoo_finance","auto_adjust":True,
         "completed_before_utc_date":today.isoformat(),"benchmark":"SPY",
         "downloaded":len(prices),"complete_ohlcv":len(event_prices),"failed":failures,
@@ -105,6 +110,8 @@ def gather(archive:Path, downloader, now=None):
         "negative_control_tickers_requested":len(control_tickers),
         "negative_control_budget_max":48,
         "ma_geometry_tickers_requested":len(ma_geometry_tickers),
+        "ma_geometry_at_risk_tickers_requested":len(at_risk_tickers),
+        "ma_geometry_at_risk_budget_max":128,
         "ma_geometry_budget_max":128,
         "recovered_after_single_retry":sorted(recovered_after_retry),
         "retry_policy":"at_most_two_same_source_requests_only_on_download_or_close_failure"}
