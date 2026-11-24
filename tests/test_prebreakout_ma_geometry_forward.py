@@ -286,6 +286,75 @@ class IndependentMAForwardTests(unittest.TestCase):
             self.assertEqual(new["groups"]["geometry_fail_ma_fail"][0]["ticker"], "A")
             self.assertEqual(new["groups"]["geometry_pass_ma_pass"], [])
 
+    def test_v2_cross_method_concordance_is_frozen_and_not_equivalent_to_trade_eligibility(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            fixed_only = captured_row("FIXED", True, True, True, intact=True)
+            fixed_only["first_rejection"] = "local_liquidity_or_base_position"
+            fixed_only["swing_geometry_shadow"] = {
+                "status": "measured",
+                "sequential_contraction_pass": False,
+                "base_width_pass": False,
+                "below_pivot_pass": True,
+                "latest_pullback_recent": True,
+                "all_geometry_pass": False,
+            }
+            corroborated = captured_row("CONFIRMED", True, True, True, intact=True)
+            corroborated["first_rejection"] = "passed_structural_gates"
+            corroborated["swing_geometry_shadow"] = {
+                "status": "measured",
+                "sequential_contraction_pass": True,
+                "base_width_pass": True,
+                "below_pivot_pass": True,
+                "latest_pullback_recent": True,
+                "all_geometry_pass": True,
+            }
+            write_slot(root, "2026-11-24", [fixed_only, corroborated])
+            v1 = compare(select(root), {})
+            v2 = compare(select(root, at_risk_only=True), {})
+            original = v1["groups"]["geometry_pass_ma_pass"]
+            bucket = v2["groups"]["geometry_pass_ma_pass"]
+            self.assertEqual(original["selected_tickers"], 2)
+            self.assertNotIn("cross_method_concordance_at_capture", original)
+            self.assertEqual(bucket["selected_tickers"], 2)
+            concordance = bucket["cross_method_concordance_at_capture"]
+            self.assertEqual(concordance["swing_geometry_counts"], {
+                "swing_geometry_confirmed": 1, "swing_geometry_not_confirmed": 1})
+            self.assertEqual(concordance["canonical_gate_counts"], {
+                "canonical_rejected_local_liquidity_or_base_position": 1,
+                "canonical_structural_gates_passed": 1})
+            self.assertEqual(concordance["swing_confirmed_and_canonical_passed"], 1)
+            self.assertEqual(bucket["by_horizon"]["5"]["unknown_reasons"],
+                             {"independent_ohlcv_unavailable": 2})
+            # Group membership cannot be replaced after an improved later capture.
+            later = captured_row("FIXED", True, True, True, intact=True)
+            later["first_rejection"] = "passed_structural_gates"
+            later["swing_geometry_shadow"] = corroborated["swing_geometry_shadow"]
+            write_slot(root, "2026-11-25", [later])
+            frozen = compare(select(root, at_risk_only=True), {})["groups"]["geometry_pass_ma_pass"]
+            self.assertEqual(frozen["cross_method_concordance_at_capture"], concordance)
+
+    def test_missing_or_inconsistent_swing_snapshot_is_unknown_not_false(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            missing = captured_row("MISSING", False, False, False)
+            inconsistent = captured_row("INCONSISTENT", False, False, False)
+            inconsistent["swing_geometry_shadow"] = {
+                "status": "measured",
+                "sequential_contraction_pass": True,
+                "base_width_pass": False,
+                "below_pivot_pass": True,
+                "latest_pullback_recent": True,
+                "all_geometry_pass": True,
+            }
+            write_slot(root, "2026-11-24", [missing, inconsistent])
+            c = compare(select(root, at_risk_only=True), {})["groups"]["geometry_fail_ma_fail"]
+            self.assertEqual(c["cross_method_concordance_at_capture"]["swing_geometry_counts"], {
+                "swing_geometry_not_measured": 1,
+                "swing_geometry_conflicting_capture": 1})
+            self.assertEqual(sum(c["cross_method_concordance_at_capture"]
+                                 ["canonical_gate_counts"].values()), c["selected_tickers"])
+
     def test_no_capture_arms_are_explicitly_empty(self):
         with tempfile.TemporaryDirectory() as td:
             selected = select(Path(td))
