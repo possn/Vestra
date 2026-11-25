@@ -70,3 +70,12 @@ assert.match(source,/Confluência técnica indisponível/);
 assert.doesNotMatch(source,/>Proximidade de fundo</);
 assert.match(source,/não probabilidades nem estimativas de distância/);
 console.log('Turning proximity and COR1M as-of research invariants passed');
+
+// A missing recent NYSE session must never be silently compressed into a five-session change.
+const spyRows=dates.slice(-90).map((date,i)=>({date,close:100+i/10}));
+const nyseRows=dates.slice(-90).map(date=>({date,advancers:1500,decliners:1200}));
+const payload={venue:'NYSE',instrument_scope:'listed_common_stocks',method:'issues_advancers_minus_decliners',source_url:'https://www.nyse.com/',sessions:nyseRows};
+assert.equal(typeof api.nyseBreadthFactor(payload,spyRows,anchor).bottom,'boolean');
+const gap={...payload,sessions:nyseRows.filter((_,i)=>i!==nyseRows.length-3)};
+assert.equal(api.nyseBreadthFactor(gap,spyRows,anchor).bottom,null);
+assert.match(api.nyseBreadthFactor(gap,spyRows,anchor).value,/lacunas/);
