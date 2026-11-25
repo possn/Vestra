@@ -428,6 +428,10 @@
       return unavailable('NYSE sem cobertura comparável ao S&P 500');
     const recent=aligned.slice(-41);
     if(recent.length<41) return unavailable('NYSE sem janela de divergência');
+    // Missing sessions distort both the cumulative A-D line and the 5-session change.
+    const expectedDates=Array.from(spy.keys()).filter(date=>date<=anchor).sort().slice(-41);
+    if(expectedDates.length!==41||recent.some((row,i)=>row.date!==expectedDates[i]))
+      return unavailable('NYSE com lacunas na janela de divergência');
     const prior=recent.slice(0,20),last=recent.slice(20);
     const p=last.at(-1),prevPriceLow=Math.min(...prior.map(x=>x.price));
     const prevPriceHigh=Math.max(...prior.map(x=>x.price));
