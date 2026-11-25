@@ -35,12 +35,19 @@ def daily_coverage_capacity(eligible: int)->dict:
     if type(eligible) is not int or eligible<0:
         raise ValueError("eligible universe must be a nonnegative integer")
     budget=slot_scan_budget(eligible)
-    capacity=budget*SCANNER_SLOTS_PER_DAY
-    return {"max_distinct_daily":min(capacity,eligible),
+    # Above the 1,600-name baseline the adaptive plan intentionally reserves
+    # up to 25 recurring watched names on EACH slot. Count the reservation
+    # once across the day, not four times as if all rechecks were new.
+    reserved=min(MAX_WATCH_RECHECKS,eligible) if eligible>SCAN_BUDGET_PER_SLOT*SCANNER_SLOTS_PER_DAY else 0
+    distinct=min(eligible, reserved+(budget-reserved)*SCANNER_SLOTS_PER_DAY)
+    return {"max_distinct_daily":distinct,
             "requests_per_slot":budget,
             "maximum_requests_per_slot":MAX_ADAPTIVE_SCAN_BUDGET_PER_SLOT,
-            "max_daily_coverage_pct":round(100*min(capacity,eligible)/eligible,2) if eligible else None,
-            "assumes":"four_slots_all_complete_disjoint_no_watchlist_overrides",
+            "max_daily_coverage_pct":round(100*distinct/eligible,2) if eligible else None,
+            "assumes":("four_slots_all_complete_disjoint_except_25_reserved_watch_rechecks"
+                       if reserved else "four_slots_all_complete_disjoint_no_watchlist_overrides"),
+            "watchlist_recheck_reservation_per_slot":reserved,
+            "planning_capacity_not_verified_ohlcv":True,
             "not_actual_coverage":True}
 
 
