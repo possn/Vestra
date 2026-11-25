@@ -455,6 +455,34 @@ class RotationPlanAuditTests(unittest.TestCase):
         for invalid in (-1,1.5,True):
             with self.assertRaises(ValueError):mod.slot_scan_budget(invalid)
 
+    def test_adaptive_capacity_counts_repeated_watchlist_once_not_four_times(self):
+        # 1,950 names need 513 requests/slot to preserve 25 watch rechecks,
+        # but the hard provider-safe cap is 500. Thus 25 + 4*475 = 1,925
+        # distinct names in the most favorable four-slot plan, not 1,950.
+        n=1950
+        stats=mod.daily_coverage_capacity(n)
+        self.assertEqual(stats["requests_per_slot"],500)
+        self.assertEqual(stats["watchlist_recheck_reservation_per_slot"],25)
+        self.assertEqual(stats["max_distinct_daily"],1925)
+        self.assertEqual(stats["max_daily_coverage_pct"],98.72)
+        self.assertTrue(stats["planning_capacity_not_verified_ohlcv"])
+        self.assertTrue(stats["not_actual_coverage"])
+        stocks=[{"ticker":f"T{i:04d}","quote_type":"EQUITY",
+                 "market_cap":10_000_000_000-i} for i in range(n)]
+        watch=[f"T{i:04d}" for i in range(25)]
+        plan=mod.rotation_plan_audit(stocks,date(2026,11,25),watch)
+        self.assertEqual(plan["planned_requests"],2000)
+        self.assertEqual(plan["planned_distinct"],1925)
+        self.assertLess(plan["planned_distinct_pct"],100.0)
+
+    def test_adaptive_reservation_still_allows_full_1616_plan_not_observed_claim(self):
+        stats=mod.daily_coverage_capacity(1616)
+        self.assertEqual(stats["requests_per_slot"],429)
+        self.assertEqual(stats["watchlist_recheck_reservation_per_slot"],25)
+        self.assertEqual(stats["max_distinct_daily"],1616)
+        self.assertEqual(stats["max_daily_coverage_pct"],100.0)
+        self.assertTrue(stats["planning_capacity_not_verified_ohlcv"])
+
     def test_empty_universe_does_not_invent_coverage(self):
         plan=mod.rotation_plan_audit([],date(2026,10,28))
         self.assertIsNone(plan["planned_distinct_pct"])
