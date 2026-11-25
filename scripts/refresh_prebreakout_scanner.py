@@ -13,13 +13,32 @@ INDEX=ROOT/"data"/"stocks-index.json"
 OUTPUT=ROOT/"data"/"prebreakout-signals.json"
 SCAN_BUDGET_PER_SLOT=400
 SCANNER_SLOTS_PER_DAY=4
+MAX_ADAPTIVE_SCAN_BUDGET_PER_SLOT=500
+MAX_WATCH_RECHECKS=25
+
+
+def slot_scan_budget(eligible: int) -> int:
+    """Bounded uplift when four fixed slots cannot cover the eligible universe.
+
+    Reserve capacity for repeated historical watch names without crowding out
+    distinct OHLCV observations. Requests are not proof of successful coverage.
+    """
+    if type(eligible) is not int or eligible < 0:
+        raise ValueError("eligible universe must be a nonnegative integer")
+    if eligible <= SCAN_BUDGET_PER_SLOT * SCANNER_SLOTS_PER_DAY:
+        return SCAN_BUDGET_PER_SLOT
+    needed=math.ceil(eligible / SCANNER_SLOTS_PER_DAY) + MAX_WATCH_RECHECKS
+    return min(MAX_ADAPTIVE_SCAN_BUDGET_PER_SLOT,needed)
 
 def daily_coverage_capacity(eligible: int)->dict:
     """Honest upper bound, not observed coverage or a performance promise."""
     if type(eligible) is not int or eligible<0:
         raise ValueError("eligible universe must be a nonnegative integer")
-    capacity=SCAN_BUDGET_PER_SLOT*SCANNER_SLOTS_PER_DAY
+    budget=slot_scan_budget(eligible)
+    capacity=budget*SCANNER_SLOTS_PER_DAY
     return {"max_distinct_daily":min(capacity,eligible),
+            "requests_per_slot":budget,
+            "maximum_requests_per_slot":MAX_ADAPTIVE_SCAN_BUDGET_PER_SLOT,
             "max_daily_coverage_pct":round(100*min(capacity,eligible)/eligible,2) if eligible else None,
             "assumes":"four_slots_all_complete_disjoint_no_watchlist_overrides",
             "not_actual_coverage":True}
@@ -669,17 +688,22 @@ def candidates(stocks: list[dict], when: date, slot: int = 0, watch: list[str]|N
             continue
         universe[ticker]=max(cap,universe.get(ticker,0))
     ordered=sorted(universe,key=lambda t:(-universe[t],t))
-    # Four 400-name slots can cover up to 1,600 requests daily; verify observed\n    # coverage rather than assuming all provider calls succeed.\n    # A daily-bar scanner gains no fresh evidence by rereading fixed anchors
+    # Four daily slots use a bounded adaptive budget for universes >1,600;\n    # planned requests are not proof of downloaded/evaluable OHLCV.\n    # A daily-bar scanner gains no fresh evidence by rereading fixed anchors
     # on all four slots. Rotate the complete eligible universe instead.
     if not 0<=slot<=3:raise ValueError("invalid six-hour scan slot")
     if not ordered:return []
-    offset=(((when-date(2026,10,13)).days*4+slot)*SCAN_BUDGET_PER_SLOT)%len(ordered)
-    rotated=ordered[offset:]+ordered[:offset]
+    budget=slot_scan_budget(len(ordered))
     watchlist=[]
     for ticker in watch or []:
         if ticker in universe and ticker not in watchlist:
             watchlist.append(ticker)
-            if len(watchlist)>=25:break
+            if len(watchlist)>=MAX_WATCH_RECHECKS:break
+    # Rotate by the *non-watch* request budget to avoid deterministic gaps.
+    # Keep legacy 400-name ordering untouched for universes <=1,600.
+    stride=(budget-len(watchlist) if budget>SCAN_BUDGET_PER_SLOT
+            else SCAN_BUDGET_PER_SLOT)
+    offset=(((when-date(2026,10,13)).days*4+slot)*stride)%len(ordered)
+    rotated=ordered[offset:]+ordered[:offset]
     # Historical watch candidates are rechecked, never promoted from cache.
     rotation=[t for t in rotated if t not in watchlist]
     if recently_verified is not None:
@@ -689,7 +713,7 @@ def candidates(stocks: list[dict], when: date, slot: int = 0, watch: list[str]|N
         unseen=[t for t in rotation if t not in recently_verified]
         repeats=[t for t in rotation if t in recently_verified]
         rotation=unseen+repeats
-    return watchlist+rotation[:SCAN_BUDGET_PER_SLOT-len(watchlist)]
+    return watchlist+rotation[:budget-len(watchlist)]
 
 def rotation_plan_audit(stocks:list[dict], when:date, watch:list[str]|None=None)->dict:
     """Deterministic four-slot selection plan, not proof any prices were downloaded."""

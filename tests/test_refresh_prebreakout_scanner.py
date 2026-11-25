@@ -431,6 +431,30 @@ class RotationPlanAuditTests(unittest.TestCase):
         self.assertEqual(plan["planned_distinct_pct"],100.0)
         self.assertTrue(plan["not_actual_ohlcv_coverage"])
         self.assertEqual(mod.daily_coverage_capacity(1524)["max_daily_coverage_pct"],100.0)
+    def test_adaptive_1616_universe_has_disjoint_four_slot_plan(self):
+        stocks=[{"ticker":f"T{i:04d}","quote_type":"EQUITY",
+                 "market_cap":10_000_000_000-i} for i in range(1616)]
+        day=date(2026,11,24)
+        self.assertEqual(mod.slot_scan_budget(1616),429)
+        for watch in ([],[f"T{i:04d}" for i in range(25)]):
+            slots=[mod.candidates(stocks,day,slot,watch) for slot in range(4)]
+            self.assertTrue(all(len(x)==429 and len(x)==len(set(x)) for x in slots))
+            self.assertEqual(len(set().union(*(set(x) for x in slots))),1616)
+            plan=mod.rotation_plan_audit(stocks,day,watch)
+            self.assertEqual(plan["planned_requests"],1716)
+            self.assertEqual(plan["planned_distinct"],1616)
+            self.assertEqual(plan["planned_distinct_pct"],100.0)
+        self.assertEqual(mod.daily_coverage_capacity(1616)["requests_per_slot"],429)
+        self.assertTrue(mod.daily_coverage_capacity(1616)["not_actual_coverage"])
+
+    def test_adaptive_budget_remains_capped_without_false_full_coverage_claims(self):
+        self.assertEqual(mod.slot_scan_budget(1600),400)
+        self.assertEqual(mod.slot_scan_budget(2100),500)
+        self.assertEqual(mod.slot_scan_budget(4000),500)
+        self.assertLess(mod.daily_coverage_capacity(4000)["max_daily_coverage_pct"],100)
+        for invalid in (-1,1.5,True):
+            with self.assertRaises(ValueError):mod.slot_scan_budget(invalid)
+
     def test_empty_universe_does_not_invent_coverage(self):
         plan=mod.rotation_plan_audit([],date(2026,10,28))
         self.assertIsNone(plan["planned_distinct_pct"])
