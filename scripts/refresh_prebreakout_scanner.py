@@ -705,14 +705,18 @@ def candidates(stocks: list[dict], when: date, slot: int = 0, watch: list[str]|N
         if ticker in universe and ticker not in watchlist:
             watchlist.append(ticker)
             if len(watchlist)>=MAX_WATCH_RECHECKS:break
-    # Rotate by the *non-watch* request budget to avoid deterministic gaps.
-    # Keep legacy 400-name ordering untouched for universes <=1,600.
-    stride=(budget-len(watchlist) if budget>SCAN_BUDGET_PER_SLOT
-            else SCAN_BUDGET_PER_SLOT)
-    offset=(((when-date(2026,10,13)).days*4+slot)*stride)%len(ordered)
-    rotated=ordered[offset:]+ordered[:offset]
+    # Adaptive rotation must operate over the NON-WATCH population.
+    # Rotating the full population and only THEN removing watchlist names
+    # reintroduces overlap across adjacent slots when watch names fall within
+    # the rotated segment. Legacy <=1,600 behavior remains unchanged.
+    adaptive=budget>SCAN_BUDGET_PER_SLOT
+    rotation_universe=([t for t in ordered if t not in watchlist]
+                       if adaptive else ordered)
+    stride=(budget-len(watchlist) if adaptive else SCAN_BUDGET_PER_SLOT)
+    offset=(((when-date(2026,10,13)).days*4+slot)*stride)%len(rotation_universe)
+    rotated=rotation_universe[offset:]+rotation_universe[:offset]
     # Historical watch candidates are rechecked, never promoted from cache.
-    rotation=[t for t in rotated if t not in watchlist]
+    rotation=(rotated if adaptive else [t for t in rotated if t not in watchlist])
     if recently_verified is not None:
         # Daily OHLCV rarely changes between six-hour slots. When the
         # universe/capitalisation order moves, prioritize names not yet
