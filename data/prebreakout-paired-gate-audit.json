@@ -1,38 +1,38 @@
 {
   "schema": "vestra_prebreakout_paired_gate_audit_v1",
-  "observed_at": "2026-11-24T22:50:56.053027+00:00",
+  "observed_at": "2026-11-26T05:07:32.678162+00:00",
   "scope": "same_slot_same_ticker_as_observed_not_out_of_sample",
-  "eligible_universe": 1616,
-  "attempted": 400,
+  "eligible_universe": 1640,
+  "attempted": 435,
   "counts": {
-    "base_width_pass": 31,
-    "both_geometry_below_unbroken_pivot": 1,
+    "base_width_pass": 26,
+    "both_geometry_below_unbroken_pivot": 0,
     "both_geometry_pass": 1,
-    "evaluable": 347,
+    "evaluable": 393,
     "geometry_both_rejected_ma": 1,
-    "geometry_both_unbroken_rejected_ma": 1,
-    "ma_first_rejection": 301,
-    "not_evaluable": 53,
-    "paired_evaluable": 347,
-    "sequential_contractions_pass": 10,
+    "geometry_both_unbroken_rejected_ma": 0,
+    "ma_first_rejection": 351,
+    "not_evaluable": 42,
+    "paired_evaluable": 393,
+    "sequential_contractions_pass": 9,
     "strict_structural_pass": 0
   },
   "overlapping_ma_failed_checks": {
-    "ma150_above_ma200": 133,
-    "ma150_rising_10": 179,
-    "ma200_rising_10": 171,
-    "ma50_above_ma150": 209,
-    "ma50_rising_10": 227,
-    "price_above_ma50": 248
+    "ma150_above_ma200": 185,
+    "ma150_rising_10": 257,
+    "ma200_rising_10": 248,
+    "ma50_above_ma150": 268,
+    "ma50_rising_10": 309,
+    "price_above_ma50": 276
   },
   "independent_ma_geometry_matrix": {
     "counts": {
-      "geometry_fail_ma_fail": 300,
-      "geometry_fail_ma_pass": 46,
-      "geometry_pass_ma_fail": 1,
+      "geometry_fail_ma_fail": 351,
+      "geometry_fail_ma_pass": 42,
+      "geometry_pass_ma_fail": 0,
       "geometry_pass_ma_pass": 0,
       "missing_or_conflicting_ma_capture": 0,
-      "paired_rows": 347
+      "paired_rows": 393
     },
     "paired_coverage_of_evaluable": 1.0,
     "scope": "same_ticker_same_slot_completed_bars_only",
@@ -43,15 +43,15 @@
   "alternative_geometry_comparison": {
     "method": "same_ticker_same_slot_complete_case_only",
     "counts": {
-      "alternate_phase_only": 2,
+      "alternate_phase_only": 1,
       "both_fixed_and_swing_pass": 0,
       "fixed_pass_on_phase_sample": 1,
-      "fixed_pass_on_swing_sample": 1,
+      "fixed_pass_on_swing_sample": 0,
       "fixed_pass_phase_robust": 1,
-      "phase_any_pass": 3,
-      "phase_comparable": 347,
+      "phase_any_pass": 2,
+      "phase_comparable": 393,
       "phase_two_or_more_pass": 2,
-      "swing_comparable": 347,
+      "swing_comparable": 393,
       "swing_only_pass": 1,
       "swing_pass": 1
     },
@@ -63,21 +63,6 @@
   "research_only_not_signal": true,
   "forecast_performance_validated": false,
   "calibrated_probability": null,
-  "sample_not_recommendations": [
-    {
-      "ticker": "SCHW",
-      "first_rejection": "moving_average_structure",
-      "ma_failed_checks": [
-        "ma150_rising_10",
-        "ma200_rising_10",
-        "ma50_above_ma150",
-        "ma50_rising_10",
-        "price_above_ma50"
-      ],
-      "close_position20": 0.673,
-      "relative_strength_observed": false,
-      "research_only": true
-    }
-  ],
+  "sample_not_recommendations": [],
   "interpretation": "Structural comparison only; no forward returns, no changed gates or rank."
 }
