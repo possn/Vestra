@@ -38,3 +38,16 @@ assert.match(source,/data-dms-turning-toggle/);
 const missing=api.capitulationContext({SPY:detail(prices),'^VIX':detail(vix).price_history_1y.slice(-2)},anchor,asOf);
 assert.equal(missing.available,false);
 console.log('Turning stress / technical confirmation split and Home latency guard passed');
+
+// Stale or future market snapshots cannot expose contemporaneous stress or structure.
+const base={date:anchor,factors:factors.slice(0,4),capitulation:context,spyDaily:[]};
+const freshReading=api.turningPointReading(base,null,null,asOf);
+assert.equal(freshReading.capitulation.level,'extreme');
+for(const clock of [new Date('2026-12-01T00:00:00Z'),new Date('2026-11-18T12:00:00Z')]){
+ const reading=api.turningPointReading(base,null,null,clock);
+ assert.equal(reading.stale,true);
+ assert.equal(reading.capitulation,undefined);
+ assert.equal(reading.priceStructure,undefined);
+ assert.equal(reading.proximity,undefined);
+}
+assert.match(source,/if\(r\.stale\) return/);
