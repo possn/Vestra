@@ -453,7 +453,11 @@
     const available=factors.filter(f=>typeof f.bottom==='boolean').length;
     const bottom=factors.filter(f=>f.bottom===true).length,top=factors.filter(f=>f.top===true).length;
     const ageDays=(asOf.getTime()-Date.parse(`${base.date}T23:59:59Z`))/86400000;
-    const usable=available>=4&&Number.isFinite(ageDays)&&ageDays>=-1&&ageDays<=5;
+    const fresh=Number.isFinite(ageDays)&&ageDays>=-1&&ageDays<=5;
+    // Stress, structure and directional evidence must share the same freshness
+    // gate. Historical readings must not masquerade as current market stress.
+    if(!fresh) return {asOf:base.date,stale:true,unvalidated:true};
+    const usable=available>=4;
     const direction=usable&&bottom>=3&&bottom>top&&factors[2]?.bottom===true?'bottom':
       usable&&top>=3&&top>bottom&&factors[2]?.top===true?'top':null;
     return {direction,bottom,top,available,factors,nyseBreadth:breadth,asOf:base.date,
@@ -496,6 +500,7 @@
   function turningMarkup(){
     const r=turningPointReading(S.data?.turningInputs,S.cnn,S.aaii,new Date(),S.nyse);
     if(!r) return '<section class="dms-turning"><span>INVERSÕES · EM INVESTIGAÇÃO</span><strong>Dados insuficientes</strong><p>É necessário histórico verificável de SPY e VIX.</p></section>';
+    if(r.stale) return `<section class="dms-turning"><span>INVERSÕES · EM INVESTIGAÇÃO</span><strong>Dados desatualizados</strong><p>Última sessão observada: ${esc(r.asOf||'indisponível')}. Sem leitura atual de stress, fundo ou topo.</p></section>`;
     const cap=r.capitulation;
     const stress=cap?.available?cap.label:'Leitura de stress indisponível';
     const factors=r.factors.map(f=>`<li><span>${esc(f.name)}</span><b>${esc(f.value)}</b><small>${f.bottom===null?'Sem dados':f.bottom?'Recuperação observada':f.top?'Fragilidade observada':'Sem confirmação'}</small></li>`).join('');
