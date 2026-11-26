@@ -51,3 +51,16 @@ for(const clock of [new Date('2026-12-01T00:00:00Z'),new Date('2026-11-18T12:00:
  assert.equal(reading.proximity,undefined);
 }
 assert.match(source,/if\(r\.stale\) return/);
+
+// Same-date volatility relief plus price improvement is required after stress.
+const episodePrices=last.map((_,i)=>i===123?86:i===124?87:i===125?88:100);
+const episodeVix=last.map((_,i)=>i===123?40:i===124?35:i===125?29:15);
+const episode=api.capitulationContext({SPY:detail(episodePrices),'^VIX':detail(episodeVix)},anchor,asOf);
+assert.equal(episode.exhaustion.state,'possible_exhaustion');
+const falling=api.capitulationContext({SPY:detail(episodePrices.map((v,i)=>i===125?85:v)),'^VIX':detail(episodeVix)},anchor,asOf);
+assert.equal(falling.exhaustion.state,'volatility_cooling_only');
+assert.equal(context.exhaustion.state,'stress_persists');
+const broken=detail(episodeVix);broken.price_history_1y.splice(120,1);
+const gap=api.capitulationContext({SPY:detail(episodePrices),'^VIX':broken},anchor,asOf);
+assert.equal(gap.available,false);
+assert.equal(episode.exhaustion.researchOnly,true);
