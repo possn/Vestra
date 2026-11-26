@@ -74,7 +74,30 @@ def assess_freshness(feed:dict, now:datetime, max_age_hours:float=8)->dict:
         # invalidating genuine earlier publication evidence.
         capacity_cutover=datetime.fromisoformat("2026-11-21T10:46:00+00:00")
         budget_per_slot=400 if generated>=capacity_cutover else 300
-        expected=min(4*budget_per_slot,feed["eligible_universe"])
+        eligible=feed["eligible_universe"]
+        if type(eligible) is not int or eligible<0:
+            return {"status":"invalid","reason":"invalid_eligible_universe"}
+        expected=min(4*budget_per_slot,eligible)
+        # Preserve the historical producer contracts, including the brief
+        # adaptive version before the watch reservation accounting fix.
+        adaptive_cutover=datetime.fromisoformat("2026-11-25T00:30:00+00:00")
+        reservation_cutover=datetime.fromisoformat("2026-11-25T09:12:52+00:00")
+        if generated>=adaptive_cutover:
+            budget_per_slot=400 if eligible<=1600 else min(500,(eligible+3)//4+25)
+            reserved=25 if eligible>1600 else 0
+            corrected=generated>=reservation_cutover
+            expected=min(eligible,4*budget_per_slot-(3*reserved if corrected else 0))
+            if (not isinstance(capacity,dict) or
+                type(capacity.get("requests_per_slot")) is not int or
+                capacity.get("requests_per_slot")!=budget_per_slot or
+                capacity.get("maximum_requests_per_slot")!=500 or
+                capacity.get("not_actual_coverage") is not True or
+                (corrected and (capacity.get("watchlist_recheck_reservation_per_slot")!=reserved or
+                 capacity.get("planning_capacity_not_verified_ohlcv") is not True)) or
+                type(feed["attempted"]) is not int or not 0<=feed["attempted"]<=min(eligible,budget_per_slot)):
+                return {"status":"invalid","reason":"inconsistent_adaptive_capacity"}
+            if capacity.get("max_daily_coverage_pct")!=(round(100*expected/eligible,2) if eligible else None):
+                return {"status":"invalid","reason":"inconsistent_adaptive_capacity"}
         if (not isinstance(slot,dict) or not isinstance(audit,dict) or
             not isinstance(capacity,dict) or
             capacity.get("max_distinct_daily")!=expected or
