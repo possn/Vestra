@@ -1,36 +1,36 @@
 {
   "schema": "vestra_prebreakout_paired_gate_audit_v1",
-  "observed_at": "2026-11-26T10:58:31.590090+00:00",
+  "observed_at": "2026-11-26T15:14:22.156847+00:00",
   "scope": "same_slot_same_ticker_as_observed_not_out_of_sample",
   "eligible_universe": 1640,
   "attempted": 435,
   "counts": {
-    "base_width_pass": 33,
-    "both_geometry_below_unbroken_pivot": 1,
+    "base_width_pass": 39,
+    "both_geometry_below_unbroken_pivot": 0,
     "both_geometry_pass": 1,
     "evaluable": 425,
-    "geometry_both_rejected_ma": 0,
+    "geometry_both_rejected_ma": 1,
     "geometry_both_unbroken_rejected_ma": 0,
-    "ma_first_rejection": 352,
+    "ma_first_rejection": 330,
     "not_evaluable": 10,
     "paired_evaluable": 425,
-    "sequential_contractions_pass": 7,
+    "sequential_contractions_pass": 12,
     "strict_structural_pass": 0
   },
   "overlapping_ma_failed_checks": {
-    "ma150_above_ma200": 128,
-    "ma150_rising_10": 181,
-    "ma200_rising_10": 170,
-    "ma50_above_ma150": 221,
-    "ma50_rising_10": 243,
-    "price_above_ma50": 246
+    "ma150_above_ma200": 157,
+    "ma150_rising_10": 177,
+    "ma200_rising_10": 167,
+    "ma50_above_ma150": 218,
+    "ma50_rising_10": 199,
+    "price_above_ma50": 186
   },
   "independent_ma_geometry_matrix": {
     "counts": {
-      "geometry_fail_ma_fail": 352,
-      "geometry_fail_ma_pass": 72,
+      "geometry_fail_ma_fail": 330,
+      "geometry_fail_ma_pass": 95,
       "geometry_pass_ma_fail": 0,
-      "geometry_pass_ma_pass": 1,
+      "geometry_pass_ma_pass": 0,
       "missing_or_conflicting_ma_capture": 0,
       "paired_rows": 425
     },
@@ -43,17 +43,17 @@
   "alternative_geometry_comparison": {
     "method": "same_ticker_same_slot_complete_case_only",
     "counts": {
-      "alternate_phase_only": 2,
+      "alternate_phase_only": 7,
       "both_fixed_and_swing_pass": 0,
       "fixed_pass_on_phase_sample": 1,
-      "fixed_pass_on_swing_sample": 1,
-      "fixed_pass_phase_robust": 0,
-      "phase_any_pass": 3,
+      "fixed_pass_on_swing_sample": 0,
+      "fixed_pass_phase_robust": 1,
+      "phase_any_pass": 8,
       "phase_comparable": 425,
-      "phase_two_or_more_pass": 2,
+      "phase_two_or_more_pass": 7,
       "swing_comparable": 425,
-      "swing_only_pass": 2,
-      "swing_pass": 2
+      "swing_only_pass": 4,
+      "swing_pass": 4
     },
     "missing_or_unverifiable": {},
     "swing_geometry_is_independent_not_a_live_signal": true,
