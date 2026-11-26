@@ -307,13 +307,34 @@
     const vvix=completedHistory(details[VVIX_TICKER],asOf).filter(r=>r.date<=anchor);
     const vvixCurrent=vvix.at(-1)?.date===anchor?vvix.at(-1).close:null;
     const credit=creditStressContext(details,anchor,asOf);
+    // A recent stress episode can persist as context even after VIX cools.
+    // Compare identical completed SPY/VIX session dates; never infer exhaustion
+    // from volatility alone, and do not add another correlated scoring vote.
+    const recentSpy=spy.slice(-10),recentVix=vix.slice(-10);
+    let exhaustion={available:false,label:'Exaustão: dados não comparáveis'};
+    if(recentSpy.every((row,i)=>row.date===recentVix[i]?.date)){
+      const peak=Math.max(...recentVix.map(row=>row.close));
+      const low=Math.min(...recentSpy.map(row=>row.close));
+      const recentStress=peak>=25&&peak>=vs.slice().sort((a,b)=>a-b)[94]&&100*(low/high-1)<=-7;
+      const cooling=peak>0&&v<=peak*.90;
+      const stabilizing=p>recentSpy.at(-2).close&&p>=low*1.01;
+      const state=!recentStress?'no_recent_stress':cooling&&stabilizing?'possible_exhaustion':
+        cooling?'volatility_cooling_only':'stress_persists';
+      const labels={no_recent_stress:'Sem episódio recente de stress elevado',
+        possible_exhaustion:'Possível exaustão vendedora · preço e volatilidade melhoram',
+        volatility_cooling_only:'Volatilidade a aliviar · preço ainda sem confirmação',
+        stress_persists:'Stress recente sem alívio suficiente'};
+      exhaustion={available:true,state,label:labels[state],recentStress,cooling,stabilizing,
+        vixFromPeakPct:100*(v/peak-1),priceFromLowPct:100*(p/low-1),
+        researchOnly:true};
+    }
     const stressExtreme=v>=35&&percentile>=90&&drawdown<=-10;
     const stressElevated=v>=25&&percentile>=75&&drawdown<=-7;
     const level=stressExtreme?'extreme':stressElevated?'elevated':'not_detected';
     const label=stressExtreme?'Stress extremo · capitulação possível':
       stressElevated?'Stress elevado · vigilância':'Sem capitulação identificada';
     return {available:true,date:anchor,level,label,vix:v,vixPercentile:percentile,
-      spyDrawdown126:drawdown,qqqDrawdown126,spyDailyRsi14,vixChange5Pct,
+      spyDrawdown126:drawdown,qqqDrawdown126,spyDailyRsi14,vixChange5Pct,exhaustion,
       vvixCurrent,creditEasing:credit.observed?credit.easing:null,
       description:'Stress e drawdown contemporâneos; não confirma exaustão nem estima probabilidade de fundo',
       methodology:'descriptive_126_session_stress_not_predictive'};
@@ -531,7 +552,7 @@
     return `<section class="dms-turning" aria-label="Contexto de stress e sinais de possível inversão">
       <span>INVERSÕES · EXPERIMENTAL</span><strong>${esc(stress)}</strong>
       <div class="dms-turning-summary">${visibleSupport}</div>
-      <p class="dms-turning-caveat">${esc(r.priceStructure.label)}. Fundo ainda não confirmado; horizonte de 5–20 sessões em investigação.</p>
+      <p class="dms-turning-caveat">${esc(cap?.exhaustion?.label||"Exaustão não avaliada")}. ${esc(r.priceStructure.label)}. Fundo ainda não confirmado; horizonte de 5–20 sessões em investigação.</p>
       <button type="button" class="dms-turning-toggle" data-dms-turning-toggle aria-expanded="${S.turningExpanded?'true':'false'}" aria-controls="dmsTurningEvidence">${S.turningExpanded?'Ocultar análise':'Ver análise e indicadores'} <span aria-hidden="true">${S.turningExpanded?'−':'+'}</span></button>
       <div class="dms-turning-evidence" id="dmsTurningEvidence"${S.turningExpanded?'':' hidden'}>
         ${scalesMarkup}
