@@ -20,7 +20,7 @@ FEATURED_OPPORTUNITY_MIN_SCORE = 54.0
 
 def _f(v):
     try:
-        if v is None or isinstance(v, bool) or v == "":
+        if v is None or isinstance(v, bool) or (type(v).__module__.startswith("numpy") and type(v).__name__ in ("bool", "bool_")) or v == "":
             return None
         x = float(v)
         return x if x == x and abs(x) != float("inf") else None
@@ -501,7 +501,7 @@ def _insufficient(reason, components=None, gates=None, timing=None):
 
 def assess(row: dict) -> dict:
     quote_type = str(row.get("quote_type") or "").upper()
-    if quote_type in ("ETF", "CRYPTO", "CRYPTOCURRENCY", "MUTUALFUND"):
+    if quote_type in ("ETF", "CRYPTO", "CRYPTOCURRENCY", "MUTUALFUND", "FUND", "PREFERRED"):
         return _insufficient("Instrumento fora do ranking de ações", gates=[
             _gate("equity", False, detail="Apenas ações entram no Best Opportunities")
         ])
@@ -527,6 +527,8 @@ def assess(row: dict) -> dict:
         _gate("timing_available", timing_score is not None, value=timing_score, detail="Best Opportunities Now exige histórico de preço suficiente"),
     ]
 
+    if any(v is not None and not 0 <= v <= 100 for v in (score, conf, coverage, critical)):
+        return _insufficient("Métricas fundamentais fora da escala 0–100", gates=gates, timing=timing)
     if score is None:
         return _insufficient("Score Vestra suprimido por evidência insuficiente", gates=gates, timing=timing)
     if coverage is None or coverage < 55:
@@ -564,6 +566,8 @@ def assess(row: dict) -> dict:
         "valuation": valuation,
         "timing": timing_score,
     }
+    if any(v is not None and not 0 <= v <= 100 for v in components.values()):
+        return _insufficient("Dimensões de ranking fora da escala 0–100", components, gates, timing)
     observed = [v for v in components.values() if v is not None]
     structural_observed = [v for v in (moat, cap, qarp, trap_inverse, sector) if v is not None]
     gates.extend([
