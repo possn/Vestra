@@ -1598,34 +1598,6 @@
     "no_probability_or_ranking_effect": true,
     "records": [
       {
-        "ticker": "SIKA.SW",
-        "observed_session": "2026-11-25",
-        "published_at": "2026-11-26T15:14:22.156847+00:00",
-        "original_anchor_fingerprint": "df18b7d501521b38e6deb84994bd2b0e5a331f460d4da7e080e2bd2617d3ccaf",
-        "forward_return_pct": {
-          "5": null,
-          "10": null,
-          "20": null
-        },
-        "entry_session": null,
-        "all_intermediate_sessions_required": true,
-        "status": "verified_pending"
-      },
-      {
-        "ticker": "VRSN",
-        "observed_session": "2026-11-25",
-        "published_at": "2026-11-26T15:14:22.156847+00:00",
-        "original_anchor_fingerprint": "5e8b323ec76a676d063400c464edec7679fcc057787341ed9f1ca672c6d85575",
-        "forward_return_pct": {
-          "5": null,
-          "10": null,
-          "20": null
-        },
-        "entry_session": null,
-        "all_intermediate_sessions_required": true,
-        "status": "verified_pending"
-      },
-      {
         "ticker": "WAB",
         "observed_session": "2026-11-25",
         "published_at": "2026-11-26T15:14:22.156847+00:00",
@@ -1938,6 +1910,34 @@
         "observed_session": "2026-11-25",
         "published_at": "2026-11-26T23:01:56.797583+00:00",
         "original_anchor_fingerprint": "a2665ffd70f6a455998e07c8214a95c64ead4741348d9dc275a33bed913dae04",
+        "forward_return_pct": {
+          "5": null,
+          "10": null,
+          "20": null
+        },
+        "entry_session": null,
+        "all_intermediate_sessions_required": true,
+        "status": "verified_pending"
+      },
+      {
+        "ticker": "DTE.DE",
+        "observed_session": "2026-11-26",
+        "published_at": "2026-11-27T22:44:38.198945+00:00",
+        "original_anchor_fingerprint": "8b3867d98f4d62144787366a208ff351d17b7ad3221803c96775e8f2f132e804",
+        "forward_return_pct": {
+          "5": null,
+          "10": null,
+          "20": null
+        },
+        "entry_session": null,
+        "all_intermediate_sessions_required": true,
+        "status": "verified_pending"
+      },
+      {
+        "ticker": "ENGI.PA",
+        "observed_session": "2026-11-26",
+        "published_at": "2026-11-27T22:44:38.198945+00:00",
+        "original_anchor_fingerprint": "fb9051d7b829d5795dbea04771151e4c9b1e4489d61df265f66d30a3081da512",
         "forward_return_pct": {
           "5": null,
           "10": null,
@@ -6431,12 +6431,12 @@
     },
     "selection": {
       "available_unique_first_observations": {
-        "geometry_negative_control": 231,
+        "geometry_negative_control": 233,
         "geometry_pass_ma_rejected": 1
       },
       "excluded_reasons": {
         "missing_capture": 3304,
-        "outside_predeclared_groups": 1440
+        "outside_predeclared_groups": 1447
       },
       "selection_policy": "first_valid_original_publication_per_ticker_earliest_per_group",
       "per_group_budget": 16,
@@ -6721,18 +6721,18 @@
       60
     ],
     "selection": {
-      "instrumented_slots_observed": 11,
-      "instrumented_evaluable_rows_observed": 4026,
-      "latest_instrumented_capture": "2026-11-27T08:38:07.951290+00:00",
+      "instrumented_slots_observed": 12,
+      "instrumented_evaluable_rows_observed": 4420,
+      "latest_instrumented_capture": "2026-11-27T22:44:38.198945+00:00",
       "capture_readiness": "captured_prospective_groups",
       "eligible_unique_first_observations": {
-        "geometry_fail_ma_fail": 1402,
-        "geometry_fail_ma_pass": 245,
+        "geometry_fail_ma_fail": 1410,
+        "geometry_fail_ma_pass": 246,
         "geometry_pass_ma_fail": 1,
         "geometry_pass_ma_pass": 1
       },
       "excluded_reasons": {
-        "invalid_anchor_values": 11,
+        "invalid_anchor_values": 12,
         "missing_matched_capture": 4375
       },
       "selection_policy": "first_complete_prospective_ma_shadow_and_asof_anchor_per_ticker",
@@ -7084,18 +7084,18 @@
       60
     ],
     "selection": {
-      "instrumented_slots_observed": 9,
-      "instrumented_evaluable_rows_observed": 3303,
-      "latest_instrumented_capture": "2026-11-27T08:38:07.951290+00:00",
+      "instrumented_slots_observed": 10,
+      "instrumented_evaluable_rows_observed": 3697,
+      "latest_instrumented_capture": "2026-11-27T22:44:38.198945+00:00",
       "capture_readiness": "captured_prospective_groups",
       "eligible_unique_first_observations": {
-        "geometry_fail_ma_fail": 306,
+        "geometry_fail_ma_fail": 311,
         "geometry_fail_ma_pass": 138,
         "geometry_pass_ma_fail": 1,
         "geometry_pass_ma_pass": 2
       },
       "excluded_reasons": {
-        "already_broken_at_first_capture": 2513
+        "already_broken_at_first_capture": 2801
       },
       "selection_policy": "first_at_risk_prospective_complete_ma_shadow_per_ticker_v2",
       "at_risk_baseline_only": true,
@@ -7119,8 +7119,8 @@
     "auto_adjust": true,
     "completed_before_utc_date": "2026-11-27",
     "benchmark": "SPY",
-    "downloaded": 171,
-    "complete_ohlcv": 167,
+    "downloaded": 172,
+    "complete_ohlcv": 168,
     "failed": {},
     "research_anchor_tickers_requested": 25,
     "research_subset_limit": 25,
