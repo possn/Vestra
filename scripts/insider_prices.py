@@ -276,7 +276,39 @@ def _download_direct_daily_returns(ticker: str) -> dict:
         data = r.json()
         result = (((data or {}).get("chart") or {}).get("result") or [None])[0] or {}
         q = (((result.get("indicators") or {}).get("quote") or [{}])[0] or {})
-        return _compact_daily_returns(q.get("close") or [])
+        # The chart endpoint must supply matching session timestamps. Do not
+        # compress missing prices into fictitious session returns.
+        from datetime import datetime, timezone
+        from zoneinfo import ZoneInfo
+        timestamps = result.get("timestamp") or []
+        closes = q.get("close") or []
+        if not timestamps or len(timestamps) != len(closes):
+            return {}
+        zone = ZoneInfo(result.get("meta", {}).get("exchangeTimezoneName") or "UTC")
+        dates = [datetime.fromtimestamp(ts, timezone.utc).astimezone(zone).date()
+                 for ts in timestamps]
+        if any(b <= a for a, b in zip(dates, dates[1:])):
+            return {}
+        age = (datetime.now(zone).date() - dates[-1]).days
+        if not 0 <= age <= 7:
+            return {}
+        out = {}
+        for periods, key in DAILY_RETURN_WINDOWS:
+            if len(closes) <= periods:
+                continue
+            window = closes[-periods - 1:]
+            days = dates[-periods - 1:]
+            if any(isinstance(v, bool) or not isinstance(v, (int, float))
+                   or not math.isfinite(v) or v <= 0 for v in window):
+                continue
+            if (days[-1] - days[0]).days > periods * 2 + 4:
+                continue
+            out[key] = round((window[-1] / window[0] - 1.0) * 100.0, 4)
+            if periods == 20:
+                out["market_return_20d_dates"] = [d.isoformat() for d in days]
+        if out:
+            out["market_return_asof_date"] = dates[-1].isoformat()
+        return out
     except Exception as exc:
         log.debug("direct daily return fallback failed for %s: %s", ticker, exc)
         return {}
