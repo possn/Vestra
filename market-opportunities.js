@@ -528,7 +528,7 @@
       // Improving fundamentals alone do not establish a current price inflection.
       // Avoid treating a decelerating decline as positive momentum.
       return coreCandidate(s)&&!overextended(s)&&tm!=null&&tm>=55&&tm<=82&&
-        !['confirmed','recovering','failed'].includes(rec)&&est!=='deteriorating'&&dir!=='down'&&
+        !['confirmed','recovering'].includes(rec)&&rec!=='failed'&&est!=='deteriorating'&&dir!=='down'&&
         p.r5!=null&&p.r5>0&&p.r20!=null&&p.accel!=null&&p.accel>0&&
         (est==='improving'||dir==='up'||p.r20>=0);
     }
