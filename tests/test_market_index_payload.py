@@ -11,6 +11,21 @@ import build_market_shards as shards
 
 
 class MarketIndexPayloadTests(unittest.TestCase):
+    def test_daily_return_lineage_survives_startup_projection(self):
+        source = {"ticker": "EARLY", "quote_type": "EQUITY",
+                  "market_return_asof_date": "2026-11-26",
+                  "market_return_5d_pct": 3.0,
+                  "market_return_20d_pct": 4.0,
+                  "market_return_60d_pct": 8.0}
+        row = shards.index_row(source)
+        for key in source:
+            self.assertEqual(row[key], source[key])
+        bad = shards.index_row(dict(source, market_return_asof_date="2026-02-30"))
+        self.assertNotIn("market_return_asof_date", bad)
+        self.assertNotIn("market_return_60d_pct", bad)
+        invalid = shards.index_row(dict(source, market_return_5d_pct=True))
+        self.assertNotIn("market_return_5d_pct", invalid)
+
     def test_detail_only_text_lists_stay_out_of_startup_index(self):
         source = {
             "ticker": "AAPL",
