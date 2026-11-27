@@ -114,7 +114,21 @@ def _timing_assessment(row):
     - improving estimates/recovery can confirm the inflection.
     """
     closes = _closes(row)
-    if len(closes) < 22:
+    history = row.get("price_history_1y") or []
+    dated = any(isinstance(x, dict) and ("date" in x or "timestamp" in x) for x in history)
+    # Production dossier histories are weekly. Only the independently fetched
+    # daily return feed may provide session-based momentum for dated rows.
+    daily = None
+    if dated or row.get("market_return_asof_date") is not None:
+        try:
+            observed = dt.date.fromisoformat(str(row.get("market_return_asof_date")))
+            if 0 <= (dt.datetime.now(dt.timezone.utc).date() - observed).days <= 7:
+                daily = tuple(_f(row.get(f"market_return_{p}d_pct")) for p in (5, 20, 60))
+                if daily[1] is None or any(v is not None and v <= -100 for v in daily):
+                    daily = None
+        except (ValueError, TypeError):
+            pass
+    if (dated and daily is None) or (daily is None and len(closes) < 22):
         return {
             "score": None,
             "label": "Dados de preço insuficientes",
@@ -128,11 +142,9 @@ def _timing_assessment(row):
             "severely_overextended": False,
         }
 
-    r5 = _ret(closes, 5)
-    r20 = _ret(closes, 20)
-    r60 = _ret(closes, 60)
-    high = max(closes)
-    dd = (closes[-1] / high - 1.0) * 100.0 if high > 0 else None
+    r5, r20, r60 = daily if daily is not None else tuple(_ret(closes, p) for p in (5, 20, 60))
+    high = max(closes) if closes else None
+    dd = (closes[-1] / high - 1.0) * 100.0 if high else None
     room = abs(dd) if dd is not None else None
 
     # Reward the start/middle of a move; penalise a parabolic move or a falling knife.
