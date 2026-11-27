@@ -172,7 +172,25 @@ def technical_evidence_shadow(bars: list[dict])->dict:
     path=sum(abs(b-a) for a,b in zip(closes20,closes20[1:]))
     efficiency=direction/path if path>0 else None
     high20=max(b["high"] for b in sample[-20:]);low20=min(b["low"] for b in sample[-20:])
+    # Disjoint volatility windows avoid diluting the prior baseline with the
+    # current compression. Volume-weighted measures use only closed sessions.
+    previous_atr=sum(true_ranges[-60:-14])/46
+    volume20=volumes[-20:]
+    complete20=all(type(v) in (int,float) and math.isfinite(v) and v>0 for v in volume20)
+    signed_volume=None
+    money_flow=None
+    if complete20:
+        total=sum(volume20)
+        signed_volume=sum(v*((b>a)-(b<a)) for a,b,v in zip(closes[-21:-1],closes[-20:],volume20))/total
+        # Flat range has no identifiable close-location pressure: do not
+        # silently classify the bar as neutral buying/selling.
+        if all(b["high"]>b["low"] for b in sample[-20:]):
+            money_flow=sum(v*(2*b["close"]-b["high"]-b["low"])/(b["high"]-b["low"])
+                           for b,v in zip(sample[-20:],volume20))/total
     return {"status":"measured","research_only":True,
+            "atr14_to_prior46":round(atr14/previous_atr,3) if previous_atr>0 else None,
+            "normalized_obv_change20":round(signed_volume,4) if signed_volume is not None else None,
+            "chaikin_money_flow20":round(money_flow,4) if money_flow is not None else None,
             "atr14_pct":round(100*atr14/closes[-1],3),
             "atr14_to_atr60":round(atr14/atr60,3) if atr60>0 else None,
             "realized_vol10_to_vol40":round(vol10/vol40,3) if vol40>0 else None,
@@ -1444,7 +1462,8 @@ def main():
         and r["technical_evidence_shadow"].get("status")=="measured"]
     feature_fields=("atr14_pct","atr14_to_atr60","realized_vol10_to_vol40",
                     "volume9_to_prior40","return20_pct","return60_pct",
-                    "efficiency20","close_position20")
+                    "efficiency20","close_position20","atr14_to_prior46",
+                    "normalized_obv_change20","chaikin_money_flow20")
     feature_audit={"scope":"current_slot_evaluable_ohlcv_including_rejected_patterns",
         "measured_rows":len(observed_features),
         "available_by_metric":{key:sum(type(f.get(key)) in (int,float)
