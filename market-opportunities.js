@@ -309,7 +309,11 @@
       return v!=null&&v> -100?v:null;
     };
     const r5=daily(5),r20=daily(20),r60=daily(60),room=hi&&cur?(1-cur/hi)*100:null;
-    const accel=(r5!=null&&r20!=null)?r5-(r20/4):null;
+    // Compare disjoint windows: latest five sessions versus the preceding
+    // fifteen, compounded to an equivalent five-session return.
+    const prior5=r5!=null&&r20!=null&&r5> -100&&r20> -100
+      ? (Math.pow((1+r20/100)/(1+r5/100),1/3)-1)*100:null;
+    const accel=prior5!=null?r5-prior5:null;
     return {r5,r20,r60,room,accel};
   }
   // Technical-only setup engine; never infer a future move from a score.
@@ -519,7 +523,15 @@
     // The other strategy lenses remain views over canonical Discovery eligibility.
     if(!discoveryEligible(s))return false;
     const p=stats(s),rec=t(s?.recovery_status),est=t(s?.estimate_signal),dir=t(s?.thesis_direction),val=t(s?.valuation_signal);
-    if(lens==='emerging')return coreCandidate(s)&&!overextended(s)&&timing(s)>=55&&timing(s)<=82&&confirmed(s)>=1&&!['confirmed','recovering'].includes(rec)&&(est==='improving'||dir==='up'||(p.accel!=null&&p.accel>0));
+    if(lens==='emerging'){
+      const tm=timing(s);
+      // Improving fundamentals alone do not establish a current price inflection.
+      // Avoid treating a decelerating decline as positive momentum.
+      return coreCandidate(s)&&!overextended(s)&&tm!=null&&tm>=55&&tm<=82&&
+        !['confirmed','recovering'].includes(rec)&&rec!=='failed'&&est!=='deteriorating'&&dir!=='down'&&
+        p.r5!=null&&p.r5>0&&p.r20!=null&&p.accel!=null&&p.accel>0&&
+        (est==='improving'||dir==='up'||p.r20>=0);
+    }
     if(lens==='recovery')return coreCandidate(s)&&!overextended(s)&&timing(s)>=45&&['confirmed','recovering'].includes(rec);
     if(lens==='value'){
       const fv=n(s?.fair_value_upside_pct),support=fallbackUpsideSupport(s);
