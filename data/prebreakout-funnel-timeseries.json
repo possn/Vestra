@@ -1,26 +1,28 @@
 {
- "attempted_total": 17075,
+ "attempted_total": 17475,
  "first_rejection_share_of_attempted": {
-  "base_width": 0.1143,
-  "inconsistent_ohlc": 0.0127,
-  "insufficient_daily_sessions": 0.0439,
-  "invalid_ohlcv_or_date": 0.164,
-  "local_liquidity_or_base_position": 0.0008,
-  "moving_average_structure": 0.6453,
+  "base_width": 0.1151,
+  "inconsistent_ohlc": 0.0124,
+  "insufficient_daily_sessions": 0.0431,
+  "invalid_ohlcv_or_date": 0.1603,
+  "local_liquidity_or_base_position": 0.0009,
+  "moving_average_structure": 0.6494,
   "passed_structural_gates": 0.0004,
   "prior_impulse_continuation": 0.0006,
-  "sequential_vcp_contractions": 0.018
+  "sequential_vcp_contractions": 0.0178,
+  "stale_or_future_daily_session": 0.0001
  },
  "first_rejection_totals": {
-  "base_width": 1951,
-  "inconsistent_ohlc": 216,
-  "insufficient_daily_sessions": 749,
+  "base_width": 2011,
+  "inconsistent_ohlc": 217,
+  "insufficient_daily_sessions": 753,
   "invalid_ohlcv_or_date": 2801,
-  "local_liquidity_or_base_position": 14,
-  "moving_average_structure": 11019,
+  "local_liquidity_or_base_position": 15,
+  "moving_average_structure": 11348,
   "passed_structural_gates": 7,
   "prior_impulse_continuation": 11,
-  "sequential_vcp_contractions": 307
+  "sequential_vcp_contractions": 311,
+  "stale_or_future_daily_session": 1
  },
  "note": "Descriptive only. A high rejection share is not evidence a gate is too strict; see prebreakout-paired-gate-audit / negative-controls for forward outcomes.",
  "rows": [
@@ -679,8 +681,22 @@
     "sequential_vcp_contractions": 4
    },
    "generated_at": "2026-11-27T08:38:07.951290+00:00"
+  },
+  {
+   "attempted": 400,
+   "file": "2026-11-27-slot3.json",
+   "first_rejection_counts": {
+    "base_width": 60,
+    "inconsistent_ohlc": 1,
+    "insufficient_daily_sessions": 4,
+    "local_liquidity_or_base_position": 1,
+    "moving_average_structure": 329,
+    "sequential_vcp_contractions": 4,
+    "stale_or_future_daily_session": 1
+   },
+   "generated_at": "2026-11-27T22:44:38.198945+00:00"
   }
  ],
  "schema": "vestra_prebreakout_funnel_timeseries_v1",
- "slots": 52
+ "slots": 53
 }
