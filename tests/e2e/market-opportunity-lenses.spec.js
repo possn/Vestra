@@ -41,7 +41,7 @@ test('iPhone/WebKit: each opportunity lens ranks canonical Discovery independent
     document.querySelector('#viewMarket').prepend(fixture);
     window.VestraMarketOpportunityLenses.select('all');
   }, [
-    candidate('EARLY', { estimate_signal: 'improving', recovery_status: '', thesis_direction: 'up', opportunity_timing_score: 68 }),
+    candidate('EARLY', { market_return_asof_date: new Date().toISOString().slice(0,10), market_return_5d_pct: 3, market_return_20d_pct: 4, estimate_signal: 'improving', recovery_status: '', thesis_direction: 'up', opportunity_timing_score: 68 }),
     candidate('RECOV', { estimate_signal: 'improving', recovery_status: 'confirmed', opportunity_timing_score: 66 }),
     candidate('ESTONLY', { estimate_signal: 'improving', thesis_direction: 'up', recovery_status: 'unconfirmed', opportunity_timing_score: 67 }),
     candidate('FAILREC', { estimate_signal: 'improving', thesis_direction: 'up', recovery_status: 'failed', opportunity_timing_score: 67 }),
@@ -94,6 +94,8 @@ test('iPhone/WebKit: each opportunity lens ranks canonical Discovery independent
   expect(low52).toEqual(['LOW52']);
   const emerging = await select('emerging', 'EARLY');
   expect(emerging).toContain('EARLY');
+  expect(emerging).not.toContain('ESTONLY');
+  expect(emerging).not.toContain('FAILREC');
   // Same ticker and same Discovery score, but changed evidence: the old
   // ticker:rounded-score signature left stale thesis text on screen.
   await expect(fixture.locator('[data-market-ticker="EARLY"] .ux453-thesis')).toContainText('estimativas ↑');
@@ -178,9 +180,9 @@ test('iPhone/WebKit: More sectors defers canonical rerender until the native pic
     });
     window.VestraMarketOpportunityLenses.select('emerging');
   }, [
-    candidate('ENERGY1', { sector: 'Energy', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 72 }),
-    candidate('COMM1', { sector: 'Communication Services', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 71 }),
-    candidate('TECH1', { sector: 'Technology', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 70 }),
+    candidate('ENERGY1', { market_return_asof_date: new Date().toISOString().slice(0,10), market_return_5d_pct: 3, market_return_20d_pct: 4, sector: 'Energy', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 72 }),
+    candidate('COMM1', { market_return_asof_date: new Date().toISOString().slice(0,10), market_return_5d_pct: 3, market_return_20d_pct: 4, sector: 'Communication Services', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 71 }),
+    candidate('TECH1', { market_return_asof_date: new Date().toISOString().slice(0,10), market_return_5d_pct: 3, market_return_20d_pct: 4, sector: 'Technology', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 70 }),
   ]);
 
   const fixture = page.locator('#moreSectorFixture');

@@ -30,6 +30,68 @@ class Provider:
         return FakeFrame()
 
 class ResearchCollectorTests(unittest.TestCase):
+    def test_batch_symbol_isolation_without_optional_dependencies(self):
+        class Columns:
+            nlevels=2
+            def get_level_values(self, level):
+                return ["A"]
+        class Part(FakeFrame):
+            index=[0,249]
+            @property
+            def loc(self):
+                return self
+            def __getitem__(self, selection):
+                return self
+            def dropna(self, **kwargs):
+                return self
+        class Batch:
+            columns=Columns()
+            def __getitem__(self, ticker):
+                if ticker!="A":
+                    raise KeyError(ticker)
+                return Part()
+        class BatchProvider(Provider):
+            def download(self,ticker,**kwargs):
+                if isinstance(ticker,list):
+                    self.calls.append(("batch",tuple(ticker)))
+                    return Batch()
+                self.calls.append(("download",ticker))
+                return FakeFrame() if ticker=="SPY" else None
+        provider=BatchProvider()
+        rows=[{"ticker":x,"market_cap":200e6,"quote_type":"EQUITY"} for x in ("A","B")]
+        report=mod.collect(rows,provider,slot=0,budget=2,
+                           checked_at=datetime(2026,7,12,tzinfo=timezone.utc),batch_prices=True)
+        observed={r["ticker"]:r for r in report["observations"]}
+        self.assertEqual(observed["A"]["status"],"evaluable_ohlcv")
+        self.assertEqual(observed["B"]["status"],"no_ohlcv")
+        self.assertIn(("download","B"),provider.calls)
+        self.assertNotIn(("download","A"),provider.calls)
+
+    def test_batch_missing_symbol_falls_back_without_borrowing_peer_prices(self):
+        try:
+            import pandas as pd
+        except ImportError:
+            self.skipTest("Real DataFrame integration requires optional pandas; dependency-free batch contract still runs")
+        from datetime import timedelta
+        now=datetime(2026,7,12,tzinfo=timezone.utc)
+        days=pd.date_range("2025-11-01",periods=250,tz="UTC")
+        frame=pd.DataFrame({"Open":10.0,"High":11.0,"Low":9.0,"Close":10.0,"Volume":600000.0},index=days)
+        class BatchProvider(Provider):
+            def download(self,ticker,**kwargs):
+                if isinstance(ticker,list):
+                    self.calls.append(("batch",tuple(ticker)))
+                    return pd.concat({"A":frame},axis=1)
+                self.calls.append(("download",ticker))
+                return frame if ticker=="SPY" else None
+        provider=BatchProvider()
+        rows=[{"ticker":x,"market_cap":200e6,"quote_type":"EQUITY"} for x in ("A","B")]
+        report=mod.collect(rows,provider,slot=0,budget=2,checked_at=now,batch_prices=True)
+        observed={r["ticker"]:r for r in report["observations"]}
+        self.assertEqual(observed["A"]["status"],"evaluable_ohlcv")
+        self.assertEqual(observed["B"]["status"],"no_ohlcv")
+        self.assertIn(("download","B"),provider.calls)
+        self.assertNotIn(("download","A"),provider.calls)
+
     def test_relative_strength_requires_exact_completed_session_alignment(self):
         from datetime import timedelta
         start=datetime(2026,9,1,tzinfo=timezone.utc)
@@ -288,16 +350,16 @@ class ResearchCollectorTests(unittest.TestCase):
 
     def test_workflow_default_budget_matches_bounded_collector_capacity(self):
         workflow=(ROOT/".github/workflows/smallcap-prebreakout-research.yml").read_text(encoding="utf-8")
-        self.assertEqual(mod.MAX_PER_RUN,40)
-        self.assertIn("default: '40'",workflow)
-        self.assertIn("github.event.inputs.budget || '40'",workflow)
+        self.assertEqual(mod.MAX_PER_RUN,64)
+        self.assertIn("default: '64'",workflow)
+        self.assertIn("github.event.inputs.budget || '64'",workflow)
 
     def test_weekend_slots_preserve_bounded_budget_and_rolling_coverage(self):
         # A Friday-close daily history remains observable on the weekend;
-        # All slots use the 40-name budget; this is capacity, not coverage.
+        # All slots use the 64-name budget; this is capacity, not coverage.
         workflow=(ROOT/".github/workflows/smallcap-prebreakout-research.yml").read_text(encoding="utf-8")
         self.assertIn("cron: '23 0,4,8,12,16,20 * * *'",workflow)
-        self.assertIn('MAX_PER_RUN=40', (ROOT/"research/prebreakout/smallcap_ohlcv_collector.py").read_text())
+        self.assertIn('MAX_PER_RUN=64', (ROOT/"research/prebreakout/smallcap_ohlcv_collector.py").read_text())
         self.assertIn("--budget \"$BUDGET\"",workflow)
 
     def test_redundant_market_triggers_skip_fresh_collection(self):
@@ -771,6 +833,6 @@ class ResearchCollectorTests(unittest.TestCase):
             mod.merge_slots(bad,previous,now,eligible_tickers={"A","B"})
 
     def test_rejects_invalid_limits(self):
-        for slot,budget in ((-1,1),(0,0),(0,41)):
+        for slot,budget in ((-1,1),(0,0),(0,65)):
             with self.assertRaises(ValueError):mod.collect([],Provider(),slot,budget)
 if __name__=="__main__":unittest.main()

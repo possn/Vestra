@@ -53,7 +53,11 @@ class SmallcapPublishWindowTests(unittest.TestCase):
         budget=int(match.group(1))
         # Six runs/day, four days. This is theoretical capacity only.
         self.assertGreaterEqual(budget*24,480)
-        self.assertLessEqual(budget,40)
+        collector=(ROOT/"research/prebreakout/smallcap_ohlcv_collector.py").read_text()
+        ceiling=re.search(r"^MAX_PER_RUN=(\d+)$",collector,re.M)
+        self.assertIsNotNone(ceiling)
+        self.assertLessEqual(budget,int(ceiling.group(1)))
+        self.assertLessEqual(int(ceiling.group(1)),64)
         self.assertIn("n.toordinal()*6+n.hour//4",workflow)
         self.assertIn("github.event.inputs.budget || '"+str(budget)+"'",workflow)
         # This is only a theoretical capacity bound, not real OHLCV coverage.
