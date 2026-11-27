@@ -30,8 +30,48 @@ class Provider:
         return FakeFrame()
 
 class ResearchCollectorTests(unittest.TestCase):
+    def test_batch_symbol_isolation_without_optional_dependencies(self):
+        class Columns:
+            nlevels=2
+            def get_level_values(self, level):
+                return ["A"]
+        class Part(FakeFrame):
+            index=[0,249]
+            @property
+            def loc(self):
+                return self
+            def __getitem__(self, selection):
+                return self
+            def dropna(self, **kwargs):
+                return self
+        class Batch:
+            columns=Columns()
+            def __getitem__(self, ticker):
+                if ticker!="A":
+                    raise KeyError(ticker)
+                return Part()
+        class BatchProvider(Provider):
+            def download(self,ticker,**kwargs):
+                if isinstance(ticker,list):
+                    self.calls.append(("batch",tuple(ticker)))
+                    return Batch()
+                self.calls.append(("download",ticker))
+                return FakeFrame() if ticker=="SPY" else None
+        provider=BatchProvider()
+        rows=[{"ticker":x,"market_cap":200e6,"quote_type":"EQUITY"} for x in ("A","B")]
+        report=mod.collect(rows,provider,slot=0,budget=2,
+                           checked_at=datetime(2026,7,12,tzinfo=timezone.utc),batch_prices=True)
+        observed={r["ticker"]:r for r in report["observations"]}
+        self.assertEqual(observed["A"]["status"],"evaluable_ohlcv")
+        self.assertEqual(observed["B"]["status"],"no_ohlcv")
+        self.assertIn(("download","B"),provider.calls)
+        self.assertNotIn(("download","A"),provider.calls)
+
     def test_batch_missing_symbol_falls_back_without_borrowing_peer_prices(self):
-        import pandas as pd
+        try:
+            import pandas as pd
+        except ImportError:
+            self.skipTest("Real DataFrame integration requires optional pandas; dependency-free batch contract still runs")
         from datetime import timedelta
         now=datetime(2026,7,12,tzinfo=timezone.utc)
         days=pd.date_range("2025-11-01",periods=250,tz="UTC")
