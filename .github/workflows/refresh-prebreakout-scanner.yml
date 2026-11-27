@@ -16,6 +16,7 @@ on:
     paths:
       - 'scripts/refresh_prebreakout_scanner.py'
       - 'scripts/check_prebreakout_publication.py'
+      - 'scripts/prebreakout_funnel_timeseries.py'
       - '.github/workflows/refresh-prebreakout-scanner.yml'
 
 permissions:
@@ -83,7 +84,8 @@ jobs:
           python scripts/check_prebreakout_transitions.py
           python scripts/check_prebreakout_publication.py
           python scripts/prebreakout_paired_gate_audit.py
-          git add data/prebreakout-signals.json data/prebreakout-paired-gate-audit.json data/prebreakout-history/ data/prebreakout-observations.json data/prebreakout-transitions.json data/opportunity-pit-history/
+          python scripts/prebreakout_funnel_timeseries.py
+          git add data/prebreakout-funnel-timeseries.json data/prebreakout-signals.json data/prebreakout-paired-gate-audit.json data/prebreakout-history/ data/prebreakout-observations.json data/prebreakout-transitions.json data/opportunity-pit-history/
           if ! git diff --cached --quiet; then
             git commit -m "Actualização de setups pré-breakout verificados"
             bash scripts/publish_with_retry.sh origin main
