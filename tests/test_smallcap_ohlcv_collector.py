@@ -30,6 +30,28 @@ class Provider:
         return FakeFrame()
 
 class ResearchCollectorTests(unittest.TestCase):
+    def test_batch_missing_symbol_falls_back_without_borrowing_peer_prices(self):
+        import pandas as pd
+        from datetime import timedelta
+        now=datetime(2026,7,12,tzinfo=timezone.utc)
+        days=pd.date_range("2025-11-01",periods=250,tz="UTC")
+        frame=pd.DataFrame({"Open":10.0,"High":11.0,"Low":9.0,"Close":10.0,"Volume":600000.0},index=days)
+        class BatchProvider(Provider):
+            def download(self,ticker,**kwargs):
+                if isinstance(ticker,list):
+                    self.calls.append(("batch",tuple(ticker)))
+                    return pd.concat({"A":frame},axis=1)
+                self.calls.append(("download",ticker))
+                return frame if ticker=="SPY" else None
+        provider=BatchProvider()
+        rows=[{"ticker":x,"market_cap":200e6,"quote_type":"EQUITY"} for x in ("A","B")]
+        report=mod.collect(rows,provider,slot=0,budget=2,checked_at=now,batch_prices=True)
+        observed={r["ticker"]:r for r in report["observations"]}
+        self.assertEqual(observed["A"]["status"],"evaluable_ohlcv")
+        self.assertEqual(observed["B"]["status"],"no_ohlcv")
+        self.assertIn(("download","B"),provider.calls)
+        self.assertNotIn(("download","A"),provider.calls)
+
     def test_relative_strength_requires_exact_completed_session_alignment(self):
         from datetime import timedelta
         start=datetime(2026,9,1,tzinfo=timezone.utc)
