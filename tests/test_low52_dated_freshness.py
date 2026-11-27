@@ -73,5 +73,13 @@ class DatedLow52IntegrityTests(unittest.TestCase):
         self.assertEqual(result["low52_price_low"], 100)
 
 
+    def test_weekly_extreme_older_than_year_is_excluded(self):
+        end = datetime.now(timezone.utc).date()
+        dates = [end-timedelta(days=7*(53-i)) for i in range(54)]
+        row = quality_history(dates)
+        row["price_history_1y"][0]["close"] = 1
+        result = assess(row)
+        self.assertEqual(result["low52_price_low"], 100)
+
 if __name__ == "__main__":
     unittest.main()

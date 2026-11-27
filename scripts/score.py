@@ -123,7 +123,7 @@ class ScoredTicker:
     score_model_note: str | None = None
     score_dimensions: dict[str, float | None] | None = None
     risk_flags: list[str] | None = None
-    risk_gate: str = "clear"
+    risk_gate: str = "unknown"
     score_cap: float | None = None
 
     # bank-native statement-derived proxies
@@ -723,9 +723,19 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
         for flag in capital_flags:
             if flag not in risk_flags:
                 risk_flags.append(flag)
-        capital_gate = str(getattr(r, "capital_structure_risk", "clear") or "clear")
+        capital_gate = str(getattr(r, "capital_structure_risk", None) or "unknown")
 
-        risk_gate = "clear"
+        # Missing filing/debt-service evidence is not evidence of safety.
+        # Preserve explicit adverse flags and caps even with incomplete data.
+        risk_evidence_complete = (
+            capital_gate == "clear"
+            and (model in ("bank", "insurance") or zombie_state == "clear")
+            and quality is not None
+            and r.revenue_growth is not None
+            and r.diluted_shares_yoy is not None
+            and (model in ("bank", "insurance") or fcf_yield is not None)
+        )
+        risk_gate = "clear" if risk_evidence_complete else "unknown"
         score_cap = None
         severe = any(x in risk_flags for x in ("zombie_interest_coverage", "severe_dilution"))
         if severe:

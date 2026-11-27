@@ -75,5 +75,11 @@ class RecoveryIntegrityTests(unittest.TestCase):
             self.assertEqual(recovery.assess(equity([100] * 65, quote_type=quote_type)), {})
 
 
+    def test_long_sparse_dated_history_is_not_daily(self):
+        end = datetime.now(timezone.utc).date()
+        history = [{"date": (end-timedelta(days=7*(64-i))).isoformat(),
+                    "close": 100+i} for i in range(65)]
+        self.assertEqual(recovery.assess(equity(history))["recovery_status"], "insufficient")
+
 if __name__ == "__main__":
     unittest.main()

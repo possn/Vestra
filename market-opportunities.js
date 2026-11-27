@@ -48,7 +48,7 @@
         const ageDays=(Date.now()-Date.parse(String(row?.date||'')+'T23:59:59Z'))/86400000;
         if(row?.source!=='yahoo:smallcap_daily_ohlcv'||row?.currencyVerified!=='USD'||
            !['pré-breakout','compressão'].includes(row?.stage)||
-           !(cap>=100000000&&cap<500000000)||
+           !(cap>=100000000&&cap<=2000000000)||
            !(distance>=0&&distance<=8)||!(ageDays>=-1&&ageDays<=7)||
            row?.vcpConfirmed!==true||!(n(row?.score)>=0))continue;
         found.set(t(row.ticker).toUpperCase(),row);

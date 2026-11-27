@@ -131,7 +131,8 @@ def technical_evidence_audit(observations):
               and row["technical_evidence_shadow"].get("status")=="measured"]
     metrics=("atr14_pct","atr14_to_atr60","realized_vol10_to_vol40",
              "volume9_to_prior40","return20_pct","return60_pct",
-             "efficiency20","close_position20")
+             "efficiency20","close_position20","atr14_to_prior46",
+             "normalized_obv_change20","chaikin_money_flow20")
     available={key:sum(type(r.get(key)) in (int,float) and math.isfinite(r[key])
                        for r in measured) for key in metrics}
     return {"scope":"liquid_evaluable_series_independent_of_first_rejection",

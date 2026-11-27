@@ -5,7 +5,7 @@ from datetime import date, datetime, timezone
 
 def _n(v):
     try:
-        if v is None or isinstance(v, bool) or v == '': return None
+        if v is None or isinstance(v, bool) or (type(v).__module__.startswith('numpy') and type(v).__name__ in ('bool', 'bool_')) or v == '': return None
         x=float(v); return x if math.isfinite(x) else None
     except Exception: return None
 
@@ -56,7 +56,12 @@ def assess(row):
     weekly=(45<=len(c)<=54 and len(dates)==len(c)
             and (dates[-1]-dates[0]).days>=300
             and all(4<=(b-a).days<=11 for a,b in zip(dates,dates[1:])))
-    if len(c)>=61:
+    # A long dated series is not necessarily daily: reject sparse recent windows.
+    daily = len(c)>=61 and (not dates or (
+        (dates[-1]-dates[-61]).days <= 100
+        and (dates[-1]-dates[-21]).days <= 35
+        and all(1 <= (b-a).days <= 7 for a,b in zip(dates[-61:],dates[-60:]))))
+    if daily:
         basis='daily_sessions_20_60'
         r20=_ret(c,20);r60=_ret(c,60)
     elif weekly:

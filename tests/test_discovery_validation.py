@@ -82,5 +82,17 @@ class DiscoveryValidationTests(unittest.TestCase):
         self.assertEqual(result["status"], "insufficient_history")
 
 
+    def test_mismatched_outcome_dates_are_rejected(self):
+        rows = self.example()
+        rows[0]["outcome_asof"] = "2026-04-29"
+        with self.assertRaisesRegex(ValueError, "outcome date"):
+            evaluate(rows)
+
+    def test_future_outcome_is_rejected(self):
+        rows = self.example()
+        rows[0]["outcome_asof"] = "2999-01-01"
+        with self.assertRaisesRegex(ValueError, "point-in-time"):
+            evaluate(rows)
+
 if __name__ == "__main__":
     unittest.main()
