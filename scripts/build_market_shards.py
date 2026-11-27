@@ -422,6 +422,26 @@ def index_row(row: dict, fund_history: dict | None = None, as_of: str = "") -> d
             out["market_return_5d_pct"] = round(r5, 4)
         if r20 is not None:
             out["market_return_20d_pct"] = round(r20, 4)
+        # Opportunity lenses run against the compact index, not hydrated dossiers.
+        # Preserve the actual provider observation date; never substitute the
+        # index build date for an absent return timestamp.
+        from datetime import date
+        asof = row.get("market_return_asof_date")
+        try:
+            valid_asof = isinstance(asof, str) and date.fromisoformat(asof).isoformat() == asof
+        except ValueError:
+            valid_asof = False
+        if valid_asof:
+            out["market_return_asof_date"] = asof
+            raw60 = row.get("market_return_60d_pct")
+            r60 = _finite_number(raw60) if not isinstance(raw60, bool) else None
+            if r60 is not None and r60 > -100:
+                out["market_return_60d_pct"] = round(r60, 4)
+            # Avoid turning boolean returns into valid dated momentum.
+            for key in ("market_return_5d_pct", "market_return_20d_pct"):
+                if isinstance(row.get(key), bool) or (key in out and out[key] <= -100):
+                    out.pop(key, None)
+
 
     # Funds need concentration before dossier hydration, but the complete holdings
     # list remains in the lazy dossier. Keep only the top-10 aggregate in startup.
