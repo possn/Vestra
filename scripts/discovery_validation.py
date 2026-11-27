@@ -35,6 +35,8 @@ def _date(value):
 
 
 def _number(value):
+    if isinstance(value, bool):
+        raise ValueError("Boolean is not a numeric observation")
     result = float(value)
     if not math.isfinite(result):
         raise ValueError("Non-finite number")
@@ -89,7 +91,7 @@ def evaluate(rows, *, min_cohort=4, min_dates=2):
             benchmark = _number(row["benchmark_total_return_pct"])
         except (TypeError, ValueError) as exc:
             raise ValueError(f"Row {position}: malformed date/number: {exc}") from exc
-        if not (signal <= snap < outcome):
+        if not (signal <= snap < outcome <= dt.datetime.now(dt.timezone.utc).date()):
             raise ValueError(f"Row {position}: point-in-time violation: signal <= snapshot < outcome required")
         if horizon not in ALLOWED_HORIZONS:
             raise ValueError(f"Row {position}: unsupported trading-session horizon")
@@ -113,6 +115,8 @@ def evaluate(rows, *, min_cohort=4, min_dates=2):
         if len(group) < min_cohort:
             discarded[horizon] += 1
             continue
+        if len({item[4] for item in group}) != 1:
+            raise ValueError(f"{date}/{horizon}: outcome date must be identical across cohort")
         benchmarks = [item[3] for item in group]
         if max(benchmarks) - min(benchmarks) > 1e-6:
             raise ValueError(f"{date}/{horizon}: benchmark must be identical across cohort")
