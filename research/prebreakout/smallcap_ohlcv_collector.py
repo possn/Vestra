@@ -366,6 +366,8 @@ def inspect(ticker,frame,currency,checked_at,*,spy_closes=None):
                 if turnover>=1_000_000 else None,
             "technical_swing_geometry_shadow":technical_audit.get("swing_geometry_shadow")
                 if turnover>=1_000_000 else None,
+            "technical_prebreakout_lineage":technical_audit.get("research_prebreakout_lineage"),
+            "technical_base_anchor":technical_audit.get("asof_base_price_anchor"),
             "technical_evidence_shadow":technical_audit.get("technical_evidence_shadow")
                 if turnover>=1_000_000 else None,
             "technical_failed_ma_checks":technical_audit.get("moving_average_failed_checks",[])
@@ -702,6 +704,9 @@ def main():
     from research.prebreakout.smallcap_watch_forward import reconcile
     fresh_histories=result.pop("__fresh_histories",{})
     spy_closes=result.pop("__spy_closes",{})
+    from research.prebreakout.smallcap_accumulation_forward import reconcile_accumulation
+    result.update(reconcile_accumulation(previous,result,fresh_histories,spy_closes,
+                            datetime.fromisoformat(result["generated_at"])))
     result.update(reconcile(previous,result,fresh_histories,spy_closes,
                             datetime.fromisoformat(result["generated_at"])))
     args.output.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
