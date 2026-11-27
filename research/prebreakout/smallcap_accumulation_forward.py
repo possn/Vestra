@@ -3,7 +3,7 @@ from datetime import date, timedelta
 import math
 from research.prebreakout.smallcap_watch_forward import _outcome, _finite_positive, HORIZONS
 
-POLICY="accumulation_v1"
+POLICY="accumulation_v2"
 def _num(v):
     return type(v) in (int,float) and math.isfinite(v)
 
@@ -23,6 +23,12 @@ def candidate(row, now):
     if not 0<age<=7 or a.get("session")!=row["last_session"]:
         return False
     if g.get("unbroken_prebreakout_position") is not True or g.get("prior_confirmed_breakouts_in_base")!=0:
+        return False
+    impulse=g.get("prebase_impulse_pct")
+    if (g.get("prebase_volume_lineage_complete") is not True
+            or type(g.get("prior_confirmed_breakouts_before_base")) is not int
+            or g["prior_confirmed_breakouts_before_base"]!=0
+            or not _num(impulse) or impulse>=25):
         return False
     # Independent accumulation hypothesis: no MA requirement, but no
     # observed pivot crossing. Thresholds are exploratory, fixed at capture.
@@ -89,4 +95,4 @@ def reconcile_accumulation(previous,current,fresh_histories,spy_history,now):
             "accumulation_audit":{"policy":POLICY,"matched_tickers":sorted(set(matched)),
             "episodes":len(ordered),"matured_by_horizon":{str(h):sum(str(h) in e["outcomes"] for e in ordered) for h in HORIZONS},
             "research_only_not_signal":True,"no_predictive_validation":True,
-            "prior_breakouts_outside_current_base_not_assessed":True}}
+            "prebase_lineage_required":True}}
