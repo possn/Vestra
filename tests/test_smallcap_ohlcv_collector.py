@@ -288,16 +288,16 @@ class ResearchCollectorTests(unittest.TestCase):
 
     def test_workflow_default_budget_matches_bounded_collector_capacity(self):
         workflow=(ROOT/".github/workflows/smallcap-prebreakout-research.yml").read_text(encoding="utf-8")
-        self.assertEqual(mod.MAX_PER_RUN,40)
-        self.assertIn("default: '40'",workflow)
-        self.assertIn("github.event.inputs.budget || '40'",workflow)
+        self.assertEqual(mod.MAX_PER_RUN,64)
+        self.assertIn("default: '64'",workflow)
+        self.assertIn("github.event.inputs.budget || '64'",workflow)
 
     def test_weekend_slots_preserve_bounded_budget_and_rolling_coverage(self):
         # A Friday-close daily history remains observable on the weekend;
-        # All slots use the 40-name budget; this is capacity, not coverage.
+        # All slots use the 64-name budget; this is capacity, not coverage.
         workflow=(ROOT/".github/workflows/smallcap-prebreakout-research.yml").read_text(encoding="utf-8")
         self.assertIn("cron: '23 0,4,8,12,16,20 * * *'",workflow)
-        self.assertIn('MAX_PER_RUN=40', (ROOT/"research/prebreakout/smallcap_ohlcv_collector.py").read_text())
+        self.assertIn('MAX_PER_RUN=64', (ROOT/"research/prebreakout/smallcap_ohlcv_collector.py").read_text())
         self.assertIn("--budget \"$BUDGET\"",workflow)
 
     def test_redundant_market_triggers_skip_fresh_collection(self):
@@ -771,6 +771,6 @@ class ResearchCollectorTests(unittest.TestCase):
             mod.merge_slots(bad,previous,now,eligible_tickers={"A","B"})
 
     def test_rejects_invalid_limits(self):
-        for slot,budget in ((-1,1),(0,0),(0,41)):
+        for slot,budget in ((-1,1),(0,0),(0,65)):
             with self.assertRaises(ValueError):mod.collect([],Provider(),slot,budget)
 if __name__=="__main__":unittest.main()
