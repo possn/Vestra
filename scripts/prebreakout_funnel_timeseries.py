@@ -12,10 +12,15 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def build(history_glob=None):
-    pattern = history_glob or os.path.join(ROOT, "data", "prebreakout-history", "*", "*.json")
+    # Slot archives supersede the legacy daily snapshot for the same UTC slot.
+    if history_glob is None:
+        base = os.path.join(ROOT, "data", "prebreakout-history")
+        paths = sorted(glob.glob(os.path.join(base, "*", "slots", "*.json")))
+    else:
+        paths = sorted(glob.glob(history_glob))
     rows, total = [], Counter()
     attempted_total = 0
-    for path in sorted(glob.glob(pattern)):
+    for path in paths:
         try:
             with open(path, encoding="utf-8") as fh:
                 d = json.load(fh)
@@ -23,9 +28,9 @@ def build(history_glob=None):
             continue
         counts = (d.get("gate_funnel") or {}).get("first_rejection_counts")
         attempted = d.get("attempted")
-        if not isinstance(counts, dict) or not isinstance(attempted, int) or attempted <= 0:
+        if not isinstance(counts, dict) or type(attempted) is not int or attempted <= 0:
             continue
-        counts = {k: int(v) for k, v in counts.items() if isinstance(v, int)}
+        counts = {k: int(v) for k, v in counts.items() if type(v) is int and v >= 0}
         rows.append({"file": os.path.basename(path), "generated_at": d.get("generated_at"),
                      "attempted": attempted, "first_rejection_counts": counts})
         total.update(counts)
