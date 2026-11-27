@@ -298,7 +298,17 @@
     const c=values.every(x=>x!=null&&x>0)?values:[];
     const ret=d=>c.length>d?(c.at(-1)/c[c.length-d-1]-1)*100:null;
     const hi=c.length?Math.max(...c):null,cur=c.at(-1)||null;
-    const r5=ret(5),r20=ret(20),r60=ret(60),room=hi&&cur?(1-cur/hi)*100:null;
+    const dated=history.some(x=>x&&typeof x==='object'&&('date' in x||'timestamp' in x));
+    const asof=t(s?.market_return_asof_date);
+    const age=(Date.now()-Date.parse(asof+'T00:00:00Z'))/86400000;
+    const daily=d=>{
+      if(!dated&&!asof)return ret(d);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(asof)||!Number.isFinite(age)||age<0||age>=8)return null;
+      const raw=s?.['market_return_'+d+'d_pct'];
+      const v=typeof raw==='boolean'?null:n(raw);
+      return v!=null&&v> -100?v:null;
+    };
+    const r5=daily(5),r20=daily(20),r60=daily(60),room=hi&&cur?(1-cur/hi)*100:null;
     const accel=(r5!=null&&r20!=null)?r5-(r20/4):null;
     return {r5,r20,r60,room,accel};
   }
