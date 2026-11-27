@@ -12,6 +12,8 @@ import datetime as _dt
 
 def _n(v):
     try:
+        if isinstance(v, bool) or (type(v).__module__.startswith('numpy') and type(v).__name__ in ('bool', 'bool_')):
+            return None
         x = float(v)
         return x if x == x and abs(x) != float("inf") else None
     except (TypeError, ValueError):
@@ -49,7 +51,9 @@ def _freshness_score(row: dict, today=None):
     d = _latest_statement_date(row)
     if not d:
         return 50.0, None
-    age = max(0, (today - d).days)
+    age = (today - d).days
+    if age < 0:
+        return 0.0, age
     if age <= 120: score = 100.0
     elif age <= 180: score = 90.0
     elif age <= 270: score = 78.0
@@ -84,7 +88,7 @@ def _fundamental_source_context(row: dict):
     """
     provenance = row.get("data_provenance") if isinstance(row.get("data_provenance"), dict) else {}
     independent = provenance.get("independent_fundamental_source_count")
-    if isinstance(independent, int) and independent >= 0:
+    if type(independent) is int and independent >= 0:
         count = independent
     else:
         sources = {str(x) for x in (row.get("data_sources") or [])}
@@ -260,7 +264,9 @@ def assess(row: dict) -> dict:
         score = min(score, 54.0)
     elif agreement is not None and checks >= 2 and agreement < 70:
         score = min(score, 69.0)
-    if age_days is not None and age_days > 540:
+    if age_days is not None and age_days < 0:
+        score = min(score, 49.0)
+    elif age_days is not None and age_days > 540:
         score = min(score, 49.0)
     elif age_days is not None and age_days > 365:
         score = min(score, 64.0)
@@ -279,7 +285,8 @@ def assess(row: dict) -> dict:
     elif evidence_state == "metadata_only":
         reasons.append("Apenas metadados disponíveis neste snapshot")
     if age_days is not None:
-        if age_days <= 180: reasons.append("Contas recentes")
+        if age_days < 0: reasons.append("Data de contas futura ou inválida")
+        elif age_days <= 180: reasons.append("Contas recentes")
         elif age_days > 365: reasons.append("Contas desatualizadas")
     if agreement is not None and checks >= 2:
         if agreement >= 85: reasons.append("Fontes independentes concordam")
@@ -298,7 +305,11 @@ def assess(row: dict) -> dict:
 
     # Hard evidence gate. A sparse dossier is a research candidate, not a strong
     # quantitative opportunity. Keep the raw score for audit, suppress the public one.
-    if coverage_score < 50 or critical_coverage < 35:
+    if age_days is not None and age_days < 0:
+        public_factor = None
+        reliability = "insufficient_data"
+        reliability_reason = "Data de contas futura ou inválida."
+    elif coverage_score < 50 or critical_coverage < 35:
         public_factor = None
         reliability = "insufficient_data"
         reliability_reason = "Cobertura fundamental insuficiente para calcular um score robusto."
