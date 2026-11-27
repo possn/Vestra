@@ -297,8 +297,7 @@ def utility_shadow(ctx):
         ctx.p("trailing_pe", invert=True, positive_only=True),
         ctx.p("price_to_book", invert=True, positive_only=True),
     ])
-    base_cash = ctx.cashflow()
-    cashflow = avg([base_cash, positive_score(ctx.row.get("operating_cash_flow"))])
+    cashflow = ctx.cashflow()
     growth = ctx.growth()
     stability = ctx.stability()
     score = weighted([

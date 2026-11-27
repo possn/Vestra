@@ -105,7 +105,11 @@ def _price_position(row: dict):
               and all(4 <= (b-a).days <= 11 for a,b in zip(dated_sessions,dated_sessions[1:]))):
             # The canonical market history is weekly. Keep this as a clearly
             # named weekly-CLOSE observation, never an intraday 52-week low.
-            low, high = min(closes), max(closes)
+            cutoff = dated_sessions[-1].toordinal() - 365
+            year_closes = [v for day, v in zip(dated_sessions, closes) if day.toordinal() >= cutoff]
+            if len(year_closes) < 45:
+                return None
+            low, high = min(year_closes), max(year_closes)
             basis = "observed_weekly_closes_approximately_52weeks"
         else:
             # A partial / undated history is not a 52-week observation.

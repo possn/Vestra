@@ -762,10 +762,14 @@ def main():
     for row in rows:
         ticker = str(row.get("ticker") or "").strip()
         metrics = daily_return_map.get(ticker) or {}
+        # Never carry a prior run's daily return observations into a fresh ranking.
+        for key in ("market_return_5d_pct", "market_return_20d_pct",
+                    "market_return_60d_pct", "market_return_asof_date"):
+            row.pop(key, None)
         if metrics:
-            # Internal daily date arrays validate sector comparisons; never inflate public indexes.
+            # Preserve the observation date, but not internal session arrays.
             row.update({key: value for key, value in metrics.items()
-                        if key not in ("market_return_asof_date", "market_return_20d_dates")})
+                        if key != "market_return_20d_dates"})
 
     payload = {
         "schema_version": 521,
