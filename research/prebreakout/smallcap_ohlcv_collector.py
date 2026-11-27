@@ -18,7 +18,7 @@ ROOT=Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:sys.path.insert(0,str(ROOT))
 from scripts.refresh_prebreakout_scanner import EARLY_SETUP_POLICY_VERSION
 DEFAULT_OUTPUT=ROOT/"data"/"breakout-lab-smallcap-ohlcv-research.json"
-MAX_PER_RUN=40
+MAX_PER_RUN=64
 MIN_BARS=220
 
 def cohort(rows):
@@ -471,7 +471,7 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96,
     return sorted(chosen,key=lambda ticker:positions[ticker])
 
 
-def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
+def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None,batch_prices=False):
     if type(slot)!=int or slot<0 or type(budget)!=int or not 1<=budget<=MAX_PER_RUN:
         raise ValueError(f"slot must be >=0 and budget between 1 and {MAX_PER_RUN}")
     checked_at=checked_at or datetime.now(timezone.utc)
@@ -485,24 +485,62 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
     fresh_histories={}
     cap_by_ticker={str(row.get("ticker") or "").strip().upper():row.get("market_cap")
                    for row in rows if isinstance(row,dict)}
-    spy_closes=None
-    spy_attempted=False
-    for ticker in selected:
+    # Resolve currency independently before fetching prices. Parallelise only
+    # metadata; yfinance.download has shared state in older supported versions.
+    from concurrent.futures import ThreadPoolExecutor
+    def resolve_currency(ticker):
         try:
-            item=provider.Ticker(ticker)
-            currency=item.fast_info.get("currency")
-            if currency!="USD":
-                observed.append(inspect(ticker,None,currency,checked_at));continue
-            if not spy_attempted:
-                spy_attempted=True
-                try:
-                    benchmark=provider.download("SPY",period="18mo",interval="1d",auto_adjust=True,
-                                                threads=False,progress=False,timeout=20,multi_level_index=False)
-                    spy_closes=benchmark_closes(benchmark,checked_at)
-                except Exception:
-                    spy_closes=None
-            frame=provider.download(ticker,period="18mo",interval="1d",auto_adjust=True,
-                                    threads=False,progress=False,timeout=20,multi_level_index=False)
+            return provider.Ticker(ticker).fast_info.get("currency"), None
+        except Exception as exc:
+            return None, type(exc).__name__
+    if batch_prices and selected:
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            metadata=dict(zip(selected,pool.map(resolve_currency,selected)))
+    else:
+        metadata={ticker:resolve_currency(ticker) for ticker in selected}
+    usd=[ticker for ticker in selected if metadata[ticker]==("USD",None)]
+    spy_closes=None
+    if usd:
+        try:
+            benchmark=provider.download("SPY",period="18mo",interval="1d",auto_adjust=True,
+                                        threads=False,progress=False,timeout=20,multi_level_index=False)
+            spy_closes=benchmark_closes(benchmark,checked_at)
+        except Exception:
+            spy_closes=None
+    frames={}
+    if batch_prices:
+        # Bounded group requests with provider-owned threading, not concurrent
+        # calls to download. Select exact ticker columns; never borrow a peer.
+        for offset in range(0,len(usd),12):
+            members=usd[offset:offset+12]
+            try:
+                frame=provider.download(members,period="18mo",interval="1d",
+                    auto_adjust=True,threads=4,progress=False,timeout=20,
+                    group_by="ticker",multi_level_index=True)
+                if getattr(frame.columns,"nlevels",1)==2:
+                    for ticker in members:
+                        if ticker in frame.columns.get_level_values(0):
+                            # Preserve interior gaps; only remove batch alignment
+                            # padding at the ends before the existing OHLCV gate.
+                            part=frame[ticker]
+                            valid=part.dropna(how="all")
+                            if not valid.empty:
+                                frames[ticker]=part.loc[valid.index[0]:valid.index[-1]]
+            except Exception:
+                pass
+    for ticker in selected:
+        currency,error=metadata[ticker]
+        if error:
+            observed.append({"ticker":ticker,"status":"provider_error","error_type":error})
+            continue
+        if currency!="USD":
+            observed.append(inspect(ticker,None,currency,checked_at))
+            continue
+        try:
+            frame=frames.get(ticker)
+            if frame is None:
+                frame=provider.download(ticker,period="18mo",interval="1d",auto_adjust=True,
+                                        threads=False,progress=False,timeout=20,multi_level_index=False)
             result=inspect(ticker,frame,currency,checked_at,spy_closes=spy_closes)
             history=result.pop("__closed_history",None)
             if isinstance(history,list):fresh_histories[ticker]=history
@@ -657,7 +695,7 @@ def main():
         previous=json.loads(args.output.read_text(encoding="utf-8"))
     except (FileNotFoundError,ValueError,OSError):
         previous={}
-    result=collect(rows,yf,args.slot,args.budget,previous=previous)
+    result=collect(rows,yf,args.slot,args.budget,previous=previous,batch_prices=True)
     result["universe_source_index_sha256"]=hashlib.sha256(index_bytes).hexdigest()
     result=merge_slots(result,previous,datetime.fromisoformat(result["generated_at"]),
                        eligible_tickers=cohort(rows))
