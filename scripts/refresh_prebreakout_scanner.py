@@ -322,7 +322,17 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
                 .encode("utf-8")).hexdigest(),
             "historical_adjustment_factor_verified":False,
             "research_only_no_eligibility_or_score_effect":True}
+        # Measure pre-base lineage before any moving-average rejection.
+        prior_closes_shadow=sorted(b["close"] for b in clean[-160:-40])
+        prior_reference_shadow=prior_closes_shadow[int((len(prior_closes_shadow)-1)*.15)]
+        prebase_impulse_shadow=100*(clean[-40]["close"]/prior_reference_shadow-1)
+        prior_breaks_shadow=historical_breakout_dates(clean,len(clean)-180,len(clean)-40)
+        prior_volume_complete=all(type(b.get("volume")) in (int,float) and
+            math.isfinite(b["volume"]) and b["volume"]>0 for b in clean[-200:-40])
         audit["research_prebreakout_lineage"]={
+            "prebase_impulse_pct":round(prebase_impulse_shadow,3),
+            "prior_confirmed_breakouts_before_base":len(prior_breaks_shadow),
+            "prebase_volume_lineage_complete":prior_volume_complete,
             "distance_to_pivot_pct":round(pivot_distance_pct,3),
             "prior_confirmed_breakouts_in_base":len(confirmed_in_base),
             "unbroken_prebreakout_position":(
