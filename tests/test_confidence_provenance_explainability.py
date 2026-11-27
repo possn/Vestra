@@ -85,5 +85,16 @@ class ConfidenceProvenanceExplainabilityTests(unittest.TestCase):
         )
 
 
+    def test_future_statement_cannot_certify_recent_accounts(self):
+        out = mod.assess(rich_row(sec_period_end="2999-01-01"))
+        self.assertIsNone(out["score"])
+        self.assertLessEqual(out["confidence_score"], 49)
+        self.assertEqual(out["score_reliability"], "insufficient_data")
+
+    def test_boolean_metrics_do_not_count_as_evidence(self):
+        base = mod.assess(rich_row(roe=None))
+        bad = mod.assess(rich_row(roe=True))
+        self.assertEqual(base["critical_metric_coverage_pct"], bad["critical_metric_coverage_pct"])
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

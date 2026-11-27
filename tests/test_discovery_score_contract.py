@@ -492,5 +492,21 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         self.assertIn('"high_priority_requires_upside_support": "strong"', guard)
 
 
+    def test_out_of_range_scores_cannot_promote_opportunity(self):
+        for key, value in (("score", 120), ("confidence_score", 101),
+                           ("data_coverage_pct", 120), ("critical_metric_coverage_pct", 101),
+                           ("moat_score", 200), ("value_trap_risk_score", -10)):
+            candidate = row()
+            candidate[key] = value
+            result = MOD.assess(candidate)
+            self.assertFalse(result["opportunity_eligible"], key)
+            self.assertIsNone(result["opportunity_score"], key)
+
+    def test_fund_and_preferred_are_not_common_equity_opportunities(self):
+        for kind in ("FUND", "PREFERRED"):
+            candidate = row()
+            candidate["quote_type"] = kind
+            self.assertFalse(MOD.assess(candidate)["opportunity_eligible"])
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
