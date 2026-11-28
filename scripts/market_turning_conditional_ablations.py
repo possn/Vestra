@@ -162,12 +162,13 @@ def conditional_evaluate(raw):
             label=future_reversal_labels(spy,item["index"],forward=HORIZON,nearby=5)[side]
             if label is None: continue
             samples.append({**item,"label":int(label)})
-        episode_lookup=stress_episode_groups(samples)
+        episode_lookup=stress_episode_groups([{"index": i} for i in sorted(eligible)])
         by_model={name:[] for name in variants()}
         baseline=[]
         anchor_years=[]
         anchor_episodes=[]
         folds=[]
+        last=-100000  # Maintain separation across annual fold boundaries.
         # Fold boundaries are calendar trading sessions, not count of
         # stressed observations; thus no event-selected time warping.
         for start_index in range(125+1008,len(spy)-HORIZON,FOLD):
@@ -178,7 +179,6 @@ def conditional_evaluate(raw):
             fitted={name:fit(train,keys) for name,keys in variants().items()}
             if any(model is None for model in fitted.values()):continue
             independent=[]
-            last=-100000
             for row in test:
                 if row["index"]-last<HORIZON:continue
                 independent.append(row)
@@ -237,7 +237,7 @@ def conditional_evaluate(raw):
                 "no calibration permission or investment thresholds",
                 "HYG/LQD is a relative price proxy, not HY OAS",
                 "small numbers of eligible events can prevent fitting",
-                "non-overlap in same fold does not guarantee independence between crises"],
+                "non-overlap across folds does not guarantee independence between crises"],
             "results":report}
     output["research_evidence_gate"]=conservative_research_gate(output)
     return output

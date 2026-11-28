@@ -101,6 +101,7 @@ def evaluate(raw):
                 samples.append({"index":index,"date":day,"features":features,
                                 "label":int(label)})
             forecasts, baselines, fold_meta = [], [], []
+            last_anchor=-100000  # Global across folds, not just within each fold.
             for start in range(MIN_TRAIN,len(samples),FOLD):
                 # Last train label's full forward horizon must end before first test.
                 training = [v for v in samples[:max(0,start-PURGE)]
@@ -116,7 +117,6 @@ def evaluate(raw):
                 # One decision every horizon sessions: prevent overlapping
                 # forward outcomes from masquerading as independent episodes.
                 sampled=[]
-                last_anchor=-100000
                 for item in testing:
                     if item["index"]-last_anchor < horizon:
                         continue
