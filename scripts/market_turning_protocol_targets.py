@@ -67,6 +67,9 @@ def evaluate_protocol(raw, observations=None):
                 continue
             samples.append({**row, "features": features, "label": int(outcome(closes,i,target))})
         full, base, price_only, years, blocks = [], [], [], [], []
+        vvix_samples = [r for r in samples if r['features'].get('vvix_percentile_126') is not None]
+        vvix_control, vvix_augmented, vvix_years, vvix_blocks = [], [], [], []
+        vvix_last = -1000
         last = -1000
         for start in range(1133, len(closes)-horizon, 252):
             train = [r for r in samples if r["index"] < start-horizon-20]
@@ -87,7 +90,35 @@ def evaluate_protocol(raw, observations=None):
                 base.append((prevalence,y))
                 years.append(int(r["date"][:4]))
                 blocks.append(episodes[i])
+        # Separate paired experiment: both variants use identical VVIX-complete
+        # training and test rows; do not change the primary benchmark universe.
+        augmented_keys = keys + ("vvix_percentile_126",)
+        for start in range(1133, len(closes)-horizon, 252):
+            train = [r for r in vvix_samples if r["index"] < start-horizon-20]
+            if len(train)<150:
+                continue
+            control_model = fit(train,keys)
+            augmented_model = fit(train,augmented_keys)
+            if control_model is None or augmented_model is None:
+                continue
+            for r in vvix_samples:
+                i = r["index"]
+                if not start<=i<start+252 or i-vvix_last<horizon:
+                    continue
+                vvix_last=i
+                y=r["label"]
+                vvix_control.append((predict(control_model,r["features"],keys),y))
+                vvix_augmented.append((predict(augmented_model,r["features"],augmented_keys),y))
+                vvix_years.append(int(r["date"][:4]))
+                vvix_blocks.append(episodes[i])
         result[target] = {"horizon_sessions":horizon,"eligible_sessions":len(episodes),
+            "vvix_incremental_experiment":{
+                "complete_samples":len(vvix_samples),
+                "control":metrics(vvix_control),
+                "augmented":metrics(vvix_augmented),
+                "paired_episode_ci":episode_block_skill_ci(vvix_augmented,vvix_control,vvix_blocks),
+                "paired_year_ci":year_block_brier_skill_ci(vvix_augmented,vvix_control,vvix_years),
+                "live_vote_authorized":False},
             "complete_samples":len(samples),"model":metrics(full),"baseline":metrics(base),
             "price_only":metrics(price_only),
             "vs_baseline_episode_ci":episode_block_skill_ci(full,base,blocks),
