@@ -18,7 +18,7 @@ FEATURES = (
     "mfi_daily_14", "drawdown_126_pct", "ma50_gap_pct",
     "vix_percentile_126", "vvix_percentile_126",
     "cor1m_percentile_126", "vix_1m_3m_ratio",
-    "hyg_lqd_change_5_pct",
+    "hyg_lqd_change_5_pct", "vvix_change_5_pct", "vvix_vix_change_gap_5_pct",
 )
 
 
@@ -146,6 +146,12 @@ def feature_row(histories, asof):
     ):
         result[key] = percentile(histories.get(ticker, []), asof)
     vix = same_day(histories.get("^VIX", []), asof)
+    vvix = same_day(histories.get("^VVIX", []), asof)
+    dates = [row["date"] for row in spy[-6:]]
+    if len(vvix) >= 6 and [row["date"] for row in vvix[-6:]] == dates:
+        result["vvix_change_5_pct"] = 100 * (vvix[-1]["close"] / vvix[-6]["close"] - 1)
+        if len(vix) >= 6 and [row["date"] for row in vix[-6:]] == dates:
+            result["vvix_vix_change_gap_5_pct"] = result["vvix_change_5_pct"] - 100 * (vix[-1]["close"] / vix[-6]["close"] - 1)
     vix3m = same_day(histories.get("^VIX3M", []), asof)
     if vix and vix3m:
         result["vix_1m_3m_ratio"] = vix[-1]["close"] / vix3m[-1]["close"]
