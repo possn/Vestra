@@ -23,32 +23,37 @@ def sigmoid(value):
     value = max(-35., min(35., value))
     return 1. / (1. + math.exp(-value))
 
-def fit(train, keys):
+def fit(train, keys, sample_weights=None):
     """Train-only standardization, deterministic L2 logistic SGD."""
     x = [[v["features"][key] for key in keys] for v in train]
     y = [int(v["label"]) for v in train]
     if min(sum(y), len(y)-sum(y)) < 15:
         return None
-    means = [sum(row[j] for row in x)/len(x) for j in range(len(keys))]
-    stds = [max((sum((row[j]-means[j])**2 for row in x)/len(x))**.5, 1e-6)
+    mass = [1.] * len(x) if sample_weights is None else list(sample_weights)
+    if len(mass) != len(x) or any(not math.isfinite(v) or v <= 0 for v in mass):
+        raise ValueError('invalid training weights')
+    total = sum(mass)
+    means = [sum(w*row[j] for w,row in zip(mass,x))/total for j in range(len(keys))]
+    stds = [max((sum(w*(row[j]-means[j])**2 for w,row in zip(mass,x))/total)**.5, 1e-6)
             for j in range(len(keys))]
     z = [[max(-6., min(6., (row[j]-means[j])/stds[j]))
           for j in range(len(keys))] for row in x]
     weights = [0.] * len(keys)
-    bias = math.log(max(EPS, sum(y)/len(y)) / max(EPS, 1.-sum(y)/len(y)))
+    prevalence = sum(w*v for w,v in zip(mass,y))/total
+    bias = math.log(max(EPS, prevalence) / max(EPS, 1.-prevalence))
     # Batch gradient descent avoids dependence on row-order or a random seed.
     for step in range(350):
         gb = 0.
         gw = [0.] * len(keys)
-        for row, target in zip(z, y):
-            err = sigmoid(bias + sum(a*b for a,b in zip(row,weights))) - target
+        for row, target, weight in zip(z, y, mass):
+            err = weight * (sigmoid(bias + sum(a*b for a,b in zip(row,weights))) - target)
             gb += err
             for j,val in enumerate(row):
                 gw[j] += err*val
         lr = .12 / (1. + step/180.)
-        bias -= lr*gb/len(y)
+        bias -= lr*gb/total
         for j in range(len(keys)):
-            weights[j] -= lr*(gw[j]/len(y) + .06*weights[j])
+            weights[j] -= lr*(gw[j]/total + .06*weights[j])
     return means, stds, weights, bias
 
 def predict(model, features, keys):
