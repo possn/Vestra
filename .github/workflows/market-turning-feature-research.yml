@@ -10,6 +10,8 @@ on:
       - 'scripts/market_turning_feature_lab.py'
       - 'scripts/market_turning_walkforward.py'
       - 'scripts/market_turning_conditional_ablations.py'
+      - 'scripts/market_turning_protocol_targets.py'
+      - 'tests/test_market_turning_protocol_targets.py'
       - 'tests/test_market_turning_conditional_ablations.py'
       - 'tests/test_market_turning_walkforward.py'
       - 'scripts/refresh_market_turning_feature_lab.py'
@@ -42,6 +44,7 @@ jobs:
           python tests/test_refresh_market_turning_feature_lab.py
           python tests/test_market_turning_walkforward.py
           python tests/test_market_turning_conditional_ablations.py
+          python tests/test_market_turning_protocol_targets.py
       - name: Read independent historical daily OHLCV
         run: python scripts/refresh_market_turning_feature_lab.py
       - name: Record research report as workflow artifact
