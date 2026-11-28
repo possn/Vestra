@@ -1,0 +1,56 @@
+name: Market turning research preview
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/market_turning_*.py'
+      - 'scripts/refresh_market_turning_feature_lab.py'
+      - 'tests/test_market_turning_*.py'
+      - '.github/workflows/market-turning-research-preview.yml'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: turning-preview-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  historical-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install research dependencies
+        run: pip install 'yfinance>=0.2.65' pandas
+      - name: Verify research contracts
+        run: |
+          python tests/test_market_turning_feature_lab.py
+          python tests/test_market_turning_walkforward.py
+          python tests/test_market_turning_conditional_ablations.py
+          python tests/test_market_turning_protocol_targets.py
+      - name: Run historical preview
+        run: python scripts/refresh_market_turning_feature_lab.py --output /tmp/turning-preview.json
+      - name: Report comparable historical results
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("/tmp/turning-preview.json").read_text())
+          protocol = report["protocol_targets"]
+          assert protocol["research_only"] and not protocol["live_probability_authorized"]
+          summary = {"generated_at": report["generated_at"],
+                     "coverage": report["feature_coverage"],
+                     "protocol_targets": protocol}
+          print(json.dumps(summary, indent=2, allow_nan=False))
+          PY
+      - uses: actions/upload-artifact@v7
+        with:
+          name: turning-preview-${{ github.sha }}
+          path: /tmp/turning-preview.json
+          if-no-files-found: error
+          retention-days: 14
