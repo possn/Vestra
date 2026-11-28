@@ -1,4 +1,5 @@
 """Predeclared 23 Nov protocol targets; research only, never live probabilities."""
+from collections import Counter
 from market_turning_feature_lab import series, feature_row
 from market_turning_walkforward import fit, predict, metrics
 from market_turning_conditional_ablations import episode_block_skill_ci, year_block_brier_skill_ci
@@ -67,6 +68,8 @@ def evaluate_protocol(raw, observations=None):
                 continue
             samples.append({**row, "features": features, "label": int(outcome(closes,i,target))})
         full, base, price_only, years, blocks = [], [], [], [], []
+        weighted, weighted_control, weighted_years, weighted_blocks = [], [], [], []
+        weighted_last = -1000
         vvix_samples = [r for r in samples if r['features'].get('vvix_percentile_126') is not None]
         vvix_control, vvix_augmented, vvix_years, vvix_blocks = [], [], [], []
         vvix_last = -1000
@@ -90,6 +93,27 @@ def evaluate_protocol(raw, observations=None):
                 base.append((prevalence,y))
                 years.append(int(r["date"][:4]))
                 blocks.append(episodes[i])
+        # Equal total training mass per observed episode, counted only from
+        # the purged training prefix. Never use future episode duration.
+        for start in range(1133, len(closes)-horizon, 252):
+            train = [r for r in samples if r["index"] < start-horizon-20]
+            if len(train)<150:
+                continue
+            counts = Counter(episodes[r["index"]] for r in train)
+            mass = [1/counts[episodes[r["index"]]] for r in train]
+            control, alternative = fit(train,keys), fit(train,keys,mass)
+            if control is None or alternative is None:
+                continue
+            for r in samples:
+                i = r["index"]
+                if not start<=i<start+252 or i-weighted_last<horizon:
+                    continue
+                weighted_last=i
+                y=r["label"]
+                weighted_control.append((predict(control,r["features"],keys),y))
+                weighted.append((predict(alternative,r["features"],keys),y))
+                weighted_years.append(int(r["date"][:4]))
+                weighted_blocks.append(episodes[i])
         # Separate paired experiment: both variants use identical VVIX-complete
         # training and test rows; do not change the primary benchmark universe.
         augmented_keys = keys + ("vvix_percentile_126",)
@@ -133,6 +157,11 @@ def evaluate_protocol(raw, observations=None):
                 dynamic_years.append(int(r["date"][:4]))
                 dynamic_blocks.append(episodes[i])
         result[target] = {"horizon_sessions":horizon,"eligible_sessions":len(episodes),
+            "episode_weighting_experiment":{
+                "control":metrics(weighted_control),"episode_weighted":metrics(weighted),
+                "paired_episode_ci":episode_block_skill_ci(weighted,weighted_control,weighted_blocks),
+                "paired_year_ci":year_block_brier_skill_ci(weighted,weighted_control,weighted_years),
+                "live_vote_authorized":False},
             "vvix_dynamics_experiment":{
                 "complete_samples":len(dynamic_samples),
                 "static_control":metrics(static_pairs),"dynamic":metrics(dynamic_pairs),
