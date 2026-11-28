@@ -24,6 +24,8 @@ class FirstFailingGateAuditTests(unittest.TestCase):
         self.assertEqual(trace["first_rejection"],"moving_average_structure")
         feature=trace["technical_evidence_shadow"]
         self.assertEqual(feature["status"],"measured")
+        self.assertTrue(trace["emerging_base_shadow"]["research_only"])
+        self.assertFalse(trace["emerging_base_shadow"]["all_pass"])
         self.assertIsInstance(feature["atr14_to_atr60"],float)
         self.assertEqual(feature["volume9_to_prior40"],1.0)
         self.assertIsNone(feature["relative_strength_to_index"])
