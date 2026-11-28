@@ -19,6 +19,11 @@ class ProtocolTargets(unittest.TestCase):
         report=evaluate_protocol({})
         self.assertFalse(report["live_probability_authorized"])
         self.assertIsNone(report["targets"]["cyclical_bottom"]["model"])
+        for target in report["targets"].values():
+            experiment = target["vvix_incremental_experiment"]
+            self.assertEqual(experiment["complete_samples"], 0)
+            self.assertIsNone(experiment["augmented"])
+            self.assertFalse(experiment["live_vote_authorized"])
 
 if __name__ == "__main__":
     unittest.main()
