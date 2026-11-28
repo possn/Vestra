@@ -204,6 +204,43 @@ def technical_evidence_shadow(bars: list[dict])->dict:
             "not_signal_or_backtest_or_calibrated_probability":True}
 
 
+def emerging_base_shadow(clean, lineage, technical):
+    """Predeclared Stage-1 transition hypothesis, never a live signal."""
+    values = [b["close"] for b in clean]
+    end = len(values)-1
+    m150, m200 = sma(values,end,150), sma(values,end,200)
+    old150, old200 = sma(values,end-20,150), sma(values,end-20,200)
+    # Caller supplies validated OHLC; require enough sessions for all averages.
+    if any(v is None or v <= 0 for v in (m150,m200,old150,old200)):
+        return {"status":"insufficient_history","research_only":True}
+    gap = abs(m150/m200-1)
+    old_gap = abs(old150/old200-1)
+    base = clean[-84:]
+    base_width = max(b["high"] for b in base)/min(b["low"] for b in base)-1
+    # Fixed 84-session window is a hypothesis, not a proven base start.
+    pivot = max(b["high"] for b in base[:-1])
+    distance = pivot/values[-1]-1
+    fields = ("atr14_to_prior46","volume9_to_prior40","chaikin_money_flow20")
+    if any(technical.get(k) is None for k in fields):
+        return {"status":"missing_volume_or_volatility_evidence","research_only":True}
+    checks = {
+        "base84_narrow": 0 < base_width <= .30,
+        "ma150_ma200_converging": gap <= .05 and gap <= old_gap,
+        "ma150_rising": m150 > old150,
+        "price_above_ma150": values[-1] > m150,
+        "atr_compression": 0 < technical["atr14_to_prior46"] <= .80,
+        "volume_drying": 0 < technical["volume9_to_prior40"] <= .85,
+        "positive_money_flow_proxy": technical["chaikin_money_flow20"] > 0,
+        "unbroken_local_pivot": lineage.get("unbroken_prebreakout_position") is True,
+        "below_84_session_pivot": 0 < distance <= .08 and base[-1]["high"] <= pivot,
+    }
+    return {"status":"measured","checks":checks,"all_pass":all(checks.values()),
+            "base_window_sessions":84,"base_width_pct":round(base_width*100,3),
+            "ma_gap_pct":round(gap*100,3),"distance_to_84_session_pivot_pct":round(distance*100,3),
+            "research_only":True,"no_eligibility_or_score_effect":True,
+            "relative_strength_not_verified":True}
+
+
 def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_quality: bool=True, liquidity_floor: float=5_000_000, audit: dict|None=None):
     """Identify a contracting base, not a prediction of future returns."""
     def reject(reason: str):
@@ -377,6 +414,7 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     if audit is not None:
         # Measure MA and base geometry on the same observed bars, independently
         # of which gate happens to fail first. This is descriptive only.
+        audit["emerging_base_shadow"]=emerging_base_shadow(clean,audit["research_prebreakout_lineage"],audit["technical_evidence_shadow"])
         audit["ma_structure_shadow"]={
             "status":"measured",
             "price_order_pass":bool(ma_structure),
@@ -1351,6 +1389,7 @@ def main():
                     "trend_phase":trace.get("trend_phase"),
                     "geometry_shadow":trace.get("geometry_shadow"),
                     "ma_structure_shadow":trace.get("ma_structure_shadow"),
+                    "emerging_base_shadow":trace.get("emerging_base_shadow"),
                     "research_prebreakout_lineage":trace.get("research_prebreakout_lineage"),
                     "swing_geometry_shadow":trace.get("swing_geometry_shadow"),
                     "geometry_phase_shadow":trace.get("geometry_phase_shadow"),
