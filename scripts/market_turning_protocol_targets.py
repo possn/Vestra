@@ -111,7 +111,34 @@ def evaluate_protocol(raw, observations=None):
                 vvix_augmented.append((predict(augmented_model,r["features"],augmented_keys),y))
                 vvix_years.append(int(r["date"][:4]))
                 vvix_blocks.append(episodes[i])
+        dynamic_keys = augmented_keys + ("vvix_change_5_pct", "vvix_vix_change_gap_5_pct")
+        dynamic_samples = [r for r in vvix_samples if all(r["features"].get(k) is not None for k in dynamic_keys)]
+        static_pairs, dynamic_pairs, dynamic_years, dynamic_blocks = [], [], [], []
+        dynamic_last = -1000
+        for start in range(1133, len(closes)-horizon, 252):
+            train = [r for r in dynamic_samples if r["index"] < start-horizon-20]
+            if len(train)<150:
+                continue
+            static_model, dynamic_model = fit(train,augmented_keys), fit(train,dynamic_keys)
+            if static_model is None or dynamic_model is None:
+                continue
+            for r in dynamic_samples:
+                i = r["index"]
+                if not start<=i<start+252 or i-dynamic_last<horizon:
+                    continue
+                dynamic_last=i
+                y=r["label"]
+                static_pairs.append((predict(static_model,r["features"],augmented_keys),y))
+                dynamic_pairs.append((predict(dynamic_model,r["features"],dynamic_keys),y))
+                dynamic_years.append(int(r["date"][:4]))
+                dynamic_blocks.append(episodes[i])
         result[target] = {"horizon_sessions":horizon,"eligible_sessions":len(episodes),
+            "vvix_dynamics_experiment":{
+                "complete_samples":len(dynamic_samples),
+                "static_control":metrics(static_pairs),"dynamic":metrics(dynamic_pairs),
+                "paired_episode_ci":episode_block_skill_ci(dynamic_pairs,static_pairs,dynamic_blocks),
+                "paired_year_ci":year_block_brier_skill_ci(dynamic_pairs,static_pairs,dynamic_years),
+                "live_vote_authorized":False},
             "vvix_incremental_experiment":{
                 "complete_samples":len(vvix_samples),
                 "control":metrics(vvix_control),
