@@ -128,7 +128,7 @@ def _timing_assessment(row):
                     daily = None
         except (ValueError, TypeError):
             pass
-    if (dated and daily is None) or (daily is None and len(closes) < 22):
+    if ((dated or row.get("market_return_asof_date") is not None) and daily is None) or (daily is None and len(closes) < 22):
         return {
             "score": None,
             "label": "Dados de preço insuficientes",

@@ -302,7 +302,7 @@
     const asof=t(s?.market_return_asof_date);
     const age=(Date.now()-Date.parse(asof+'T00:00:00Z'))/86400000;
     const daily=d=>{
-      if(!dated&&!asof)return ret(d);
+      if(!dated&&!asof&&s?.market_return_asof_date==null)return ret(d);
       if(!/^\d{4}-\d{2}-\d{2}$/.test(asof)||!Number.isFinite(age)||age<0||age>=8)return null;
       const raw=s?.['market_return_'+d+'d_pct'];
       const v=typeof raw==='boolean'?null:n(raw);
@@ -915,7 +915,8 @@
       s?.opportunity_rotation_signal,s?.opportunity_event_risk,
       s?.opportunity_caps,s?.opportunity_sleeves,
       s?.data_coverage_pct,s?.confidence_score,
-      setup?.stage,setup?.score,setup?.date
+      s?.market_return_asof_date,s?.market_return_5d_pct,s?.market_return_20d_pct,s?.market_return_60d_pct,
+      s?.opportunity_overextended,setup?.stage,setup?.score,setup?.date,setup?.distancePct
     ]);
   }
   function opportunities(lens=activeLens,sectorOverride=''){
